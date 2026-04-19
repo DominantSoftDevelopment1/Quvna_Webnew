@@ -19,7 +19,6 @@ export function ShortsFullScreen() {
   const observerRef = useRef<IntersectionObserver | null>(null);
   const slideRefs = useRef<(HTMLDivElement | null)[]>([]);
 
-  // IntersectionObserver to track active slide
   useEffect(() => {
     observerRef.current?.disconnect();
     observerRef.current = new IntersectionObserver(
@@ -37,7 +36,6 @@ export function ShortsFullScreen() {
     return () => observerRef.current?.disconnect();
   }, [videos.length]);
 
-  // Load more when near end
   useEffect(() => {
     if (activeIndex >= videos.length - 3 && hasNextPage && !isFetchingNextPage) {
       fetchNextPage();
@@ -48,6 +46,11 @@ export function ShortsFullScreen() {
     slideRefs.current[idx] = el;
     if (el) observerRef.current?.observe(el);
   }, []);
+
+  const scrollTo = (idx: number) => {
+    const el = slideRefs.current[idx];
+    if (el) el.scrollIntoView({ behavior: "smooth" });
+  };
 
   if (isLoading) {
     return (
@@ -61,8 +64,8 @@ export function ShortsFullScreen() {
 
   if (!videos.length) {
     return (
-      <div className="short-feed" style={{ alignItems: "center", justifyContent: "center", display: "flex" }}>
-        <p className="text-muted text-sm">Videolar topilmadi</p>
+      <div className="short-feed flex items-center justify-center">
+        <p className="text-white/60 text-sm">Videolar topilmadi</p>
       </div>
     );
   }
@@ -79,6 +82,10 @@ export function ShortsFullScreen() {
               onComment={() => setCommentsVideo(video)}
               onShare={() => navigator.share?.({ title: video.title, url: window.location.href }).catch(() => {})}
               onFollow={() => video.userResponseDTO?.id && followUser.mutate(video.userResponseDTO.id)}
+              onPrev={() => scrollTo(idx - 1)}
+              onNext={() => scrollTo(idx + 1)}
+              hasPrev={idx > 0}
+              hasNext={idx < videos.length - 1}
             />
           </div>
         ))}
