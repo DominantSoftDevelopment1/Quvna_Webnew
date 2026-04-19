@@ -42,9 +42,12 @@ export default function ProfilePage() {
 
 function ProfileContent({ userId, isLoggedIn, onLogout }: { userId: number | null; isLoggedIn: boolean; onLogout: () => void }) {
   const { data: profile, isLoading } = useProfile(userId);
-  const { data: followers = [] } = useFollowers(userId);
-  const { data: following = [] } = useFollowing(userId);
-  const { data: videos = [], isLoading: videosLoading } = useUserVideos(userId);
+  const { data: followersRaw = [] } = useFollowers(userId);
+  const { data: followingRaw = [] } = useFollowing(userId);
+  const { data: videosRaw = [], isLoading: videosLoading } = useUserVideos(userId);
+  const followers = Array.isArray(followersRaw) ? followersRaw : [];
+  const following = Array.isArray(followingRaw) ? followingRaw : [];
+  const videos = Array.isArray(videosRaw) ? videosRaw : [];
   const [darkMode, setDarkMode] = useState(true);
   const [activeTab, setActiveTab] = useState<"overview" | "videos">("overview");
   const cardsRef = useRef<HTMLDivElement>(null);
