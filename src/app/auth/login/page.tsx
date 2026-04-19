@@ -22,7 +22,8 @@ export default function LoginPage() {
     setError("");
     setLoading(true);
     try {
-      const { data } = await api.post("/api/auth/login", { phoneNumber, password });
+      const cleanPhone = phoneNumber.replace(/[\s\-().]/g, "");
+      const { data } = await api.post("/api/auth/login", { phoneNumber: cleanPhone, password });
       const d = data?.data;
       if (d?.accessToken) {
         setTokens(d.accessToken, d.refreshToken);
