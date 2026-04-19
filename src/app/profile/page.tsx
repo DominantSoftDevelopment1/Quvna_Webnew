@@ -64,6 +64,8 @@ function ProfileContent({ userId, isLoggedIn, onLogout }: { userId: number | nul
   const fullName = p.firstName && p.lastName ? `${p.firstName} ${p.lastName}` : (p.username ?? "Foydalanuvchi");
   const avatarUrl = p.attachmentResponseDTO?.preSignedUrl ?? p.attachmentResponseDTO?.contentURL ?? null;
   const bannerUrl = p.userBannerAttachmentResponseDTO?.preSignedUrl ?? p.userBannerAttachmentResponseDTO?.contentURL ?? null;
+  // rating object yoki number bo'lishi mumkin
+  const ratingScore = typeof p.rating === "object" ? (p.rating?.ucAmount ?? 0) : (p.rating ?? 0);
 
   return (
     <div className="w-full mx-auto pb-10" style={{ maxWidth: '900px', marginLeft: 'auto', marginRight: 'auto', paddingLeft: '1rem', paddingRight: '1rem' }}>
@@ -131,7 +133,7 @@ function ProfileContent({ userId, isLoggedIn, onLogout }: { userId: number | nul
             <div className="flex items-center gap-2 shrink-0"
               style={{ background: "rgba(27,58,42,0.9)", borderRadius: 20, padding: "6px 12px", backdropFilter: "blur(8px)", marginBottom: 10, marginRight: 10 }}>
               <Star size={15} fill="#F59E0B" style={{ color: "#F59E0B" }} />
-              <span style={{ fontSize: 15, fontWeight: 700, color: "#fff" }}>{p.rating ?? 125}</span>
+              <span style={{ fontSize: 15, fontWeight: 700, color: "#fff" }}>{ratingScore}</span>
             </div>
           </div>
         </div>
@@ -190,10 +192,10 @@ function ProfileContent({ userId, isLoggedIn, onLogout }: { userId: number | nul
             {/* Scrollable row */}
             <div ref={cardsRef} className="flex overflow-x-auto"
               style={{ gap: '16px', paddingLeft: 16, paddingRight: 16, scrollbarWidth: "none", msOverflowStyle: "none" }}>
-              <RatingCard title="PUBG MOBILE"    rating={p.rating ?? 125} name={p.playName ?? "Azimovas"}            uid={p.gameID ?? "5971521"}           total={p.totalScore ?? "1 571"} />
-              <RatingCard title="MOBILE LEGENDS" rating={p.rating ?? 125} name={p.mobileLegendsName ?? "Azimovas"}   uid={p.mobileLegendsUID ?? "5971521"} total="2 340" />
-              <RatingCard title="FREE FIRE"      rating={p.rating ?? 125} name={p.freeFireName ?? "Azimovas"}        uid={p.freeFireUID ?? "5971521"}      total="892" />
-              <RatingCard title="STEAM"          rating={p.rating ?? 125} name={p.playName ?? "Azimovas"}            uid={p.gameID ?? "5971521"}           total="450" />
+              <RatingCard title="PUBG MOBILE"    rating={ratingScore} name={p.playName ?? "Azimovas"}            uid={p.gameID ?? "5971521"}           total={p.totalScore ?? "1 571"} />
+              <RatingCard title="MOBILE LEGENDS" rating={ratingScore} name={p.mobileLegendsName ?? "Azimovas"}   uid={p.mobileLegendsUID ?? "5971521"} total="2 340" />
+              <RatingCard title="FREE FIRE"      rating={ratingScore} name={p.freeFireName ?? "Azimovas"}        uid={p.freeFireUID ?? "5971521"}      total="892" />
+              <RatingCard title="STEAM"          rating={ratingScore} name={p.playName ?? "Azimovas"}            uid={p.gameID ?? "5971521"}           total="450" />
             </div>
             {/* Right arrow */}
             <button type="button" aria-label="O'ngga" onClick={() => scrollCards("right")}
