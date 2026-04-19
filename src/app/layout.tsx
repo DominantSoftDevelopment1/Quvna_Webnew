@@ -8,6 +8,10 @@ import { Providers } from "./providers";
 export const metadata: Metadata = {
   title: "Quvna",
   description: "Gaming video platform",
+  icons: {
+    icon: "/quvna_logo.png",
+    apple: "/quvna_logo.png",
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
