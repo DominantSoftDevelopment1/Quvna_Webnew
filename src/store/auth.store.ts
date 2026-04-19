@@ -2,10 +2,14 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
 interface User {
-  id: number;
-  username: string;
-  fullName: string;
+  id: number | string;
+  username?: string;
+  firstName?: string;
+  lastName?: string;
+  fullName?: string;
+  phoneNumber?: string;
   avatar?: string;
+  attachmentResponseDTO?: { preSignedUrl?: string };
   score?: number;
 }
 
@@ -30,10 +34,14 @@ export const useAuthStore = create<AuthState>()(
         localStorage.setItem("refresh_token", refresh);
         set({ accessToken: access, refreshToken: refresh });
       },
-      setUser: (user) => set({ user }),
+      setUser: (user) => {
+        localStorage.setItem("userId", String(user.id ?? ""));
+        set({ user });
+      },
       logout: () => {
         localStorage.removeItem("access_token");
         localStorage.removeItem("refresh_token");
+        localStorage.removeItem("userId");
         set({ user: null, accessToken: null, refreshToken: null });
       },
       isLoggedIn: () => !!get().accessToken,

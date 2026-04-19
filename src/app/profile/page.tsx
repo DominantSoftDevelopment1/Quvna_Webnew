@@ -31,7 +31,7 @@ export default function ProfilePage() {
   const router = useRouter();
 
   const demoUserId = 1;
-  const userId = user?.id ?? demoUserId;
+  const userId = user?.id ? Number(user.id) : demoUserId;
 
   return <ProfileContent userId={userId} isLoggedIn={isLoggedIn()} onLogout={() => { logout(); router.push("/"); }} />;
 }
@@ -51,7 +51,7 @@ function ProfileContent({ userId, isLoggedIn, onLogout }: { userId: number | nul
     }
   };
 
-  if (isLoading) return <ProfileSkeleton />;
+  if (isLoading && !profile) return <ProfileSkeleton />;
 
   const p = profile ?? {};
   const fullName = p.firstName && p.lastName ? `${p.firstName} ${p.lastName}` : (p.username ?? "Foydalanuvchi");
@@ -59,7 +59,7 @@ function ProfileContent({ userId, isLoggedIn, onLogout }: { userId: number | nul
   const bannerUrl = p.userBannerAttachmentResponseDTO?.preSignedUrl ?? p.userBannerAttachmentResponseDTO?.contentURL ?? null;
 
   return (
-    <div className="w-full max-w-xl mx-auto pb-10 px-4">
+    <div className="w-full mx-auto pb-10" style={{ maxWidth: '900px', marginLeft: 'auto', marginRight: 'auto', paddingLeft: '1rem', paddingRight: '1rem' }}>
       {/* ===== HEADER CARD + TABS — bitta card ===== */}
       <div className="rounded-3xl overflow-hidden" style={{ background: "var(--bg-card)", marginBottom: 16 }}>
 
@@ -181,8 +181,8 @@ function ProfileContent({ userId, isLoggedIn, onLogout }: { userId: number | nul
               <ChevronLeft size={16} />
             </button>
             {/* Scrollable row */}
-            <div ref={cardsRef} className="flex gap-3 overflow-x-auto"
-              style={{ paddingLeft: 36, paddingRight: 36, scrollbarWidth: "none", msOverflowStyle: "none" }}>
+            <div ref={cardsRef} className="flex overflow-x-auto"
+              style={{ gap: '16px', paddingLeft: 16, paddingRight: 16, scrollbarWidth: "none", msOverflowStyle: "none" }}>
               <RatingCard title="PUBG MOBILE"    rating={p.rating ?? 125} name={p.playName ?? "Azimovas"}            uid={p.gameID ?? "5971521"}           total={p.totalScore ?? "1 571"} />
               <RatingCard title="MOBILE LEGENDS" rating={p.rating ?? 125} name={p.mobileLegendsName ?? "Azimovas"}   uid={p.mobileLegendsUID ?? "5971521"} total="2 340" />
               <RatingCard title="FREE FIRE"      rating={p.rating ?? 125} name={p.freeFireName ?? "Azimovas"}        uid={p.freeFireUID ?? "5971521"}      total="892" />
@@ -393,33 +393,33 @@ function RatingCard({ title, rating, name, uid, total }: {
 }) {
   return (
     <div className="rounded-2xl shrink-0 flex flex-col justify-between"
-      style={{ background: "#1B5E3B", width: 160, minHeight: 96, padding: "10px 12px" }}>
+      style={{ background: "#1B5E3B", width: 200, minHeight: 120, padding: "14px 16px" }}>
 
       {/* Top: title + ⭐ rating */}
       <div className="flex items-center justify-between gap-1">
-        <span style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.7)", letterSpacing: "0.03em" }}>
+        <span style={{ fontSize: 13, fontWeight: 700, color: "rgba(255,255,255,0.7)", letterSpacing: "0.03em" }}>
           {title}
         </span>
         <span className="flex items-center gap-1 rounded-xl shrink-0"
-          style={{ background: "#0D3B26", padding: "3px 7px", fontSize: 12, fontWeight: 700, color: "#fff" }}>
-          <Star size={11} fill="#F59E0B" style={{ color: "#F59E0B" }} />
+          style={{ background: "#0D3B26", padding: "4px 10px", fontSize: 14, fontWeight: 700, color: "#fff" }}>
+          <Star size={13} fill="#F59E0B" style={{ color: "#F59E0B" }} />
           {rating}
         </span>
       </div>
 
       {/* Middle: Name */}
-      <p style={{ fontSize: 11, color: "rgba(255,255,255,0.65)", marginTop: 8 }}>
+      <p style={{ fontSize: 13, color: "rgba(255,255,255,0.65)", marginTop: 12 }}>
         Name: <span style={{ fontWeight: 700, color: "#fff" }}>{name}</span>
       </p>
 
       {/* Bottom: UID + Total */}
-      <div className="flex items-end justify-between" style={{ marginTop: 4 }}>
-        <p style={{ fontSize: 10, color: "rgba(255,255,255,0.5)" }}>
+      <div className="flex items-end justify-between" style={{ marginTop: 8 }}>
+        <p style={{ fontSize: 12, color: "rgba(255,255,255,0.5)" }}>
           UID: <span style={{ fontWeight: 700, color: "rgba(255,255,255,0.85)" }}>{uid}</span>
         </p>
         <div className="text-right">
-          <p style={{ fontSize: 10, color: "rgba(255,255,255,0.5)", lineHeight: 1 }}>Total</p>
-          <p style={{ fontSize: 15, fontWeight: 900, color: "#fff", lineHeight: 1, marginTop: 2 }}>{total}</p>
+          <p style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", lineHeight: 1 }}>Total</p>
+          <p style={{ fontSize: 18, fontWeight: 900, color: "#fff", lineHeight: 1, marginTop: 2 }}>{total}</p>
         </div>
       </div>
     </div>

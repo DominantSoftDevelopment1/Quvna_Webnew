@@ -8,7 +8,7 @@ import { useAuthStore } from "@/store/auth.store";
 import { Eye, EyeOff, LogIn } from "lucide-react";
 
 export default function LoginPage() {
-  const [username, setUsername] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -22,17 +22,19 @@ export default function LoginPage() {
     setError("");
     setLoading(true);
     try {
-      const { data } = await api.post("/api/auth/login", { username, password });
+      const { data } = await api.post("/api/auth/login", { phoneNumber, password });
       const d = data?.data;
       if (d?.accessToken) {
         setTokens(d.accessToken, d.refreshToken);
-        if (d.user) setUser(d.user);
+        localStorage.setItem("userId", String(d.users?.id ?? ""));
+        if (d.users) setUser(d.users);
         router.push("/");
       } else {
-        setError("Login yoki parol noto'g'ri");
+        setError("Telefon raqam yoki parol noto'g'ri");
       }
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      const msg = (err as { response?: { data?: { errors?: { msg: string }[] } } })
+        ?.response?.data?.errors?.[0]?.msg;
       setError(msg ?? "Xatolik yuz berdi. Qaytadan urinib ko'ring.");
     } finally {
       setLoading(false);
@@ -42,7 +44,6 @@ export default function LoginPage() {
   return (
     <div className="min-h-[80vh] flex items-center justify-center">
       <div className="w-full max-w-sm">
-        {/* Logo */}
         <div className="flex flex-col items-center mb-8">
           <div
             className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl font-bold text-white mb-3"
@@ -59,13 +60,13 @@ export default function LoginPage() {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium mb-1.5" style={{ color: "var(--text-secondary)" }}>
-              Foydalanuvchi nomi
+              Telefon raqam
             </label>
             <input
-              type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              placeholder="username"
+              type="tel"
+              value={phoneNumber}
+              onChange={(e) => setPhoneNumber(e.target.value)}
+              placeholder="+998901234567"
               required
               className="w-full px-3 py-2.5 rounded-xl text-sm outline-none focus:ring-2"
               style={{
