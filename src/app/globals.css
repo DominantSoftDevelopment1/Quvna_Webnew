@@ -1201,10 +1201,11 @@ body {
   /* 16px tepa/past padding short-slide da */
 }
 
-/* Video area — 9:16, ekran balandligiga sig'adi */
+/* Video area — 9:16, 40px tepadan joy */
 .ig-reel-video-area {
   position: relative;
-  height: calc(100% - 32px); /* 16px tepa + 16px past */
+  height: calc(100% - 40px);
+  margin-top: 40px;
   aspect-ratio: 9 / 16;
   max-width: 420px;
   background: #1a1a1a;
@@ -1284,7 +1285,7 @@ body {
 /* Right action buttons — video ICHIDA absolute (video bilan birga) */
 .ig-reel-actions {
   position: absolute;
-  right: 10px;
+  right: 20px;
   bottom: 100px;
   display: flex; flex-direction: column; align-items: center; gap: 20px;
   z-index: 20;
