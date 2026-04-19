@@ -8,7 +8,7 @@ import { cdnUrl } from "@/lib/utils";
 interface Props {
   isOpen: boolean;
   onClose: () => void;
-  videoId: number;
+  videoId: string;
 }
 
 function timeAgo(iso: string) {

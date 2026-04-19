@@ -2,17 +2,19 @@ import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from "@tansta
 import { api } from "@/lib/api";
 
 export interface VideoItem {
-  id: number;
+  id: string;
   title?: string;
   videoPSU?: string;
   videoUrl?: string;
   thumbnailUrl?: string;
   thumbnail?: string;
+  attachmentResponseDTO?: { preSignedUrl?: string };
   likeCount?: number;
   commentCount?: number;
   shareCount?: number;
   viewsCount?: number;
   isPressLike?: boolean;
+  isPressDisLike?: boolean;
   hideLikes?: boolean;
   hideSharing?: boolean;
   userResponseDTO?: {
@@ -26,7 +28,7 @@ export interface VideoItem {
 }
 
 export interface CommentItem {
-  id: number;
+  id: string;
   text?: string;
   createdAt?: string;
   likeCount?: number;
@@ -62,7 +64,12 @@ export function useInfiniteShorts() {
       const { data } = await api.get("/api/video/all/video", {
         params: { page: pageParam, size: 20 },
       });
-      return (data?.data ?? { content: [], last: true, number: 0 }) as ShortsPage;
+      // API returns either array or paginated {content, last, number}
+      const raw = data?.data;
+      if (Array.isArray(raw)) {
+        return { content: raw as VideoItem[], last: true, number: 0 } as ShortsPage;
+      }
+      return (raw ?? { content: [], last: true, number: 0 }) as ShortsPage;
     },
     initialPageParam: 0,
     getNextPageParam: (last: ShortsPage) =>
@@ -80,7 +87,7 @@ export function useStreams() {
   });
 }
 
-export function useVideoReactions(videoId: number) {
+export function useVideoReactions(videoId: string) {
   return useQuery({
     queryKey: ["reactions", videoId],
     queryFn: async () => {
@@ -94,7 +101,7 @@ export function useVideoReactions(videoId: number) {
 export function useLikeVideo() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ videoId, isLiked }: { videoId: number; isLiked: boolean }) =>
+    mutationFn: ({ videoId, isLiked }: { videoId: string; isLiked: boolean }) =>
       api.post("/api/reaction/create", { videoId, type: "LIKE", pressed: !isLiked }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["shorts-infinite"] });
@@ -115,7 +122,7 @@ export function useFollowUser() {
 export function useSendComment() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ videoId, text }: { videoId: number; text: string }) =>
+    mutationFn: ({ videoId, text }: { videoId: string; text: string }) =>
       api.post("/api/reaction/create", { videoId, type: "COMMENT", text }),
     onSuccess: (_data, { videoId }) => {
       qc.invalidateQueries({ queryKey: ["reactions", videoId] });

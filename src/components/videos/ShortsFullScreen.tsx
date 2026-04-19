@@ -92,7 +92,7 @@ export function ShortsFullScreen() {
       <CommentsSheet
         isOpen={!!commentsVideo}
         onClose={() => setCommentsVideo(null)}
-        videoId={commentsVideo?.id ?? 0}
+        videoId={commentsVideo?.id ?? ""}
       />
     </>
   );
