@@ -1281,19 +1281,13 @@ body {
 .ig-reel-progress-wrap { position: absolute; bottom: 0; left: 0; right: 0; height: 2px; background: rgba(255,255,255,0.2); z-index: 10; }
 .ig-reel-progress-bar  { height: 100%; background: #fff; transition: width 0.1s linear; }
 
-/* Right action buttons — FIXED, scroll bilan ketmaydi */
+/* Right action buttons — video ICHIDA absolute (video bilan birga) */
 .ig-reel-actions {
-  position: fixed;
-  right: calc(50% - 210px - 64px);
-  bottom: 120px;
+  position: absolute;
+  right: 10px;
+  bottom: 100px;
   display: flex; flex-direction: column; align-items: center; gap: 20px;
-  z-index: 100;
-}
-@media (max-width: 1100px) {
-  .ig-reel-actions {
-    right: 12px;
-    bottom: 100px;
-  }
+  z-index: 20;
 }
 
 .ig-reel-action-btn   { display: flex; flex-direction: column; align-items: center; gap: 4px; background: none; border: none; cursor: pointer; padding: 0; }
@@ -1301,16 +1295,16 @@ body {
 .ig-reel-action-btn:hover .ig-reel-action-icon { transform: scale(1.1); }
 .ig-reel-action-count { font-size: 12px; font-weight: 600; color: #fff; }
 
-/* Up/down nav — FIXED, scroll bilan ketmaydi */
+/* Up/down nav — ig-reel-wrap ichida absolute, video tashqarida o'ngda */
 .ig-reel-nav {
-  position: fixed;
-  right: calc(50% - 210px - 130px);
+  position: absolute;
+  right: -60px;
   top: 50%;
   transform: translateY(-50%);
   display: flex; flex-direction: column; gap: 12px;
-  z-index: 100;
+  z-index: 20;
 }
-@media (max-width: 1100px) { .ig-reel-nav { display: none; } }
+@media (max-width: 900px) { .ig-reel-nav { display: none; } }
 
 .ig-reel-nav-btn {
   width: 44px; height: 44px; border-radius: 50%;
