@@ -1166,42 +1166,66 @@ body {
 .comments-send-btn   { width: 36px; height: 36px; border-radius: 50%; background: var(--primary); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
 
 /* ── Instagram Reels layout ── */
+
+/* Orqa fon — ilova rangi (#141414) ga yaqin, biroz yorug' */
+.shorts-page-container { background: #0e0e0e !important; }
+
 .ig-reel-wrap {
   height: calc(100vh - 56px);
   display: flex;
   align-items: center;
   justify-content: center;
   position: relative;
-  background: #000;
+  background: #0e0e0e;
 }
 
-/* Video area — centered, max 420px wide like Instagram */
+/* Video area — 9:16 nisbatda, balandlik bo'yicha sig'adi */
 .ig-reel-video-area {
   position: relative;
-  height: 100%;
-  width: 100%;
-  max-width: 420px;
-  background: #000;
+  /* 9:16 aspect, lekin ekranga sig'ishi kerak */
+  height: calc(100vh - 56px);
+  width: calc((100vh - 56px) * 9 / 16);
+  max-width: min(420px, 100vw);
+  background: #1a1a1a;
   overflow: hidden;
   cursor: pointer;
+  flex-shrink: 0;
 }
-@media (min-width: 1024px) {
-  .ig-reel-video-area { border-radius: 12px; }
+@media (min-width: 768px) {
+  .ig-reel-video-area {
+    border-radius: 12px;
+    /* Yorug'lik effekti — Instagram kabi */
+    box-shadow: 0 0 60px rgba(255,255,255,0.04), 0 0 0 1px rgba(255,255,255,0.06);
+  }
+}
+/* Mobil — to'liq kenglik */
+@media (max-width: 767px) {
+  .ig-reel-video-area {
+    width: 100vw;
+    height: calc(100vh - 56px);
+  }
 }
 
 .ig-reel-video {
   width: 100%; height: 100%; object-fit: cover; display: block;
 }
-.ig-reel-video-empty { background: #111; }
+.ig-reel-video-empty { background: #1a1a1a; }
 
+/* Gradient — pastda quyuq, tepada engil */
 .ig-reel-gradient {
   position: absolute; inset: 0;
-  background: linear-gradient(to top, rgba(0,0,0,0.75) 0%, transparent 45%, rgba(0,0,0,0.1) 100%);
+  background: linear-gradient(
+    to top,
+    rgba(0,0,0,0.85) 0%,
+    rgba(0,0,0,0.3) 30%,
+    transparent 55%,
+    rgba(0,0,0,0.05) 100%
+  );
   pointer-events: none;
 }
 
 /* Pause indicator */
-.ig-reel-pause-wrap  { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; pointer-events: none; }
+.ig-reel-pause-wrap   { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; pointer-events: none; }
 .ig-reel-pause-circle { width: 64px; height: 64px; border-radius: 50%; background: rgba(0,0,0,0.45); display: flex; align-items: center; justify-content: center; }
 
 /* Like animation */
@@ -1211,7 +1235,7 @@ body {
 
 /* Mute button */
 .ig-reel-mute-btn {
-  position: absolute; bottom: 72px; right: 12px;
+  position: absolute; bottom: 80px; right: 12px;
   width: 32px; height: 32px; border-radius: 50%;
   background: rgba(0,0,0,0.5); border: none; cursor: pointer;
   display: flex; align-items: center; justify-content: center; z-index: 10;
@@ -1220,14 +1244,12 @@ body {
 /* Bottom info */
 .ig-reel-info {
   position: absolute; bottom: 0; left: 0; right: 0;
-  padding: 12px 14px 18px; z-index: 10;
+  padding: 12px 14px 20px; z-index: 10;
 }
-.ig-reel-user-row {
-  display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 6px;
-}
+.ig-reel-user-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 6px; }
 .ig-reel-avatar    { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; border: 2px solid rgba(255,255,255,0.8); flex-shrink: 0; }
 .ig-reel-avatar-ph { width: 36px; height: 36px; border-radius: 50%; background: var(--bg-card2); border: 2px solid rgba(255,255,255,0.8); display: flex; align-items: center; justify-content: center; font-weight: 700; color: #fff; font-size: 14px; flex-shrink: 0; }
-.ig-reel-username  { font-size: 14px; font-weight: 700; color: #fff; }
+.ig-reel-username    { font-size: 14px; font-weight: 700; color: #fff; }
 .ig-reel-username-at { font-size: 12px; color: rgba(255,255,255,0.65); }
 .ig-reel-follow-btn {
   padding: 4px 14px; border-radius: 6px;
@@ -1235,50 +1257,54 @@ body {
   background: transparent; color: #fff;
   font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.15s;
 }
-.ig-reel-follow-btn.following {
-  background: rgba(255,255,255,0.15); border-color: transparent;
-}
+.ig-reel-follow-btn.following { background: rgba(255,255,255,0.15); border-color: transparent; }
 .ig-reel-title { font-size: 13px; color: rgba(255,255,255,0.9); line-height: 1.4; }
 
 /* Progress bar */
-.ig-reel-progress-wrap { position: absolute; bottom: 0; left: 0; right: 0; height: 2px; background: rgba(255,255,255,0.25); z-index: 10; }
+.ig-reel-progress-wrap { position: absolute; bottom: 0; left: 0; right: 0; height: 2px; background: rgba(255,255,255,0.2); z-index: 10; }
 .ig-reel-progress-bar  { height: 100%; background: #fff; transition: width 0.1s linear; }
 
-/* Right action buttons */
+/* Right action buttons — video ICHIDA absolute, scroll bilan birga ketmaydi */
 .ig-reel-actions {
+  position: absolute;
+  right: -64px;
+  bottom: 80px;
   display: flex; flex-direction: column; align-items: center; gap: 20px;
-  padding: 0 16px 80px;
-  flex-shrink: 0;
+  z-index: 20;
 }
 @media (max-width: 767px) {
   .ig-reel-actions {
-    position: absolute; right: 8px; bottom: 0;
-    padding-bottom: 72px;
+    right: 8px;
+    bottom: 72px;
   }
 }
 
-.ig-reel-action-btn  { display: flex; flex-direction: column; align-items: center; gap: 4px; background: none; border: none; cursor: pointer; padding: 0; }
-.ig-reel-action-icon { width: 46px; height: 46px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: transform 0.15s; }
+.ig-reel-action-btn   { display: flex; flex-direction: column; align-items: center; gap: 4px; background: none; border: none; cursor: pointer; padding: 0; }
+.ig-reel-action-icon  { width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: transform 0.15s; }
 .ig-reel-action-btn:hover .ig-reel-action-icon { transform: scale(1.1); }
 .ig-reel-action-count { font-size: 12px; font-weight: 600; color: #fff; }
-.icon-heart-liked { filter: invert(30%) sepia(100%) saturate(700%) hue-rotate(310deg) brightness(120%); }
 
-/* Up/down nav arrows — far right, Instagram style */
+/* Up/down nav — video tashqarisida, fixed pozitsiyada */
 .ig-reel-nav {
+  position: absolute;
+  right: -120px;
+  top: 50%;
+  transform: translateY(-50%);
   display: flex; flex-direction: column; gap: 12px;
-  padding-bottom: 80px; flex-shrink: 0;
+  z-index: 20;
 }
-@media (max-width: 767px) { .ig-reel-nav { display: none; } }
+@media (max-width: 1100px) { .ig-reel-nav { display: none; } }
 
 .ig-reel-nav-btn {
   width: 44px; height: 44px; border-radius: 50%;
-  background: rgba(255,255,255,0.12);
-  border: none; cursor: pointer;
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.15);
+  cursor: pointer;
   display: flex; align-items: center; justify-content: center;
   transition: background 0.15s;
 }
-.ig-reel-nav-btn:hover { background: rgba(255,255,255,0.22); }
-.ig-reel-nav-btn.disabled { opacity: 0.3; cursor: default; }
+.ig-reel-nav-btn:hover:not(:disabled) { background: rgba(255,255,255,0.2); }
+.ig-reel-nav-btn:disabled { opacity: 0.25; cursor: default; }
 
 /* ── Videos Page (Instagram style) ── */
 .videos-page { width: 100%; }
