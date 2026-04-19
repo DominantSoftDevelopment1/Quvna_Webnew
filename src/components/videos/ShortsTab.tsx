@@ -15,7 +15,6 @@ export function ShortsTab({ searchQuery }: ShortsTabProps) {
   const { data, isLoading } = useVideos(0);
   const shorts = data?.content ?? [];
   const [fullScreenOpen, setFullScreenOpen] = useState(false);
-  const [startIndex, setStartIndex] = useState(0);
 
   const filteredShorts = searchQuery
     ? shorts.filter((v: VideoItem) =>
@@ -25,9 +24,9 @@ export function ShortsTab({ searchQuery }: ShortsTabProps) {
 
   if (isLoading) {
     return (
-      <div className="reels-grid">
+      <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-0.5 sm:gap-1">
         {Array.from({ length: 12 }).map((_, i) => (
-          <Skeleton key={i} className="reels-grid-item-skeleton" />
+          <Skeleton key={i} className="aspect-[9/16] w-full" />
         ))}
       </div>
     );
@@ -35,24 +34,19 @@ export function ShortsTab({ searchQuery }: ShortsTabProps) {
 
   if (!filteredShorts.length) {
     return (
-      <div className="videos-empty">
-        <p className="videos-empty-title">
+      <div className="flex flex-col items-center justify-center py-20 gap-2">
+        <p className="text-sm font-semibold text-[var(--text-secondary)]">
           {searchQuery ? `"${searchQuery}" bo'yicha natija yo'q` : "Reels topilmadi"}
         </p>
       </div>
     );
   }
 
-  const openShort = (index: number) => {
-    setStartIndex(index);
-    setFullScreenOpen(true);
-  };
-
   return (
     <>
-      <div className="reels-grid">
+      <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-0.5 sm:gap-1">
         {filteredShorts.map((video: VideoItem, index: number) => (
-          <ReelCard key={video.id} video={video} onClick={() => openShort(index)} />
+          <ReelCard key={video.id} video={video} onClick={() => { setFullScreenOpen(true); }} />
         ))}
       </div>
 
@@ -60,6 +54,7 @@ export function ShortsTab({ searchQuery }: ShortsTabProps) {
         <div className="fixed inset-0 z-[100] bg-black">
           <button
             type="button"
+            aria-label="Yopish"
             onClick={() => setFullScreenOpen(false)}
             className="absolute top-4 left-4 z-[110] w-10 h-10 rounded-full bg-black/50 flex items-center justify-center text-white hover:bg-black/70 transition-colors"
           >
@@ -76,30 +71,34 @@ export function ShortsTab({ searchQuery }: ShortsTabProps) {
 
 function ReelCard({ video, onClick }: { video: VideoItem; onClick: () => void }) {
   return (
-    <div className="reels-grid-item group" onClick={onClick}>
+    <div
+      className="relative aspect-[9/16] overflow-hidden cursor-pointer group bg-[var(--bg-card2)]"
+      onClick={onClick}
+    >
       {video.thumbnailUrl || video.thumbnail ? (
         <img
           src={cdnUrl(video.thumbnailUrl ?? video.thumbnail)}
           alt={video.title}
-          className="reels-grid-img"
+          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
         />
       ) : (
-        <div className="reels-grid-no-thumb">
-          <Play size={24} className="text-white/40" />
+        <div className="w-full h-full flex items-center justify-center text-white/30">
+          <Play size={24} />
         </div>
       )}
-      <div className="reels-grid-overlay" />
-      <div className="reels-grid-play">
-        <Play size={18} fill="white" className="text-white ml-0.5" />
+      {/* gradient */}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+      {/* play icon on hover */}
+      <div className="absolute top-2 left-2 opacity-0 group-hover:opacity-100 transition-opacity">
+        <Play size={16} fill="white" className="text-white" />
       </div>
-      <div className="reels-grid-bottom">
-        {video.likeCount != null && video.likeCount > 0 && (
-          <span className="reels-grid-likes">
-            <Heart size={11} fill="white" className="text-white" />
-            {formatCount(video.likeCount)}
-          </span>
-        )}
-      </div>
+      {/* likes */}
+      {video.likeCount != null && video.likeCount > 0 && (
+        <div className="absolute bottom-2 left-2 flex items-center gap-1 text-white text-[12px] font-semibold">
+          <Heart size={11} fill="white" className="text-white" />
+          {formatCount(video.likeCount)}
+        </div>
+      )}
     </div>
   );
 }

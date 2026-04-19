@@ -16,12 +16,12 @@ export function UsersTab() {
 
   if (isLoading) {
     return (
-      <div className="users-grid">
-        {Array.from({ length: 12 }).map((_, i) => (
-          <div key={i} className="user-card-skeleton">
-            <Skeleton className="user-card-avatar-skeleton" />
-            <Skeleton className="h-3 w-20 mx-auto mt-2" />
-            <Skeleton className="h-3 w-14 mx-auto mt-1" />
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+        {Array.from({ length: 10 }).map((_, i) => (
+          <div key={i} className="flex flex-col items-center gap-2 p-5 rounded-xl bg-[var(--bg-card)]">
+            <Skeleton className="w-18 h-18 rounded-full" />
+            <Skeleton className="h-3 w-20" />
+            <Skeleton className="h-3 w-14" />
           </div>
         ))}
       </div>
@@ -29,30 +29,44 @@ export function UsersTab() {
   }
 
   if (!users.length) return (
-    <div className="videos-empty">
-      <p className="videos-empty-title">Foydalanuvchilar topilmadi</p>
+    <div className="flex items-center justify-center py-20">
+      <p className="text-sm text-[var(--text-muted)]">Foydalanuvchilar topilmadi</p>
     </div>
   );
 
   return (
-    <div className="users-grid">
+    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
       {users.map((user: UserItem) => (
-        <div key={user.id} className="user-card group">
-          <div className="user-card-avatar-wrap">
-            {user.avatar ? (
-              <img src={cdnUrl(user.avatar)} alt={user.username} className="user-card-avatar" />
-            ) : (
-              <div className="user-card-avatar-ph">
-                {user.username?.[0]?.toUpperCase() ?? "U"}
-              </div>
-            )}
-          </div>
-          <p className="user-card-name">{user.fullName ?? user.username}</p>
-          <p className="user-card-username">@{user.username}</p>
-          {user.followerCount != null && (
-            <p className="user-card-followers">{formatCount(user.followerCount)} ta obunachi</p>
+        <div
+          key={user.id}
+          className="flex flex-col items-center gap-2 px-3 py-5 rounded-xl bg-[var(--bg-card)] border border-transparent hover:border-[var(--border)] hover:bg-[var(--bg-hover)] transition-all cursor-pointer"
+        >
+          {user.avatar ? (
+            <img
+              src={cdnUrl(user.avatar)}
+              alt={user.username}
+              className="w-16 h-16 rounded-full object-cover border-2 border-[var(--border)]"
+            />
+          ) : (
+            <div className="w-16 h-16 rounded-full flex items-center justify-center text-2xl font-bold text-[var(--primary)] bg-[var(--primary-muted)]">
+              {user.username?.[0]?.toUpperCase() ?? "U"}
+            </div>
           )}
-          <button type="button" className="user-card-follow-btn">Kuzatish</button>
+          <p className="text-[14px] font-semibold text-[var(--text-primary)] text-center line-clamp-1">
+            {user.fullName ?? user.username}
+          </p>
+          <p className="text-[12px] text-[var(--text-muted)] text-center">@{user.username}</p>
+          {user.followerCount != null && (
+            <p className="text-[11px] text-[var(--text-inactive)] text-center">
+              {formatCount(user.followerCount)} obunachi
+            </p>
+          )}
+          <button
+            type="button"
+            className="mt-1 px-5 py-1.5 rounded-lg border border-[var(--border)] text-[13px] font-semibold text-[var(--text-primary)] bg-transparent hover:bg-[var(--primary)] hover:border-[var(--primary)] hover:text-[var(--primary-text)] transition-all"
+          >
+            Kuzatish
+          </button>
         </div>
       ))}
     </div>
