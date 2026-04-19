@@ -39,10 +39,18 @@ export interface CommentItem {
   };
 }
 
+function isYouTubeUrl(url: string | null | undefined): boolean {
+  if (!url) return false;
+  return url.includes("youtube.com") || url.includes("youtu.be");
+}
+
 function isR2Video(v: VideoItem): boolean {
-  const url = v.videoPSU ?? v.videoUrl;
-  if (!url) return true;
-  return !url.includes("youtube.com") && !url.includes("youtu.be");
+  const urls = [
+    v.videoPSU,
+    v.videoUrl,
+    v.attachmentResponseDTO?.preSignedUrl,
+  ];
+  return !urls.some(isYouTubeUrl);
 }
 
 export function useVideos(page = 0) {
