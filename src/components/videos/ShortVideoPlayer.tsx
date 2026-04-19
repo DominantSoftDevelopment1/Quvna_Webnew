@@ -163,39 +163,39 @@ export function ShortVideoPlayer({
           {video.title && <p className="ig-reel-title">{video.title}</p>}
         </div>
 
-        {/* ── Right actions — video ichida, o'ng chekkadan 20px ── */}
-        <div className="ig-reel-actions" onClick={(e) => e.stopPropagation()}>
-          {/* Like */}
-          <button type="button" className="ig-reel-action-btn" onClick={handleLike} aria-label="Like">
-            <div className="ig-reel-action-icon">
-              <img src="/icons/like.svg" alt="" width={28} height={28}
-                className={liked ? "ig-icon-liked" : "icon-invert"} />
-            </div>
-            {likeCount > 0 && <span className="ig-reel-action-count">{fmt(likeCount)}</span>}
-          </button>
-
-          {/* Comment */}
-          <button type="button" className="ig-reel-action-btn" onClick={onComment} aria-label="Izoh">
-            <div className="ig-reel-action-icon">
-              <img src="/icons/chat.svg" alt="" width={28} height={28} className="icon-invert" />
-            </div>
-            {(video.commentCount ?? 0) > 0 && <span className="ig-reel-action-count">{fmt(video.commentCount ?? 0)}</span>}
-          </button>
-
-          {/* Share */}
-          <button type="button" className="ig-reel-action-btn" aria-label="Ulashish"
-            onClick={() => navigator.share?.({ title: video.title, url: window.location.href }).catch(() => {})}>
-            <div className="ig-reel-action-icon">
-              <img src="/icons/forward.svg" alt="" width={28} height={28} className="icon-invert" />
-            </div>
-            {(video.shareCount ?? 0) > 0 && <span className="ig-reel-action-count">{fmt(video.shareCount ?? 0)}</span>}
-          </button>
-        </div>
-
         {/* Progress bar */}
         <div className="ig-reel-progress-wrap">
           <div className="ig-reel-progress-bar" style={{ width: `${progress}%` } as React.CSSProperties} />
         </div>
+      </div>
+
+      {/* ── Right actions — video tashqarisida, video o'ngidan 20px ── */}
+      <div className="ig-reel-actions" onClick={(e) => e.stopPropagation()}>
+        {/* Like */}
+        <button type="button" className="ig-reel-action-btn" onClick={handleLike} aria-label="Like">
+          <div className="ig-reel-action-icon">
+            <img src="/icons/like.svg" alt="" width={28} height={28}
+              className={liked ? "ig-icon-liked" : "icon-invert"} />
+          </div>
+          {likeCount > 0 && <span className="ig-reel-action-count">{fmt(likeCount)}</span>}
+        </button>
+
+        {/* Comment */}
+        <button type="button" className="ig-reel-action-btn" onClick={onComment} aria-label="Izoh">
+          <div className="ig-reel-action-icon">
+            <img src="/icons/chat.svg" alt="" width={28} height={28} className="icon-invert" />
+          </div>
+          {(video.commentCount ?? 0) > 0 && <span className="ig-reel-action-count">{fmt(video.commentCount ?? 0)}</span>}
+        </button>
+
+        {/* Share */}
+        <button type="button" className="ig-reel-action-btn" aria-label="Ulashish"
+          onClick={() => navigator.share?.({ title: video.title, url: window.location.href }).catch(() => {})}>
+          <div className="ig-reel-action-icon">
+            <img src="/icons/forward.svg" alt="" width={28} height={28} className="icon-invert" />
+          </div>
+          {(video.shareCount ?? 0) > 0 && <span className="ig-reel-action-count">{fmt(video.shareCount ?? 0)}</span>}
+        </button>
       </div>
 
       {/* ── Up/Down nav ── */}
