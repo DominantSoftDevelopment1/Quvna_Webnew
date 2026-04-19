@@ -169,15 +169,14 @@ export function ShortVideoPlayer({
         </div>
       </div>
 
-      {/* ── Right actions — inline SVG icons ── */}
+      {/* ── Right actions ── */}
       <div className="ig-reel-actions" onClick={(e) => e.stopPropagation()}>
 
         {/* Like */}
         <button type="button" className="ig-reel-action-btn" onClick={handleLike} aria-label="Like">
-          <div className={`ig-reel-action-icon${liked ? " liked" : ""}`}>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill={liked ? "#ff3c3c" : "white"}>
-              <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
-            </svg>
+          <div className="ig-reel-action-icon">
+            <img src="/icons/like.svg" alt="" width={28} height={28}
+              className={liked ? "ig-icon-liked" : "icon-invert"} />
           </div>
           {likeCount > 0 && <span className="ig-reel-action-count">{fmt(likeCount)}</span>}
         </button>
@@ -185,9 +184,7 @@ export function ShortVideoPlayer({
         {/* Comment */}
         <button type="button" className="ig-reel-action-btn" onClick={onComment} aria-label="Izoh">
           <div className="ig-reel-action-icon">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
-              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-            </svg>
+            <img src="/icons/chat.svg" alt="" width={28} height={28} className="icon-invert" />
           </div>
           {(video.commentCount ?? 0) > 0 && <span className="ig-reel-action-count">{fmt(video.commentCount ?? 0)}</span>}
         </button>
@@ -196,20 +193,9 @@ export function ShortVideoPlayer({
         <button type="button" className="ig-reel-action-btn" aria-label="Ulashish"
           onClick={() => navigator.share?.({ title: video.title, url: window.location.href }).catch(() => {})}>
           <div className="ig-reel-action-icon">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
-              <path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92-1.31-2.92-2.92-2.92z"/>
-            </svg>
+            <img src="/icons/forward.svg" alt="" width={28} height={28} className="icon-invert" />
           </div>
           {(video.shareCount ?? 0) > 0 && <span className="ig-reel-action-count">{fmt(video.shareCount ?? 0)}</span>}
-        </button>
-
-        {/* More */}
-        <button type="button" className="ig-reel-action-btn" aria-label="Ko'proq">
-          <div className="ig-reel-action-icon">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="white">
-              <circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/>
-            </svg>
-          </div>
         </button>
       </div>
 
