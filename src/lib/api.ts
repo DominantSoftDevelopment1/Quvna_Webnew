@@ -9,6 +9,10 @@ export const api = axios.create({
   },
 });
 
+// Watchdog Cloud monitoring integration
+// providers.tsx ichida initWatchdogCloud() chaqirilgandan so'ng
+// watchdog avtomatik ravishda Axios interceptor qo'shadi
+
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem("access_token");
   if (token) config.headers.Authorization = `Bearer ${token}`;

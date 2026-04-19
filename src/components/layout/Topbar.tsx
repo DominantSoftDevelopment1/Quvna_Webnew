@@ -17,18 +17,9 @@ export function Topbar() {
         <img src="/icons/text_quvna.svg" alt="Quvna" className="topbar-logo-text" />
       </Link>
 
-      {/* Search */}
-      <div className="topbar-search hidden sm:flex">
-        <img src="/icons/search.svg" alt="" width={16} height={16} className="topbar-search-icon" />
-        <input type="text" placeholder="Qidirish..." />
-      </div>
+      {/* Search removed per user request */}
 
       <div className="flex items-center gap-2 ml-auto">
-        {/* Mobile search */}
-        <button type="button" className="topbar-btn sm:hidden" aria-label="Qidirish">
-          <img src="/icons/search.svg" alt="" width={20} height={20} className="topbar-search-icon" />
-        </button>
-
         {/* Rating always visible */}
         <Link href="/rating" className="topbar-rating-btn" aria-label="Reyting">
           <img src="/icons/star.svg" alt="" width={22} height={22} className="topbar-rating-star" />
