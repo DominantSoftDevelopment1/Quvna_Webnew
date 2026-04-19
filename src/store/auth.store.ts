@@ -30,22 +30,31 @@ export const useAuthStore = create<AuthState>()(
       accessToken: null,
       refreshToken: null,
       setTokens: (access, refresh) => {
-        localStorage.setItem("access_token", access);
-        localStorage.setItem("refresh_token", refresh);
+        if (typeof window !== "undefined") {
+          localStorage.setItem("access_token", access);
+          localStorage.setItem("refresh_token", refresh);
+        }
         set({ accessToken: access, refreshToken: refresh });
       },
       setUser: (user) => {
-        localStorage.setItem("userId", String(user.id ?? ""));
+        if (typeof window !== "undefined") {
+          localStorage.setItem("userId", String(user.id ?? ""));
+        }
         set({ user });
       },
       logout: () => {
-        localStorage.removeItem("access_token");
-        localStorage.removeItem("refresh_token");
-        localStorage.removeItem("userId");
+        if (typeof window !== "undefined") {
+          localStorage.removeItem("access_token");
+          localStorage.removeItem("refresh_token");
+          localStorage.removeItem("userId");
+        }
         set({ user: null, accessToken: null, refreshToken: null });
       },
       isLoggedIn: () => !!get().accessToken,
     }),
-    { name: "quvna-auth" }
+    {
+      name: "quvna-auth",
+      skipHydration: true,
+    }
   )
 );

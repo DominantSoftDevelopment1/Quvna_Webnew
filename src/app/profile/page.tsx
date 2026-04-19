@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuthStore } from "@/store/auth.store";
 import { useProfile, useFollowers, useFollowing, useUserVideos } from "@/hooks/useProfile";
 import { cdnUrl, formatCount } from "@/lib/utils";
@@ -29,6 +29,10 @@ import { useRef } from "react";
 export default function ProfilePage() {
   const { user, isLoggedIn, logout } = useAuthStore();
   const router = useRouter();
+
+  useEffect(() => {
+    useAuthStore.persist.rehydrate();
+  }, []);
 
   const demoUserId = 1;
   const userId = user?.id ? Number(user.id) : demoUserId;
