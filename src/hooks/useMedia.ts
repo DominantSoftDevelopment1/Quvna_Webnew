@@ -45,9 +45,18 @@ function isYouTubeUrl(url: string | null | undefined): boolean {
 }
 
 function isR2Video(v: VideoItem): boolean {
-  const videoUrl = v.videoPSU ?? v.videoUrl ?? v.attachmentResponseDTO?.preSignedUrl;
-  if (!videoUrl) return false;
-  return !isYouTubeUrl(videoUrl);
+  const raw = v as unknown as Record<string, unknown>;
+  const urls = [
+    v.videoPSU,
+    v.videoUrl,
+    v.attachmentResponseDTO?.preSignedUrl,
+    raw.url as string,
+    raw.videoLink as string,
+    raw.link as string,
+  ].filter(Boolean) as string[];
+
+  if (urls.length === 0) return false;
+  return urls.every(u => !isYouTubeUrl(u));
 }
 
 export function useVideos(page = 0) {

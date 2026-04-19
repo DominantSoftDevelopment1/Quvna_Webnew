@@ -59,11 +59,7 @@ export function ShortVideoPlayer({
   const handleTap = useCallback(() => {
     const now = Date.now();
     if (now - lastTap.current < 300) {
-      if (!liked) {
-        setLiked(true);
-        setLikeCount((c) => c + 1);
-        onLike();
-      }
+      if (!liked) { setLiked(true); setLikeCount((c) => c + 1); onLike(); }
       setShowLikeAnim(true);
       setTimeout(() => setShowLikeAnim(false), 700);
       lastTap.current = 0;
@@ -89,14 +85,13 @@ export function ShortVideoPlayer({
 
   const handleFollow = () => { setFollowing((p) => !p); onFollow(); };
 
-  const formatCount = (n: number) => {
+  const fmt = (n: number) => {
     if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + "M";
     if (n >= 1_000) return (n / 1_000).toFixed(1) + "K";
     return String(n);
   };
 
   return (
-    /* Instagram Reels layout: video center, actions right, nav arrows far right */
     <div className="ig-reel-wrap">
 
       {/* ── Video area ── */}
@@ -106,9 +101,7 @@ export function ShortVideoPlayer({
             ref={videoRef}
             className="ig-reel-video"
             src={cdnUrl(videoUrl)}
-            loop
-            playsInline
-            muted={muted}
+            loop playsInline muted={muted}
             onTimeUpdate={handleTimeUpdate}
             poster={thumbnail ? cdnUrl(thumbnail) : undefined}
           />
@@ -118,10 +111,8 @@ export function ShortVideoPlayer({
           <div className="ig-reel-video ig-reel-video-empty" />
         )}
 
-        {/* gradient bottom */}
         <div className="ig-reel-gradient" />
 
-        {/* pause indicator */}
         {showPause && (
           <div className="ig-reel-pause-wrap">
             <div className="ig-reel-pause-circle">
@@ -133,7 +124,6 @@ export function ShortVideoPlayer({
           </div>
         )}
 
-        {/* double-tap like anim */}
         {showLikeAnim && (
           <div className="ig-reel-like-anim">
             <svg width="90" height="90" viewBox="0 0 24 24" fill="white">
@@ -142,20 +132,21 @@ export function ShortVideoPlayer({
           </div>
         )}
 
-        {/* mute button */}
-        <button
-          type="button"
-          aria-label={muted ? "Ovoz yoqish" : "Ovoz o'chirish"}
-          className="ig-reel-mute-btn"
-          onClick={(e) => { e.stopPropagation(); setMuted((m) => !m); }}
-        >
-          {muted
-            ? <img src="/icons/mute.svg" alt="mute" width={18} height={18} className="icon-invert" />
-            : <img src="/icons/volume.svg" alt="volume" width={18} height={18} className="icon-invert" />
-          }
+        {/* Mute button — inline SVG */}
+        <button type="button" aria-label={muted ? "Ovoz yoqish" : "Ovoz o'chirish"} className="ig-reel-mute-btn"
+          onClick={(e) => { e.stopPropagation(); setMuted((m) => !m); }}>
+          {muted ? (
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="white">
+              <path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/>
+            </svg>
+          ) : (
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="white">
+              <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
+            </svg>
+          )}
         </button>
 
-        {/* bottom info */}
+        {/* Bottom info */}
         <div className="ig-reel-info" onClick={(e) => e.stopPropagation()}>
           <div className="ig-reel-user-row">
             {avatar
@@ -164,61 +155,52 @@ export function ShortVideoPlayer({
             }
             <span className="ig-reel-username">{displayName}</span>
             <span className="ig-reel-username-at">@{username}</span>
-            <button
-              type="button"
-              onClick={handleFollow}
-              className={`ig-reel-follow-btn${following ? " following" : ""}`}
-            >
+            <button type="button" onClick={handleFollow}
+              className={`ig-reel-follow-btn${following ? " following" : ""}`}>
               {following ? "Kuzatilmoqda" : "Kuzatish"}
             </button>
           </div>
-          {video.title && (
-            <p className="ig-reel-title">{video.title}</p>
-          )}
+          {video.title && <p className="ig-reel-title">{video.title}</p>}
         </div>
 
-        {/* progress bar */}
+        {/* Progress bar */}
         <div className="ig-reel-progress-wrap">
           <div className="ig-reel-progress-bar" style={{ width: `${progress}%` } as React.CSSProperties} />
         </div>
       </div>
 
-      {/* ── Right actions (Instagram style) ── */}
+      {/* ── Right actions — inline SVG icons ── */}
       <div className="ig-reel-actions" onClick={(e) => e.stopPropagation()}>
+
         {/* Like */}
         <button type="button" className="ig-reel-action-btn" onClick={handleLike} aria-label="Like">
           <div className={`ig-reel-action-icon${liked ? " liked" : ""}`}>
-            {liked
-              ? <img src="/icons/heart-filled.svg" alt="" width={24} height={24} className="icon-heart-liked" />
-              : <img src="/icons/heart.svg" alt="" width={24} height={24} className="icon-invert" />
-            }
+            <svg width="24" height="24" viewBox="0 0 24 24" fill={liked ? "#ff3c3c" : "white"}>
+              <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+            </svg>
           </div>
-          {likeCount > 0 && <span className="ig-reel-action-count">{formatCount(likeCount)}</span>}
+          {likeCount > 0 && <span className="ig-reel-action-count">{fmt(likeCount)}</span>}
         </button>
 
         {/* Comment */}
         <button type="button" className="ig-reel-action-btn" onClick={onComment} aria-label="Izoh">
           <div className="ig-reel-action-icon">
-            <img src="/icons/comment.svg" alt="" width={24} height={24} className="icon-invert" />
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+            </svg>
           </div>
-          {(video.commentCount ?? 0) > 0 && (
-            <span className="ig-reel-action-count">{formatCount(video.commentCount ?? 0)}</span>
-          )}
+          {(video.commentCount ?? 0) > 0 && <span className="ig-reel-action-count">{fmt(video.commentCount ?? 0)}</span>}
         </button>
 
         {/* Share */}
-        <button
-          type="button"
-          className="ig-reel-action-btn"
-          aria-label="Ulashish"
-          onClick={() => navigator.share?.({ title: video.title, url: window.location.href }).catch(() => {})}
-        >
+        <button type="button" className="ig-reel-action-btn" aria-label="Ulashish"
+          onClick={() => navigator.share?.({ title: video.title, url: window.location.href }).catch(() => {})}>
           <div className="ig-reel-action-icon">
-            <img src="/icons/share.svg" alt="" width={24} height={24} className="icon-invert" />
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
+              <path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92-1.31-2.92-2.92-2.92z"/>
+            </svg>
           </div>
-          {(video.shareCount ?? 0) > 0 && (
-            <span className="ig-reel-action-count">{formatCount(video.shareCount ?? 0)}</span>
-          )}
+          {(video.shareCount ?? 0) > 0 && <span className="ig-reel-action-count">{fmt(video.shareCount ?? 0)}</span>}
         </button>
 
         {/* More */}
@@ -231,26 +213,18 @@ export function ShortVideoPlayer({
         </button>
       </div>
 
-      {/* ── Up/Down navigation (far right, Instagram style) ── */}
+      {/* ── Up/Down nav ── */}
       <div className="ig-reel-nav">
-        <button
-          type="button"
-          aria-label="Oldingi"
+        <button type="button" aria-label="Oldingi"
           className={`ig-reel-nav-btn${!hasPrev ? " disabled" : ""}`}
-          onClick={onPrev}
-          disabled={!hasPrev}
-        >
+          onClick={onPrev} disabled={!hasPrev}>
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round">
             <path d="M18 15l-6-6-6 6"/>
           </svg>
         </button>
-        <button
-          type="button"
-          aria-label="Keyingi"
+        <button type="button" aria-label="Keyingi"
           className={`ig-reel-nav-btn${!hasNext ? " disabled" : ""}`}
-          onClick={onNext}
-          disabled={!hasNext}
-        >
+          onClick={onNext} disabled={!hasNext}>
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round">
             <path d="M6 9l6 6 6-6"/>
           </svg>
