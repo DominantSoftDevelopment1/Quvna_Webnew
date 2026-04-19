@@ -1107,18 +1107,18 @@ body {
 }
 
 /* ── Short Video Player ── */
-.short-feed          {
+.short-feed {
   height: calc(100vh - 56px);
   overflow-y: scroll;
   scroll-snap-type: y mandatory;
   scrollbar-width: none;
-  -webkit-overflow-scrolling: touch;
-  overscroll-behavior-y: contain;
+  overscroll-behavior-y: none;
 }
 .short-feed::-webkit-scrollbar { display: none; }
-.short-slide         {
+
+/* Har bir slide aniq balandlikda, scroll-snap to'g'ri ishlashi uchun */
+.short-slide {
   height: calc(100vh - 56px);
-  padding: 16px 0;
   scroll-snap-align: start;
   scroll-snap-stop: always;
   position: relative;
@@ -1126,7 +1126,8 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  overflow: visible;
+  overflow: hidden;
+  flex-shrink: 0;
 }
 .short-video-el      { width: 100%; height: 100%; object-fit: cover; }
 .short-thumbnail     { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
@@ -1189,38 +1190,41 @@ body {
 .shorts-page-container { background: #0e0e0e !important; }
 
 .ig-reel-wrap {
-  height: calc(100vh - 56px);
+  /* 16px tepa va pastdan bo'sh joy, ikonlar ko'rinsin */
+  height: calc(100vh - 56px - 32px);
+  margin: 16px 0;
   display: flex;
   align-items: center;
   justify-content: center;
   position: relative;
   background: #0e0e0e;
+  overflow: visible;
 }
 
-/* Video area — 9:16 nisbatda, balandlik bo'yicha sig'adi */
+/* Video area */
 .ig-reel-video-area {
   position: relative;
-  /* 9:16 aspect, lekin ekranga sig'ishi kerak */
-  height: calc(100vh - 56px);
-  width: calc((100vh - 56px) * 9 / 16);
-  max-width: min(420px, 100vw);
+  height: 100%;
+  width: calc(100% * 9 / 16);
+  max-width: 420px;
   background: #1a1a1a;
   overflow: hidden;
   cursor: pointer;
   flex-shrink: 0;
+  border-radius: 12px;
 }
 @media (min-width: 768px) {
   .ig-reel-video-area {
-    border-radius: 12px;
-    /* Yorug'lik effekti — Instagram kabi */
     box-shadow: 0 0 60px rgba(255,255,255,0.04), 0 0 0 1px rgba(255,255,255,0.06);
   }
 }
-/* Mobil — to'liq kenglik */
+/* Mobil — to'liq kenglik, border-radius yo'q */
 @media (max-width: 767px) {
+  .ig-reel-wrap { margin: 0; height: calc(100vh - 56px); }
   .ig-reel-video-area {
     width: 100vw;
     height: calc(100vh - 56px);
+    border-radius: 0;
   }
 }
 

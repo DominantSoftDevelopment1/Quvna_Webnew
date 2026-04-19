@@ -16,24 +16,51 @@ export function ShortsFullScreen() {
 
   const [activeIndex, setActiveIndex] = useState(0);
   const [commentsVideo, setCommentsVideo] = useState<VideoItem | null>(null);
-  const observerRef = useRef<IntersectionObserver | null>(null);
-  const slideRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const feedRef = useRef<HTMLDivElement>(null);
+  const isScrolling = useRef(false);
 
+  // Bitta wheel = bitta video
   useEffect(() => {
-    observerRef.current?.disconnect();
-    observerRef.current = new IntersectionObserver(
+    const el = feedRef.current;
+    if (!el) return;
+
+    const onWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      if (isScrolling.current) return;
+      isScrolling.current = true;
+
+      const next = e.deltaY > 0
+        ? Math.min(activeIndex + 1, videos.length - 1)
+        : Math.max(activeIndex - 1, 0);
+
+      setActiveIndex(next);
+      const slide = el.children[next] as HTMLElement;
+      if (slide) slide.scrollIntoView({ behavior: "smooth", block: "start" });
+
+      setTimeout(() => { isScrolling.current = false; }, 700);
+    };
+
+    el.addEventListener("wheel", onWheel, { passive: false });
+    return () => el.removeEventListener("wheel", onWheel);
+  }, [activeIndex, videos.length]);
+
+  // Mobil touch scroll — IntersectionObserver
+  useEffect(() => {
+    const el = feedRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
-            const idx = slideRefs.current.indexOf(entry.target as HTMLDivElement);
+            const idx = Array.from(el.children).indexOf(entry.target as HTMLElement);
             if (idx !== -1) setActiveIndex(idx);
           }
         });
       },
-      { threshold: 0.6 }
+      { root: el, threshold: 0.6 }
     );
-    slideRefs.current.forEach((el) => el && observerRef.current?.observe(el));
-    return () => observerRef.current?.disconnect();
+    Array.from(el.children).forEach((child) => observer.observe(child));
+    return () => observer.disconnect();
   }, [videos.length]);
 
   useEffect(() => {
@@ -42,22 +69,18 @@ export function ShortsFullScreen() {
     }
   }, [activeIndex, videos.length, hasNextPage, isFetchingNextPage, fetchNextPage]);
 
-  const setSlideRef = useCallback((el: HTMLDivElement | null, idx: number) => {
-    slideRefs.current[idx] = el;
-    if (el) observerRef.current?.observe(el);
+  const scrollTo = useCallback((idx: number) => {
+    const el = feedRef.current;
+    if (!el) return;
+    const slide = el.children[idx] as HTMLElement;
+    if (slide) slide.scrollIntoView({ behavior: "smooth", block: "start" });
+    setActiveIndex(idx);
   }, []);
-
-  const scrollTo = (idx: number) => {
-    const el = slideRefs.current[idx];
-    if (el) el.scrollIntoView({ behavior: "smooth" });
-  };
 
   if (isLoading) {
     return (
       <div className="short-feed">
-        <div className="short-slide">
-          <Skeleton className="w-full h-full" />
-        </div>
+        <div className="short-slide"><Skeleton className="w-full h-full" /></div>
       </div>
     );
   }
@@ -72,9 +95,9 @@ export function ShortsFullScreen() {
 
   return (
     <>
-      <div className="short-feed">
+      <div className="short-feed" ref={feedRef}>
         {videos.map((video, idx) => (
-          <div key={video.id} ref={(el) => setSlideRef(el, idx)}>
+          <div key={video.id} className="short-slide">
             <ShortVideoPlayer
               video={video}
               isActive={idx === activeIndex}
@@ -90,9 +113,7 @@ export function ShortsFullScreen() {
           </div>
         ))}
         {isFetchingNextPage && (
-          <div className="short-slide">
-            <Skeleton className="w-full h-full" />
-          </div>
+          <div className="short-slide"><Skeleton className="w-full h-full" /></div>
         )}
       </div>
 
