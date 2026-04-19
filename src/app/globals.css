@@ -1165,24 +1165,55 @@ body {
 @keyframes short-like-pop { 0% { transform: scale(0); opacity: 1; } 60% { transform: scale(1.3); opacity: 1; } 100% { transform: scale(1); opacity: 0; } }
 .short-like-anim svg { animation: short-like-pop 0.7s ease forwards; }
 
-/* Comments sheet */
-.comments-backdrop   { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 40; }
-.comments-sheet      { position: fixed; bottom: 0; left: 0; right: 0; max-height: 70vh; background: var(--bg-card); border-radius: 20px 20px 0 0; z-index: 41; display: flex; flex-direction: column; }
-.comments-handle     { width: 36px; height: 4px; border-radius: 2px; background: var(--border); margin: 12px auto 0; }
-.comments-header     { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid var(--border); }
-.comments-title      { font-size: 15px; font-weight: 700; color: var(--text-primary); }
-.comments-close      { width: 28px; height: 28px; border-radius: 50%; background: var(--bg-card2); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-.comments-list       { flex: 1; overflow-y: auto; padding: 12px 16px; display: flex; flex-direction: column; gap: 14px; }
-.comment-item        { display: flex; gap: 10px; }
-.comment-avatar      { width: 34px; height: 34px; border-radius: 50%; object-fit: cover; flex-shrink: 0; }
-.comment-avatar-ph   { width: 34px; height: 34px; border-radius: 50%; background: var(--bg-card2); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; color: var(--text-muted); flex-shrink: 0; }
-.comment-body        { flex: 1; }
-.comment-username    { font-size: 13px; font-weight: 600; color: var(--text-primary); }
-.comment-text        { font-size: 13px; color: var(--text-secondary); margin-top: 2px; line-height: 1.4; }
-.comment-time        { font-size: 11px; color: var(--text-muted); margin-top: 3px; }
-.comments-input-wrap { display: flex; gap: 10px; align-items: center; padding: 10px 16px 16px; border-top: 1px solid var(--border); }
-.comments-input      { flex: 1; background: var(--bg-card2); border: 1px solid var(--border); border-radius: 20px; padding: 8px 14px; font-size: 14px; color: var(--text-primary); outline: none; }
-.comments-send-btn   { width: 36px; height: 36px; border-radius: 50%; background: var(--primary); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+/* Comments sheet — Instagram style */
+.cs-backdrop    { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 40; }
+.cs-sheet       { position: fixed; bottom: 0; left: 0; right: 0; max-height: 75vh; background: #1c1c1e; border-radius: 16px 16px 0 0; z-index: 41; display: flex; flex-direction: column; }
+.cs-handle      { width: 36px; height: 4px; border-radius: 2px; background: #3a3a3c; margin: 10px auto 0; flex-shrink: 0; }
+.cs-header      { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px 10px; border-bottom: 1px solid #2c2c2e; flex-shrink: 0; }
+.cs-title       { font-size: 15px; font-weight: 700; color: #fff; }
+.cs-close-btn   { width: 30px; height: 30px; border-radius: 50%; background: #2c2c2e; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; color: #aeaeb2; }
+
+.cs-list        { flex: 1; overflow-y: auto; padding: 12px 16px; display: flex; flex-direction: column; gap: 18px; }
+.cs-empty       { text-align: center; color: #636366; font-size: 13px; padding: 16px 0; }
+.cs-no-comments { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 40px 0; color: #636366; font-size: 14px; }
+
+.cs-comment       { display: flex; flex-direction: column; }
+.cs-comment-row   { display: flex; gap: 10px; align-items: flex-start; }
+.cs-avatar        { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; flex-shrink: 0; }
+.cs-avatar-ph     { width: 36px; height: 36px; border-radius: 50%; background: #2c2c2e; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; color: #aeaeb2; flex-shrink: 0; }
+.cs-comment-body  { flex: 1; min-width: 0; }
+.cs-comment-top   { display: flex; align-items: flex-start; gap: 8px; }
+.cs-comment-content { flex: 1; min-width: 0; }
+.cs-comment-user  { font-size: 13px; font-weight: 700; color: #fff; margin-right: 6px; }
+.cs-comment-time  { font-size: 12px; color: #636366; }
+.cs-comment-text  { font-size: 14px; color: #e5e5ea; line-height: 1.45; margin-top: 3px; }
+.cs-comment-actions { display: flex; align-items: center; gap: 12px; margin-top: 6px; }
+.cs-comment-likes { font-size: 12px; color: #636366; }
+.cs-reply-btn     { font-size: 12px; font-weight: 600; color: #636366; background: none; border: none; cursor: pointer; padding: 0; }
+.cs-reply-btn:hover { color: #aeaeb2; }
+.cs-like-btn      { background: none; border: none; cursor: pointer; padding: 4px; color: #aeaeb2; flex-shrink: 0; display: flex; align-items: center; }
+
+.cs-show-replies  { display: flex; align-items: center; gap: 8px; background: none; border: none; cursor: pointer; font-size: 12px; font-weight: 600; color: #636366; padding: 6px 0 0 0; margin-top: 2px; }
+.cs-show-replies:hover { color: #aeaeb2; }
+.cs-replies-line  { display: inline-block; width: 24px; height: 1px; background: #3a3a3c; }
+
+.cs-reply-row       { display: flex; gap: 8px; align-items: flex-start; margin-top: 10px; margin-left: 46px; }
+.cs-reply-avatar    { width: 28px; height: 28px; border-radius: 50%; object-fit: cover; flex-shrink: 0; }
+.cs-reply-avatar-ph { width: 28px; height: 28px; border-radius: 50%; background: #2c2c2e; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: #aeaeb2; flex-shrink: 0; }
+
+.cs-emoji-row   { display: flex; gap: 6px; padding: 8px 16px; border-top: 1px solid #2c2c2e; flex-shrink: 0; }
+.cs-emoji-btn   { font-size: 22px; background: #2c2c2e; border: none; border-radius: 50%; width: 40px; height: 40px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: transform 0.1s; }
+.cs-emoji-btn:hover { transform: scale(1.15); }
+
+.cs-input-wrap  { padding: 8px 16px 20px; flex-shrink: 0; }
+.cs-input-box   { background: #2c2c2e; border-radius: 22px; overflow: hidden; }
+.cs-reply-badge { display: flex; align-items: center; justify-content: space-between; padding: 6px 14px; font-size: 12px; color: #636366; border-bottom: 1px solid #3a3a3c; }
+.cs-reply-badge button { background: none; border: none; color: #636366; cursor: pointer; font-size: 13px; }
+.cs-input-row   { display: flex; align-items: center; padding: 4px 6px 4px 14px; }
+.cs-input       { flex: 1; background: transparent; border: none; outline: none; font-size: 14px; color: #fff; padding: 8px 0; }
+.cs-input::placeholder { color: #636366; }
+.cs-send-btn    { background: none; border: none; font-size: 14px; font-weight: 700; color: #636366; cursor: pointer; padding: 8px 10px; transition: color 0.15s; }
+.cs-send-btn.active { color: #0a84ff; }
 
 /* ── Instagram Reels layout ── */
 
