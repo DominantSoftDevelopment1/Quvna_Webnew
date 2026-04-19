@@ -1164,3 +1164,206 @@ body {
 .comments-input-wrap { display: flex; gap: 10px; align-items: center; padding: 10px 16px 16px; border-top: 1px solid var(--border); }
 .comments-input      { flex: 1; background: var(--bg-card2); border: 1px solid var(--border); border-radius: 20px; padding: 8px 14px; font-size: 14px; color: var(--text-primary); outline: none; }
 .comments-send-btn   { width: 36px; height: 36px; border-radius: 50%; background: var(--primary); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+
+/* ── Videos Page (Instagram style) ── */
+.videos-page { width: 100%; }
+
+.videos-tab-bar {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+  padding: 0 16px;
+  gap: 0;
+  position: sticky;
+  top: 56px;
+  z-index: 30;
+  background: var(--bg-dark);
+}
+@media (min-width: 640px) { .videos-tab-bar { padding: 0 24px; } }
+
+.videos-tab-btn {
+  padding: 14px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-muted);
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+  white-space: nowrap;
+  margin-bottom: -1px;
+}
+.videos-tab-btn:hover { color: var(--text-primary); }
+.videos-tab-btn.active { color: var(--text-primary); border-bottom-color: var(--text-primary); }
+
+.videos-tab-content { padding: 20px 16px 64px; }
+@media (min-width: 640px) { .videos-tab-content { padding: 24px 24px 64px; } }
+@media (min-width: 1024px) { .videos-tab-content { padding: 24px 0 48px; } }
+
+/* Videos grid (YouTube/Instagram style) */
+.videos-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+@media (min-width: 640px)  { .videos-grid { grid-template-columns: repeat(3, 1fr); gap: 14px; } }
+@media (min-width: 1024px) { .videos-grid { grid-template-columns: repeat(4, 1fr); gap: 16px; } }
+@media (min-width: 1280px) { .videos-grid { grid-template-columns: repeat(5, 1fr); } }
+
+.video-card { display: flex; flex-direction: column; gap: 8px; cursor: pointer; }
+.video-card-thumb {
+  position: relative;
+  aspect-ratio: 16/9;
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--bg-card2);
+}
+.video-card-img {
+  width: 100%; height: 100%; object-fit: cover;
+  transition: transform 0.3s ease;
+}
+.video-card:hover .video-card-img { transform: scale(1.04); }
+.video-card-no-thumb {
+  width: 100%; height: 100%;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-muted);
+}
+.video-card-hover-overlay {
+  position: absolute; inset: 0;
+  background: rgba(0,0,0,0);
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.2s;
+}
+.video-card:hover .video-card-hover-overlay { background: rgba(0,0,0,0.3); }
+.video-card-play-btn {
+  width: 40px; height: 40px; border-radius: 50%;
+  background: rgba(0,0,0,0.6);
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; transition: opacity 0.2s;
+}
+.video-card:hover .video-card-play-btn { opacity: 1; }
+.video-card-duration {
+  position: absolute; bottom: 6px; right: 6px;
+  background: rgba(0,0,0,0.8); color: #fff;
+  font-size: 11px; font-weight: 600;
+  padding: 2px 5px; border-radius: 4px;
+}
+.video-card-views {
+  position: absolute; bottom: 6px; left: 6px;
+  display: flex; align-items: center; gap: 3px;
+  background: rgba(0,0,0,0.6); color: rgba(255,255,255,0.9);
+  font-size: 11px; padding: 2px 6px; border-radius: 4px;
+}
+.video-card-info { display: flex; gap: 8px; align-items: flex-start; }
+.video-card-avatar {
+  width: 32px; height: 32px; border-radius: 50%; object-fit: cover; flex-shrink: 0;
+}
+.video-card-meta { flex: 1; min-width: 0; }
+.video-card-title {
+  font-size: 13px; font-weight: 600; color: var(--text-primary);
+  line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.video-card-author { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+.video-card-time   { font-size: 11px; color: var(--text-inactive); margin-top: 1px; }
+.video-card-skeleton { border-radius: 10px; overflow: hidden; background: var(--bg-card); }
+.video-card-thumb-skeleton { width: 100%; aspect-ratio: 16/9; }
+
+/* Reels grid (Instagram Reels style) */
+.reels-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 3px;
+}
+@media (min-width: 640px)  { .reels-grid { gap: 4px; } }
+@media (min-width: 1024px) { .reels-grid { grid-template-columns: repeat(4, 1fr); gap: 4px; } }
+@media (min-width: 1280px) { .reels-grid { grid-template-columns: repeat(5, 1fr); } }
+
+.reels-grid-item {
+  position: relative;
+  aspect-ratio: 9/16;
+  overflow: hidden;
+  cursor: pointer;
+  background: var(--bg-card2);
+}
+.reels-grid-img {
+  width: 100%; height: 100%; object-fit: cover;
+  transition: transform 0.3s ease;
+}
+.reels-grid-item:hover .reels-grid-img { transform: scale(1.05); }
+.reels-grid-no-thumb { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }
+.reels-grid-overlay {
+  position: absolute; inset: 0;
+  background: linear-gradient(to top, rgba(0,0,0,0.55) 0%, transparent 50%);
+}
+.reels-grid-play {
+  position: absolute; top: 8px; left: 8px;
+  opacity: 0; transition: opacity 0.2s;
+}
+.reels-grid-item:hover .reels-grid-play { opacity: 1; }
+.reels-grid-bottom {
+  position: absolute; bottom: 6px; left: 8px;
+  display: flex; align-items: center; gap: 4px;
+}
+.reels-grid-likes {
+  display: flex; align-items: center; gap: 3px;
+  color: #fff; font-size: 12px; font-weight: 600;
+}
+.reels-grid-item-skeleton { aspect-ratio: 9/16; border-radius: 0; }
+
+/* Empty state */
+.videos-empty {
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center; padding: 64px 0; gap: 8px;
+}
+.videos-empty-icon {
+  width: 56px; height: 56px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--bg-card); color: var(--text-muted); margin-bottom: 4px;
+}
+.videos-empty-title { font-size: 15px; font-weight: 600; color: var(--text-secondary); }
+.videos-empty-sub   { font-size: 13px; color: var(--text-muted); }
+
+/* Users grid (Instagram explore style) */
+.users-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+@media (min-width: 480px)  { .users-grid { grid-template-columns: repeat(3, 1fr); } }
+@media (min-width: 768px)  { .users-grid { grid-template-columns: repeat(4, 1fr); } }
+@media (min-width: 1024px) { .users-grid { grid-template-columns: repeat(5, 1fr); gap: 14px; } }
+
+.user-card {
+  display: flex; flex-direction: column; align-items: center;
+  gap: 6px; padding: 20px 12px 16px;
+  background: var(--bg-card); border-radius: 14px;
+  cursor: pointer; transition: background 0.15s;
+  border: 1px solid transparent;
+}
+.user-card:hover { background: var(--bg-hover); border-color: var(--border); }
+.user-card-avatar-wrap { position: relative; }
+.user-card-avatar {
+  width: 72px; height: 72px; border-radius: 50%;
+  object-fit: cover; border: 2px solid var(--border);
+}
+.user-card-avatar-ph {
+  width: 72px; height: 72px; border-radius: 50%;
+  background: var(--primary-muted); color: var(--primary);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 24px; font-weight: 700;
+}
+.user-card-name      { font-size: 14px; font-weight: 600; color: var(--text-primary); text-align: center; }
+.user-card-username  { font-size: 12px; color: var(--text-muted); text-align: center; }
+.user-card-followers { font-size: 11px; color: var(--text-inactive); text-align: center; }
+.user-card-follow-btn {
+  margin-top: 6px; padding: 6px 20px;
+  border-radius: 8px; border: 1.5px solid var(--border);
+  background: transparent; color: var(--text-primary);
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  transition: all 0.15s;
+}
+.user-card-follow-btn:hover {
+  background: var(--primary); border-color: var(--primary); color: var(--primary-text);
+}
+.user-card-skeleton  { padding: 20px 12px 16px; background: var(--bg-card); border-radius: 14px; }
+.user-card-avatar-skeleton { width: 72px; height: 72px; border-radius: 50%; margin: 0 auto; }

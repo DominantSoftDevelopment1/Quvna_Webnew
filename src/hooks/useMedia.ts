@@ -39,6 +39,12 @@ export interface CommentItem {
   };
 }
 
+function isR2Video(v: VideoItem): boolean {
+  const url = v.videoPSU ?? v.videoUrl;
+  if (!url) return true;
+  return !url.includes("youtube.com") && !url.includes("youtu.be");
+}
+
 export function useVideos(page = 0) {
   return useQuery({
     queryKey: ["videos", page],
@@ -46,7 +52,8 @@ export function useVideos(page = 0) {
       const { data } = await api.get("/api/video/all/video", {
         params: { page, size: 20 },
       });
-      return data?.data ?? { content: [], totalPages: 0 };
+      const raw = data?.data ?? { content: [], totalPages: 0 };
+      return { ...raw, content: (raw.content ?? []).filter(isR2Video) };
     },
   });
 }
@@ -64,12 +71,11 @@ export function useInfiniteShorts() {
       const { data } = await api.get("/api/video/all/video", {
         params: { page: pageParam, size: 20 },
       });
-      // API returns either array or paginated {content, last, number}
       const raw = data?.data;
-      if (Array.isArray(raw)) {
-        return { content: raw as VideoItem[], last: true, number: 0 } as ShortsPage;
-      }
-      return (raw ?? { content: [], last: true, number: 0 }) as ShortsPage;
+      const page: ShortsPage = Array.isArray(raw)
+        ? { content: raw as VideoItem[], last: true, number: 0 }
+        : (raw ?? { content: [], last: true, number: 0 });
+      return { ...page, content: page.content.filter(isR2Video) };
     },
     initialPageParam: 0,
     getNextPageParam: (last: ShortsPage) =>

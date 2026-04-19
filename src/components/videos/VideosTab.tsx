@@ -3,7 +3,7 @@
 import { useVideos } from "@/hooks/useMedia";
 import { cdnUrl, formatCount, timeAgo } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/Skeleton";
-import { Play, Eye } from "lucide-react";
+import { Play, Eye, Film } from "lucide-react";
 
 export function VideosTab() {
   const { data, isLoading } = useVideos(0);
@@ -11,26 +11,34 @@ export function VideosTab() {
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-        {Array.from({ length: 8 }).map((_, i) => (
-          <div key={i} className="space-y-2">
-            <Skeleton className="aspect-video rounded-xl" />
-            <Skeleton className="h-4 w-3/4" />
-            <Skeleton className="h-3 w-1/2" />
+      <div className="videos-grid">
+        {Array.from({ length: 12 }).map((_, i) => (
+          <div key={i} className="video-card-skeleton">
+            <Skeleton className="video-card-thumb-skeleton" />
+            <div className="p-3 space-y-2">
+              <Skeleton className="h-3 w-full" />
+              <Skeleton className="h-3 w-2/3" />
+            </div>
           </div>
         ))}
       </div>
     );
   }
 
-  if (!videos.length) return (
-    <div className="text-sm py-12 text-center" style={{ color: "var(--text-muted)" }}>
-      Videolar topilmadi
-    </div>
-  );
+  if (!videos.length) {
+    return (
+      <div className="videos-empty">
+        <div className="videos-empty-icon">
+          <Film size={28} />
+        </div>
+        <p className="videos-empty-title">Videolar topilmadi</p>
+        <p className="videos-empty-sub">Hozircha hech qanday video yo'q</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+    <div className="videos-grid">
       {videos.map((video: VideoItem) => (
         <VideoCard key={video.id} video={video} />
       ))}
@@ -40,60 +48,53 @@ export function VideosTab() {
 
 function VideoCard({ video }: { video: VideoItem }) {
   return (
-    <div className="cursor-pointer group">
-      <div className="relative aspect-video rounded-xl overflow-hidden mb-2">
+    <div className="video-card group cursor-pointer">
+      <div className="video-card-thumb">
         {video.thumbnailUrl || video.thumbnail ? (
           <img
             src={cdnUrl(video.thumbnailUrl ?? video.thumbnail)}
             alt={video.title}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+            className="video-card-img"
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center" style={{ background: "var(--bg-card2)" }}>
-            <Play size={32} style={{ color: "var(--text-muted)" }} />
+          <div className="video-card-no-thumb">
+            <Play size={28} />
           </div>
         )}
-        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
-          <div className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-            <Play size={16} className="text-white ml-0.5" fill="white" />
+        <div className="video-card-hover-overlay">
+          <div className="video-card-play-btn">
+            <Play size={18} fill="white" className="text-white ml-0.5" />
           </div>
         </div>
         {video.duration && (
-          <span className="absolute bottom-1.5 right-1.5 bg-black/70 text-white text-xs px-1 rounded">
-            {video.duration}
+          <span className="video-card-duration">{video.duration}</span>
+        )}
+        {video.viewCount != null && (
+          <span className="video-card-views">
+            <Eye size={10} />
+            {formatCount(video.viewCount)}
           </span>
         )}
       </div>
-      <div className="flex gap-2">
+
+      <div className="video-card-info">
         {video.user?.avatar && (
           <img
             src={cdnUrl(video.user.avatar)}
             alt={video.user.username}
-            className="w-8 h-8 rounded-full object-cover shrink-0 mt-0.5"
+            className="video-card-avatar"
           />
         )}
-        <div className="min-w-0">
-          <p className="text-sm font-medium line-clamp-2 leading-snug" style={{ color: "var(--text-primary)" }}>
-            {video.title}
-          </p>
+        <div className="video-card-meta">
+          <p className="video-card-title">{video.title}</p>
           {video.user && (
-            <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
+            <p className="video-card-author">
               {video.user.username ?? video.user.fullName}
             </p>
           )}
-          <div className="flex items-center gap-2 mt-0.5">
-            {video.viewCount != null && (
-              <span className="flex items-center gap-1 text-xs" style={{ color: "var(--text-muted)" }}>
-                <Eye size={10} />
-                {formatCount(video.viewCount)}
-              </span>
-            )}
-            {video.createdAt && (
-              <span className="text-xs" style={{ color: "var(--text-muted)" }}>
-                {timeAgo(video.createdAt)}
-              </span>
-            )}
-          </div>
+          {video.createdAt && (
+            <p className="video-card-time">{timeAgo(video.createdAt)}</p>
+          )}
         </div>
       </div>
     </div>
