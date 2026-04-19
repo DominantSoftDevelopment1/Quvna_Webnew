@@ -1292,9 +1292,9 @@ body {
 }
 
 .ig-reel-action-btn   { display: flex; flex-direction: column; align-items: center; gap: 4px; background: none; border: none; cursor: pointer; padding: 0; }
-.ig-reel-action-icon  { width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: transform 0.15s; }
+.ig-reel-action-icon  { width: 52px; height: 52px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: transform 0.15s; }
 .ig-reel-action-btn:hover .ig-reel-action-icon { transform: scale(1.1); }
-.ig-reel-action-count { font-size: 12px; font-weight: 600; color: #fff; }
+.ig-reel-action-count { font-size: 13px; font-weight: 700; color: #fff; }
 
 /* Up/down nav — ig-reel-wrap ichida absolute, video tashqarida o'ngda */
 .ig-reel-nav {
@@ -1317,7 +1317,8 @@ body {
 }
 .ig-reel-nav-btn:hover:not(:disabled) { background: rgba(255,255,255,0.2); }
 .ig-reel-nav-btn:disabled { opacity: 0.25; cursor: default; }
-.ig-icon-liked { filter: invert(30%) sepia(100%) saturate(700%) hue-rotate(310deg) brightness(120%); }
+.ig-icon-white { filter: brightness(0) invert(1); }
+.ig-icon-liked-red { filter: invert(20%) sepia(100%) saturate(3000%) hue-rotate(340deg) brightness(110%); }
 
 /* ── Videos Page (Instagram style) ── */
 .videos-page { width: 100%; }
