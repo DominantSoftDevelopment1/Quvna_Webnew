@@ -17,12 +17,14 @@ import {
   Info,
   HelpCircle,
   ChevronRight,
+  ChevronLeft,
   Star,
   Edit3,
   Gamepad2,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useRef } from "react";
 
 export default function ProfilePage() {
   const { user, isLoggedIn, logout } = useAuthStore();
@@ -41,6 +43,13 @@ function ProfileContent({ userId, isLoggedIn, onLogout }: { userId: number | nul
   const { data: videos = [], isLoading: videosLoading } = useUserVideos(userId);
   const [darkMode, setDarkMode] = useState(true);
   const [activeTab, setActiveTab] = useState<"overview" | "videos">("overview");
+  const cardsRef = useRef<HTMLDivElement>(null);
+
+  const scrollCards = (dir: "left" | "right") => {
+    if (cardsRef.current) {
+      cardsRef.current.scrollBy({ left: dir === "right" ? 180 : -180, behavior: "smooth" });
+    }
+  };
 
   if (isLoading) return <ProfileSkeleton />;
 
@@ -50,145 +59,169 @@ function ProfileContent({ userId, isLoggedIn, onLogout }: { userId: number | nul
   const bannerUrl = p.userBannerAttachmentResponseDTO?.preSignedUrl ?? p.userBannerAttachmentResponseDTO?.contentURL ?? null;
 
   return (
-    <div className="w-full max-w-xl mx-auto pb-10" style={{ paddingLeft: '1rem', paddingRight: '1rem' }}>
-      {/* ===== HEADER CARD ===== */}
-      <div className="rounded-3xl overflow-hidden mb-6" style={{ background: "var(--bg-card)" }}>
-        {/* Cover image */}
-        <div className="h-44 sm:h-56 relative">
-          {bannerUrl ? (
-            <img src={cdnUrl(bannerUrl)} alt="" className="w-full h-full object-cover" />
-          ) : (
-            <div className="w-full h-full" style={{ background: "linear-gradient(135deg, #1a3a2f 0%, #0d1f17 100%)" }} />
+    <div className="w-full max-w-xl mx-auto pb-10 px-4">
+      {/* ===== HEADER CARD + TABS — bitta card ===== */}
+      <div className="rounded-3xl overflow-hidden" style={{ background: "var(--bg-card)", marginBottom: 16 }}>
+
+        {/* Banner — katta, sahifa orqa foniga blur effekti */}
+        <div className="relative" style={{ height: 200 }}>
+          {/* Orqa fon blur — banner rangi sahifaga singadi */}
+          {bannerUrl && (
+            <div className="absolute inset-0 scale-110"
+              style={{ backgroundImage: `url(${cdnUrl(bannerUrl)})`, backgroundSize: "cover", backgroundPosition: "center", filter: "blur(40px) brightness(0.4)", transform: "scale(1.1)" }} />
           )}
-          <button className="absolute top-4 right-4 px-4 py-2 rounded-xl text-sm font-medium flex items-center gap-2"
-            style={{ background: "rgba(0,0,0,0.6)", color: "#fff", backdropFilter: "blur(8px)" }}>
-            <Edit3 size={14} />
+          {/* Asosiy banner rasmi */}
+          {bannerUrl ? (
+            <img src={cdnUrl(bannerUrl)} alt="" className="absolute inset-0 w-full h-full object-cover" />
+          ) : (
+            <div className="absolute inset-0" style={{ background: "linear-gradient(135deg, #1a3a2f 0%, #0d1f17 100%)" }} />
+          )}
+          {/* Pastga gradient overlay — avatar ustiga */}
+          <div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, transparent 40%, rgba(0,0,0,0.7) 100%)" }} />
+
+          {/* Tahrirlash tugmasi — 5px chapga */}
+          <button type="button" className="absolute top-4 flex items-center gap-1.5 text-xs font-medium"
+            style={{ right: "calc(1rem - 5px)", color: "rgba(255,255,255,0.85)" }}>
+            <Edit3 size={13} />
             Tahrirlash
           </button>
+
+          {/* Avatar + Ism + Rating — banner pastki qismida, 5px yuqoriroq */}
+          <div className="absolute left-0 right-0 flex items-end justify-between px-4 gap-3"
+            style={{ bottom: 10 }}>
+            <div className="flex items-end gap-3">
+              {/* Avatar — 5px o'ngga */}
+              <div className="relative shrink-0" style={{ marginBottom: 10, marginLeft: 5 }}>
+                <div className="w-[72px] h-[72px] rounded-full overflow-hidden"
+                  style={{ border: "2.5px solid rgba(255,255,255,0.25)", background: "var(--bg-card2)" }}>
+                  {avatarUrl ? (
+                    <img src={cdnUrl(avatarUrl)} alt={fullName} className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-2xl font-bold"
+                      style={{ color: "var(--primary)", background: "var(--bg-card2)" }}>
+                      {fullName[0]?.toUpperCase() ?? "U"}
+                    </div>
+                  )}
+                </div>
+                <div className="absolute bottom-0.5 right-0.5 w-5 h-5 rounded-full flex items-center justify-center"
+                  style={{ background: "rgba(0,0,0,0.6)", border: "1.5px solid rgba(255,255,255,0.2)" }}>
+                  <Edit3 size={9} style={{ color: "#fff" }} />
+                </div>
+              </div>
+              {/* Ism + ID — 5px yuqoriroq */}
+              <div style={{ marginBottom: 5 }}>
+                <div className="flex items-center gap-1.5">
+                  <h1 className="text-base font-bold text-white">{fullName}</h1>
+                  <svg width="15" height="15" viewBox="0 0 16 16" fill="none">
+                    <circle cx="8" cy="8" r="8" fill="#4FC3F7"/>
+                    <path d="M5 8l2 2 4-4" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </div>
+                <p className="text-xs" style={{ color: "rgba(255,255,255,0.6)" }}>ID: {p.id ?? userId}</p>
+              </div>
+            </div>
+            {/* Rating badge — 5px yuqoriroq */}
+            <div className="flex items-center gap-2 shrink-0"
+              style={{ background: "rgba(27,58,42,0.9)", borderRadius: 20, padding: "6px 12px", backdropFilter: "blur(8px)", marginBottom: 10, marginRight: 10 }}>
+              <Star size={15} fill="#F59E0B" style={{ color: "#F59E0B" }} />
+              <span style={{ fontSize: 15, fontWeight: 700, color: "#fff" }}>{p.rating ?? 125}</span>
+            </div>
+          </div>
         </div>
 
-        <div className="px-5 pb-6 -mt-12 relative">
-          {/* Avatar */}
-          <div className="w-24 h-24 rounded-full border-4 overflow-hidden shrink-0"
-            style={{ borderColor: "var(--bg-card)", background: "var(--bg-card2)" }}>
-            {avatarUrl ? (
-              <img src={cdnUrl(avatarUrl)} alt={fullName} className="w-full h-full object-cover" />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center text-3xl font-bold"
-                style={{ color: "var(--primary)", background: "var(--bg-card2)" }}>
-                {fullName[0]?.toUpperCase() ?? "U"}
-              </div>
-            )}
-          </div>
+        <div className="pb-5 relative" style={{ paddingLeft: 16, paddingRight: 16 }}>
 
-          {/* Name + Rating */}
-          <div className="mt-4">
-            <div className="flex items-center gap-3">
-              <h1 className="text-xl font-bold" style={{ color: "var(--text-primary)" }}>
-                {fullName}
-              </h1>
-              {p.rating && (
-                <span className="flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-semibold"
-                  style={{ background: "var(--primary)", color: "var(--primary-text)" }}>
-                  <Star size={12} fill="currentColor" />
-                  {p.rating}
-                </span>
-              )}
-            </div>
-            <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>
-              ID: {p.id ?? userId}
-            </p>
-            {p.bio && (
-              <p className="text-sm mt-3 leading-relaxed" style={{ color: "var(--text-secondary)" }}>
-                {p.bio}
-              </p>
-            )}
-          </div>
+          {/* Bio — 16px past */}
+          <p className="text-sm leading-relaxed" style={{ color: "var(--text-secondary)", marginTop: 16 }}>
+            {p.bio ?? "How Beyond The Summit Marries Professional Production With Grassroots Atmosphere. Grassroots👀 #Dota2"}
+          </p>
 
-          {/* Social links */}
-          {(p.telegramUrl || p.instagramUrl || p.youtubeUrl) && (
-            <div className="flex gap-3 mt-4">
-              {p.telegramUrl && (
-                <a href={p.telegramUrl} target="_blank" rel="noopener noreferrer"
-                  className="w-10 h-10 rounded-xl flex items-center justify-center overflow-hidden"
-                  style={{ background: "var(--bg-card2)" }}>
-                  <img src="/icons/telegram.png" alt="Telegram" className="w-6 h-6 object-contain" />
-                </a>
-              )}
-              {p.instagramUrl && (
-                <a href={p.instagramUrl} target="_blank" rel="noopener noreferrer"
-                  className="w-10 h-10 rounded-xl flex items-center justify-center overflow-hidden"
-                  style={{ background: "var(--bg-card2)" }}>
-                  <img src="/icons/instagram.png" alt="Instagram" className="w-6 h-6 object-contain" />
-                </a>
-              )}
-              {p.youtubeUrl && (
-                <a href={p.youtubeUrl} target="_blank" rel="noopener noreferrer"
-                  className="w-10 h-10 rounded-xl flex items-center justify-center overflow-hidden"
-                  style={{ background: "var(--bg-card2)" }}>
-                  <img src="/icons/youtube.png" alt="YouTube" className="w-6 h-6 object-contain" />
-                </a>
-              )}
-            </div>
-          )}
-
-          {/* Stats */}
-          <div className="flex gap-8 mt-5">
+          {/* Stats — bio/ism dan 16px past */}
+          <div className="flex gap-6" style={{ marginTop: 16 }}>
             <Stat label="Postlar" value={formatCount(videos.length)} />
             <Stat label="Obunachilar" value={formatCount(p.followerCount ?? followers.length)} />
             <Stat label="Obunalar" value={formatCount(p.followingCount ?? following.length)} />
           </div>
 
-          {/* Game info cards */}
-          {(p.playName || p.freeFireName || p.mobileLegendsName) && (
-            <div className="grid grid-cols-2 gap-3 mt-5">
-              {p.playName && (
-                <div className="rounded-2xl p-4" style={{ background: "var(--bg-card2)" }}>
-                  <div className="flex items-center gap-2 mb-2">
-                    <Gamepad2 size={14} style={{ color: "var(--primary)" }} />
-                    <span className="text-xs font-semibold tracking-wide" style={{ color: "var(--text-muted)" }}>PUBG MOBILE</span>
-                  </div>
-                  <p className="text-base font-bold" style={{ color: "var(--text-primary)" }}>{p.playName}</p>
-                  <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>UID: {p.gameID ?? "-"}</p>
-                </div>
-              )}
-              {p.freeFireName && (
-                <div className="rounded-2xl p-4" style={{ background: "var(--bg-card2)" }}>
-                  <div className="flex items-center gap-2 mb-2">
-                    <Gamepad2 size={14} style={{ color: "var(--primary)" }} />
-                    <span className="text-xs font-semibold tracking-wide" style={{ color: "var(--text-muted)" }}>FREE FIRE</span>
-                  </div>
-                  <p className="text-base font-bold" style={{ color: "var(--text-primary)" }}>{p.freeFireName}</p>
-                  <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>UID: {p.freeFireUID ?? "-"}</p>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      </div>
+          {/* Social links — stats dan 16px past */}
+          <div className="flex flex-wrap gap-2" style={{ marginTop: 16 }}>
+            <a href={p.telegramUrl ?? "#"} target="_blank" rel="noopener noreferrer"
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium"
+              style={{ background: "var(--bg-card2)", color: "var(--text-secondary)" }}>
+              <img src="/icons/telegram.png" alt="" className="w-3.5 h-3.5 object-contain" />
+              Telegram
+            </a>
+            <a href={p.instagramUrl ?? "#"} target="_blank" rel="noopener noreferrer"
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium"
+              style={{ background: "var(--bg-card2)", color: "var(--text-secondary)" }}>
+              <img src="/icons/instagram.png" alt="" className="w-3.5 h-3.5 object-contain" />
+              Instagram
+            </a>
+            <a href={p.youtubeUrl ?? "#"} target="_blank" rel="noopener noreferrer"
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium"
+              style={{ background: "var(--bg-card2)", color: "var(--text-secondary)" }}>
+              <img src="/icons/youtube.png" alt="" className="w-3.5 h-3.5 object-contain" />
+              YouTube
+            </a>
+            <a href={p.donationAlertsUrl ?? "#"} target="_blank" rel="noopener noreferrer"
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium"
+              style={{ background: "var(--bg-card2)", color: "var(--text-secondary)" }}>
+              <Gamepad2 size={12} style={{ color: "var(--primary)" }} />
+              Donation Alerts
+            </a>
+          </div>
 
-      {/* ===== TABS ===== */}
-      <div className="flex gap-2 mb-4 p-1.5 rounded-xl" style={{ background: "var(--bg-card)", marginBottom: '16px' }}>
-        <button
-          onClick={() => setActiveTab("overview")}
-          className="flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all"
-          style={{
-            background: activeTab === "overview" ? "var(--primary)" : "transparent",
-            color: activeTab === "overview" ? "var(--primary-text)" : "var(--text-secondary)",
-          }}
-        >
-          Umumiy
-        </button>
-        <button
-          onClick={() => setActiveTab("videos")}
-          className="flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all"
-          style={{
-            background: activeTab === "videos" ? "var(--primary)" : "transparent",
-            color: activeTab === "videos" ? "var(--primary-text)" : "var(--text-secondary)",
-          }}
-        >
-          Videolarim
-        </button>
+          {/* Game rating cards — 4 ta, swipe, scrollbar yo'q */}
+          {/* Cards + nav arrows */}
+          <div className="relative" style={{ marginTop: 16, marginLeft: -16, marginRight: -16 }}>
+            {/* Left arrow */}
+            <button type="button" aria-label="Chapga" onClick={() => scrollCards("left")}
+              className="absolute left-0 top-1/2 -translate-y-1/2 z-10 flex items-center justify-center"
+              style={{ width: 28, height: 28, borderRadius: "50%", background: "rgba(0,0,0,0.45)", color: "#fff", backdropFilter: "blur(4px)" }}>
+              <ChevronLeft size={16} />
+            </button>
+            {/* Scrollable row */}
+            <div ref={cardsRef} className="flex gap-3 overflow-x-auto"
+              style={{ paddingLeft: 36, paddingRight: 36, scrollbarWidth: "none", msOverflowStyle: "none" }}>
+              <RatingCard title="PUBG MOBILE"    rating={p.rating ?? 125} name={p.playName ?? "Azimovas"}            uid={p.gameID ?? "5971521"}           total={p.totalScore ?? "1 571"} />
+              <RatingCard title="MOBILE LEGENDS" rating={p.rating ?? 125} name={p.mobileLegendsName ?? "Azimovas"}   uid={p.mobileLegendsUID ?? "5971521"} total="2 340" />
+              <RatingCard title="FREE FIRE"      rating={p.rating ?? 125} name={p.freeFireName ?? "Azimovas"}        uid={p.freeFireUID ?? "5971521"}      total="892" />
+              <RatingCard title="STEAM"          rating={p.rating ?? 125} name={p.playName ?? "Azimovas"}            uid={p.gameID ?? "5971521"}           total="450" />
+            </div>
+            {/* Right arrow */}
+            <button type="button" aria-label="O'ngga" onClick={() => scrollCards("right")}
+              className="absolute right-0 top-1/2 -translate-y-1/2 z-10 flex items-center justify-center"
+              style={{ width: 28, height: 28, borderRadius: "50%", background: "rgba(0,0,0,0.45)", color: "#fff", backdropFilter: "blur(4px)" }}>
+              <ChevronRight size={16} />
+            </button>
+          </div>
+        </div>
+
+        {/* ===== TABS — card ichida, 16px pastda ===== */}
+        <div className="flex" style={{ marginTop: 16, marginBottom: 4, height: 32, borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+          <button
+            type="button"
+            onClick={() => setActiveTab("overview")}
+            className="flex-1 flex items-center justify-center text-sm font-semibold transition-all relative"
+            style={{ color: activeTab === "overview" ? "var(--primary)" : "var(--text-muted)" }}
+          >
+            Umumiy
+            {activeTab === "overview" && (
+              <span className="absolute bottom-0 left-1/2 -translate-x-1/2 h-0.5 w-8 rounded-full" style={{ background: "var(--primary)" }} />
+            )}
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab("videos")}
+            className="flex-1 flex items-center justify-center text-sm font-semibold transition-all relative"
+            style={{ color: activeTab === "videos" ? "var(--primary)" : "var(--text-muted)" }}
+          >
+            Videolarim
+            {activeTab === "videos" && (
+              <span className="absolute bottom-0 left-1/2 -translate-x-1/2 h-0.5 w-12 rounded-full" style={{ background: "var(--primary)" }} />
+            )}
+          </button>
+        </div>
       </div>
 
       {activeTab === "overview" ? (
@@ -311,9 +344,9 @@ function MenuItem({ icon, label, href }: { icon: React.ReactNode; label: string;
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="text-center">
-      <p className="text-lg font-bold" style={{ color: "var(--text-primary)" }}>{value}</p>
-      <p className="text-sm mt-0.5" style={{ color: "var(--text-muted)" }}>{label}</p>
+    <div>
+      <p className="text-base font-bold" style={{ color: "var(--text-primary)" }}>{value}</p>
+      <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>{label}</p>
     </div>
   );
 }
@@ -349,4 +382,46 @@ interface VideoItem {
   thumbnailUrl?: string;
   thumbnail?: string;
   viewCount?: number;
+}
+
+function RatingCard({ title, rating, name, uid, total }: {
+  title: string;
+  rating: number;
+  name: string;
+  uid: string;
+  total: string;
+}) {
+  return (
+    <div className="rounded-2xl shrink-0 flex flex-col justify-between"
+      style={{ background: "#1B5E3B", width: 160, minHeight: 96, padding: "10px 12px" }}>
+
+      {/* Top: title + ⭐ rating */}
+      <div className="flex items-center justify-between gap-1">
+        <span style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.7)", letterSpacing: "0.03em" }}>
+          {title}
+        </span>
+        <span className="flex items-center gap-1 rounded-xl shrink-0"
+          style={{ background: "#0D3B26", padding: "3px 7px", fontSize: 12, fontWeight: 700, color: "#fff" }}>
+          <Star size={11} fill="#F59E0B" style={{ color: "#F59E0B" }} />
+          {rating}
+        </span>
+      </div>
+
+      {/* Middle: Name */}
+      <p style={{ fontSize: 11, color: "rgba(255,255,255,0.65)", marginTop: 8 }}>
+        Name: <span style={{ fontWeight: 700, color: "#fff" }}>{name}</span>
+      </p>
+
+      {/* Bottom: UID + Total */}
+      <div className="flex items-end justify-between" style={{ marginTop: 4 }}>
+        <p style={{ fontSize: 10, color: "rgba(255,255,255,0.5)" }}>
+          UID: <span style={{ fontWeight: 700, color: "rgba(255,255,255,0.85)" }}>{uid}</span>
+        </p>
+        <div className="text-right">
+          <p style={{ fontSize: 10, color: "rgba(255,255,255,0.5)", lineHeight: 1 }}>Total</p>
+          <p style={{ fontSize: 15, fontWeight: 900, color: "#fff", lineHeight: 1, marginTop: 2 }}>{total}</p>
+        </div>
+      </div>
+    </div>
+  );
 }
