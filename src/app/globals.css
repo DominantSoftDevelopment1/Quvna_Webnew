@@ -1108,17 +1108,18 @@ body {
 
 /* ── Short Video Player ── */
 .short-feed {
-  height: calc(100vh - 56px);
+  height: calc(100vh - 56px - 20px);
   overflow-y: scroll;
   scroll-snap-type: y mandatory;
   scrollbar-width: none;
   overscroll-behavior-y: none;
+  margin-bottom: 20px;
 }
 .short-feed::-webkit-scrollbar { display: none; }
 
 /* Har bir slide aniq balandlikda, scroll-snap to'g'ri ishlashi uchun */
 .short-slide {
-  height: calc(100vh - 56px);
+  height: calc(100vh - 56px - 20px);
   scroll-snap-align: start;
   scroll-snap-stop: always;
   position: relative;
@@ -1169,9 +1170,9 @@ body {
 .cs-backdrop    { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 40; }
 .cs-sheet {
   position: fixed;
-  left: 50%;
+  left: calc(50% + 50px);
   transform: translateX(-50%);
-  bottom: 20px;
+  bottom: 80px;
   width: min(420px, 100vw);
   height: 70vh;
   background: #1c1c1e;
