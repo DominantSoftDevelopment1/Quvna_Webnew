@@ -1170,9 +1170,9 @@ body {
 .cs-backdrop    { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 40; }
 .cs-sheet {
   position: fixed;
-  left: calc(50% + 50px);
+  left: calc(50% + 100px);
   transform: translateX(-50%);
-  bottom: 80px;
+  bottom: 130px;
   width: min(420px, 100vw);
   height: 70vh;
   background: #1c1c1e;
