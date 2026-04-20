@@ -112,7 +112,8 @@ export function useVideoReactions(videoId: string) {
     queryKey: ["reactions", videoId],
     queryFn: async () => {
       const { data } = await api.get(`/api/reaction/reactions-by/${videoId}`);
-      return data?.data ?? [];
+      const all = data?.data ?? [];
+      return all.filter((r: { type?: string }) => r.type === "COMMENT" || !r.type);
     },
     enabled: !!videoId,
   });
