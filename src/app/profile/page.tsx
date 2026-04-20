@@ -153,29 +153,29 @@ function ProfileContent({ userId, isLoggedIn, onLogout }: { userId: number | nul
           </div>
 
           {/* Social links — stats dan 16px past */}
-          <div className="flex flex-wrap gap-2" style={{ marginTop: 16 }}>
+          <div className="flex flex-wrap gap-3" style={{ marginTop: 16 }}>
             <a href={p.telegramUrl ?? "#"} target="_blank" rel="noopener noreferrer"
-              className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium"
+              className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold"
               style={{ background: "var(--bg-card2)", color: "var(--text-secondary)" }}>
-              <img src="/icons/telegram.png" alt="" className="w-3.5 h-3.5 object-contain" />
+              <img src="/icons/telegram.png" alt="" className="w-5 h-5 object-contain" />
               Telegram
             </a>
             <a href={p.instagramUrl ?? "#"} target="_blank" rel="noopener noreferrer"
-              className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium"
+              className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold"
               style={{ background: "var(--bg-card2)", color: "var(--text-secondary)" }}>
-              <img src="/icons/instagram.png" alt="" className="w-3.5 h-3.5 object-contain" />
+              <img src="/icons/instagram.png" alt="" className="w-5 h-5 object-contain" />
               Instagram
             </a>
             <a href={p.youtubeUrl ?? "#"} target="_blank" rel="noopener noreferrer"
-              className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium"
+              className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold"
               style={{ background: "var(--bg-card2)", color: "var(--text-secondary)" }}>
-              <img src="/icons/youtube.png" alt="" className="w-3.5 h-3.5 object-contain" />
+              <img src="/icons/youtube.png" alt="" className="w-5 h-5 object-contain" />
               YouTube
             </a>
             <a href={p.donationAlertsUrl ?? "#"} target="_blank" rel="noopener noreferrer"
-              className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium"
+              className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold"
               style={{ background: "var(--bg-card2)", color: "var(--text-secondary)" }}>
-              <Gamepad2 size={12} style={{ color: "var(--primary)" }} />
+              <Gamepad2 size={16} style={{ color: "var(--primary)" }} />
               Donation Alerts
             </a>
           </div>
@@ -269,8 +269,8 @@ function ProfileContent({ userId, isLoggedIn, onLogout }: { userId: number | nul
           {isLoggedIn && (
             <button
               onClick={onLogout}
-              className="w-full mt-6 py-3.5 rounded-2xl text-sm font-semibold flex items-center justify-center gap-2"
-              style={{ background: "var(--bg-card)", color: "var(--error)" }}
+              className="w-full py-3.5 rounded-2xl text-sm font-semibold flex items-center justify-center gap-2"
+              style={{ background: "var(--bg-card)", color: "var(--error)", marginTop: 16 }}
             >
               <LogOut size={16} />
               Chiqish

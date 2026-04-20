@@ -58,9 +58,9 @@ export default function LoginPage() {
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           <div>
-            <label className="block text-sm font-medium mb-1.5" style={{ color: "var(--text-secondary)" }}>
+            <label className="block text-base font-medium mb-2" style={{ color: "var(--text-secondary)" }}>
               Telefon raqam
             </label>
             <input
@@ -69,7 +69,7 @@ export default function LoginPage() {
               onChange={(e) => setPhoneNumber(e.target.value)}
               placeholder="+998901234567"
               required
-              className="w-full px-3 py-2.5 rounded-xl text-sm outline-none focus:ring-2"
+              className="w-full px-4 py-3.5 rounded-xl text-base outline-none focus:ring-2"
               style={{
                 background: "var(--bg-card)",
                 border: "1px solid var(--border)",
@@ -79,7 +79,7 @@ export default function LoginPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1.5" style={{ color: "var(--text-secondary)" }}>
+            <label className="block text-base font-medium mb-2" style={{ color: "var(--text-secondary)" }}>
               Parol
             </label>
             <div className="relative">
@@ -89,7 +89,7 @@ export default function LoginPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
                 required
-                className="w-full px-3 py-2.5 pr-10 rounded-xl text-sm outline-none focus:ring-2"
+                className="w-full px-4 py-3.5 pr-12 rounded-xl text-base outline-none focus:ring-2"
                 style={{
                   background: "var(--bg-card)",
                   border: "1px solid var(--border)",
@@ -99,10 +99,10 @@ export default function LoginPage() {
               <button
                 type="button"
                 onClick={() => setShowPassword((v) => !v)}
-                className="absolute right-3 top-1/2 -translate-y-1/2"
+                className="absolute right-4 top-1/2 -translate-y-1/2"
                 style={{ color: "var(--text-muted)" }}
               >
-                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
               </button>
             </div>
           </div>
@@ -114,7 +114,7 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3 rounded-xl text-sm font-semibold text-white flex items-center justify-center gap-2 disabled:opacity-60"
+            className="w-full py-4 rounded-xl text-base font-semibold text-white flex items-center justify-center gap-2 disabled:opacity-60"
             style={{ background: "var(--primary)" }}
           >
             {loading ? (

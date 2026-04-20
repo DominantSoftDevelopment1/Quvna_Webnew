@@ -1328,7 +1328,7 @@ body {
 .ig-reel-progress-wrap { position: absolute; bottom: 0; left: 0; right: 0; height: 2px; background: rgba(255,255,255,0.2); z-index: 10; }
 .ig-reel-progress-bar  { height: 100%; background: #fff; transition: width 0.1s linear; }
 
-/* Right action buttons — video ICHIDA, o'ng chetidan 20px */
+/* Right action buttons — mobil: video ichida; desktop: video tashqarisida */
 .ig-reel-actions {
   position: absolute;
   right: 20px;
@@ -1336,6 +1336,11 @@ body {
   transform: translateY(-50%);
   display: flex; flex-direction: column; align-items: center; gap: 20px;
   z-index: 20;
+}
+@media (min-width: 768px) {
+  .ig-reel-actions {
+    right: -70px;
+  }
 }
 
 .ig-reel-action-btn   { display: flex; flex-direction: column; align-items: center; gap: 4px; background: none; border: none; cursor: pointer; padding: 0; }

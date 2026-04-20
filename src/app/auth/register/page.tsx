@@ -104,7 +104,7 @@ export default function RegisterPage() {
     }
   }
 
-  const inputClass = "w-full px-3 py-2.5 rounded-xl text-sm outline-none focus:ring-2";
+  const inputClass = "w-full px-4 py-3.5 rounded-xl text-base outline-none focus:ring-2";
   const inputStyle = { background: "var(--bg-card)", border: "1px solid var(--border)", color: "var(--text-primary)" };
   const labelStyle = { color: "var(--text-secondary)" };
 
@@ -148,21 +148,14 @@ export default function RegisterPage() {
 
         {/* Step 1: Phone */}
         {step === "phone" && (
-          <form onSubmit={handleSendSms} className="space-y-4">
+          <form onSubmit={handleSendSms} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
             <div>
-              <label className="block text-sm font-medium mb-1.5" style={labelStyle}>Telefon raqam</label>
-              <input
-                type="tel"
-                value={phoneNumber}
-                onChange={(e) => setPhoneNumber(e.target.value)}
-                placeholder="+998901234567"
-                required
-                className={inputClass}
-                style={inputStyle}
-              />
+              <label className="block text-base font-medium mb-2" style={labelStyle}>Telefon raqam</label>
+              <input type="tel" value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)}
+                placeholder="+998901234567" required className={inputClass} style={inputStyle} />
             </div>
             {error && <p className="text-sm text-red-400 text-center">{error}</p>}
-            <button type="submit" disabled={loading} className="w-full py-3 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-60" style={{ background: "var(--primary)", color: "#000" }}>
+            <button type="submit" disabled={loading} className="w-full py-4 rounded-xl text-base font-semibold flex items-center justify-center gap-2 disabled:opacity-60" style={{ background: "var(--primary)", color: "#000" }}>
               {loading ? <div className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin" /> : "SMS kod yuborish"}
             </button>
           </form>
@@ -170,53 +163,40 @@ export default function RegisterPage() {
 
         {/* Step 2: OTP */}
         {step === "otp" && (
-          <form onSubmit={handleVerifyOtp} className="space-y-4">
+          <form onSubmit={handleVerifyOtp} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
             <p className="text-sm text-center" style={{ color: "var(--text-muted)" }}>
               <span style={{ color: "var(--text-primary)" }}>{phoneNumber}</span> raqamiga SMS kod yuborildi
             </p>
             <div>
-              <label className="block text-sm font-medium mb-1.5" style={labelStyle}>SMS kod</label>
-              <input
-                type="text"
-                inputMode="numeric"
-                value={otp}
+              <label className="block text-base font-medium mb-2" style={labelStyle}>SMS kod</label>
+              <input type="text" inputMode="numeric" value={otp}
                 onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
-                placeholder="123456"
-                maxLength={6}
-                required
-                className={inputClass + " text-center text-lg tracking-widest"}
-                style={inputStyle}
-              />
+                placeholder="123456" maxLength={6} required
+                className={inputClass + " text-center text-xl tracking-widest"} style={inputStyle} />
             </div>
             {error && <p className="text-sm text-red-400 text-center">{error}</p>}
-            <button type="submit" disabled={loading} className="w-full py-3 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-60" style={{ background: "var(--primary)", color: "#000" }}>
+            <button type="submit" disabled={loading} className="w-full py-4 rounded-xl text-base font-semibold flex items-center justify-center gap-2 disabled:opacity-60" style={{ background: "var(--primary)", color: "#000" }}>
               {loading ? <div className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin" /> : "Tasdiqlash"}
             </button>
             <button type="button" onClick={() => { setStep("phone"); setError(""); }} className="w-full flex items-center justify-center gap-1 text-sm" style={{ color: "var(--text-muted)" }}>
-              <ArrowLeft size={14} /> Orqaga
+              <ArrowLeft size={16} /> Orqaga
             </button>
           </form>
         )}
 
         {/* Step 3: Info */}
         {step === "info" && (
-          <form onSubmit={handleRegister} className="space-y-4">
+          <form onSubmit={handleRegister} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
             {[
               { key: "firstName", label: "Ism", placeholder: "Ismoil" },
               { key: "lastName", label: "Familiya", placeholder: "Karimov" },
               { key: "email", label: "Email (ixtiyoriy)", placeholder: "email@example.com", required: false },
             ].map(({ key, label, placeholder, required: req = true }) => (
               <div key={key}>
-                <label className="block text-sm font-medium mb-1.5" style={labelStyle}>{label}</label>
-                <input
-                  type={key === "email" ? "email" : "text"}
-                  value={form[key as keyof typeof form]}
-                  onChange={(e) => setField(key, e.target.value)}
-                  placeholder={placeholder}
-                  required={req}
-                  className={inputClass}
-                  style={inputStyle}
-                />
+                <label className="block text-base font-medium mb-2" style={labelStyle}>{label}</label>
+                <input type={key === "email" ? "email" : "text"} value={form[key as keyof typeof form]}
+                  onChange={(e) => setField(key, e.target.value)} placeholder={placeholder}
+                  required={req} className={inputClass} style={inputStyle} />
               </div>
             ))}
 
@@ -225,19 +205,13 @@ export default function RegisterPage() {
               { key: "confirmPassword", label: "Parolni tasdiqlang" },
             ].map(({ key, label }) => (
               <div key={key}>
-                <label className="block text-sm font-medium mb-1.5" style={labelStyle}>{label}</label>
+                <label className="block text-base font-medium mb-2" style={labelStyle}>{label}</label>
                 <div className="relative">
-                  <input
-                    type={showPassword ? "text" : "password"}
-                    value={form[key as keyof typeof form]}
-                    onChange={(e) => setField(key, e.target.value)}
-                    placeholder="••••••••"
-                    required
-                    className={inputClass + " pr-10"}
-                    style={inputStyle}
-                  />
-                  <button type="button" onClick={() => setShowPassword((v) => !v)} className="absolute right-3 top-1/2 -translate-y-1/2" style={{ color: "var(--text-muted)" }}>
-                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  <input type={showPassword ? "text" : "password"} value={form[key as keyof typeof form]}
+                    onChange={(e) => setField(key, e.target.value)} placeholder="••••••••" required
+                    className={inputClass + " pr-12"} style={inputStyle} />
+                  <button type="button" onClick={() => setShowPassword((v) => !v)} className="absolute right-4 top-1/2 -translate-y-1/2" style={{ color: "var(--text-muted)" }}>
+                    {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                   </button>
                 </div>
               </div>
@@ -245,11 +219,11 @@ export default function RegisterPage() {
 
             {error && <p className="text-sm text-red-400 text-center">{error}</p>}
 
-            <button type="submit" disabled={loading} className="w-full py-3 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-60" style={{ background: "var(--primary)", color: "#000" }}>
+            <button type="submit" disabled={loading} className="w-full py-4 rounded-xl text-base font-semibold flex items-center justify-center gap-2 disabled:opacity-60" style={{ background: "var(--primary)", color: "#000" }}>
               {loading ? (
                 <div className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin" />
               ) : (
-                <><UserPlus size={16} /> Ro'yxatdan o'tish</>
+                <><UserPlus size={18} /> Ro'yxatdan o'tish</>
               )}
             </button>
           </form>
