@@ -115,13 +115,13 @@ export function ShortsFullScreen() {
         {isFetchingNextPage && (
           <div className="short-slide"><Skeleton className="w-full h-full" /></div>
         )}
-      </div>
 
-      <CommentsSheet
-        isOpen={!!commentsVideo}
-        onClose={() => setCommentsVideo(null)}
-        videoId={commentsVideo?.id ?? ""}
-      />
+        <CommentsSheet
+          isOpen={!!commentsVideo}
+          onClose={() => setCommentsVideo(null)}
+          videoId={commentsVideo?.id ?? ""}
+        />
+      </div>
     </>
   );
 }
