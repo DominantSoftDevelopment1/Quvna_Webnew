@@ -1261,12 +1261,16 @@ body {
   border-radius: 12px;
   box-shadow: 0 0 60px rgba(255,255,255,0.04), 0 0 0 1px rgba(255,255,255,0.06);
 }
+@media (min-width: 768px) {
+  .ig-reel-video-area { overflow: visible; }
+}
 @media (max-width: 767px) {
   .ig-reel-video-area {
     height: 100%;
     width: 100%;
     border-radius: 0;
     box-shadow: none;
+    overflow: hidden;
   }
 }
 

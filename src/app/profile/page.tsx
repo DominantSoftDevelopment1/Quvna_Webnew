@@ -278,7 +278,7 @@ function ProfileContent({ userId, isLoggedIn, onLogout }: { userId: number | nul
           )}
 
           {/* Version */}
-          <p className="text-center text-xs mt-4 mb-4" style={{ color: "var(--text-muted)" }}>
+          <p className="text-center text-xs" style={{ color: "var(--text-muted)", marginTop: 16, marginBottom: 16 }}>
             Ilova versiyasi: 1.0.125
           </p>
         </>

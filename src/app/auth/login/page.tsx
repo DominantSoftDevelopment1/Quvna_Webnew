@@ -128,7 +128,7 @@ export default function LoginPage() {
           </button>
         </form>
 
-        <p className="text-center text-sm mt-6" style={{ color: "var(--text-muted)" }}>
+        <p className="text-center text-sm" style={{ color: "var(--text-muted)", marginTop: 16 }}>
           Hisobingiz yo'qmi?{" "}
           <Link href="/auth/register" style={{ color: "var(--primary)" }} className="font-medium">
             Ro'yxatdan o'tish

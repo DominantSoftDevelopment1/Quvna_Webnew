@@ -112,10 +112,10 @@ export default function RegisterPage() {
     <div className="min-h-[80vh] flex items-center justify-center py-8">
       <div className="w-full max-w-sm">
         {/* Logo */}
-        <div className="flex flex-col items-center mb-8">
+        <div className="flex flex-col items-center" style={{ marginBottom: 16 }}>
           <div
-            className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl font-bold text-white mb-3"
-            style={{ background: "var(--primary)" }}
+            className="w-16 h-16 rounded-2xl flex items-center justify-center text-2xl font-bold text-white"
+            style={{ background: "var(--primary)", marginBottom: 16 }}
           >
             Q
           </div>
@@ -128,7 +128,7 @@ export default function RegisterPage() {
         </div>
 
         {/* Step indicator */}
-        <div className="flex items-center gap-2 mb-6">
+        <div className="flex items-center gap-2" style={{ marginBottom: 16 }}>
           {(["phone", "otp", "info"] as Step[]).map((s, i) => (
             <div key={s} className="flex items-center gap-2 flex-1">
               <div
@@ -229,7 +229,7 @@ export default function RegisterPage() {
           </form>
         )}
 
-        <p className="text-center text-sm mt-6" style={{ color: "var(--text-muted)" }}>
+        <p className="text-center text-sm" style={{ color: "var(--text-muted)", marginTop: 16 }}>
           Hisobingiz bormi?{" "}
           <Link href="/auth/login" style={{ color: "var(--primary)" }} className="font-medium">Kirish</Link>
         </p>
