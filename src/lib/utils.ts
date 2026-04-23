@@ -21,8 +21,10 @@ export function timeAgo(dateStr: string): string {
   return `${days} kun oldin`;
 }
 
-export function cdnUrl(path: string | null | undefined): string {
-  if (!path) return "/placeholder.png";
-  if (path.startsWith("http")) return path;
-  return `https://quvna-live.b-cdn.net/${path}`;
+export function cdnUrl(path: unknown): string {
+  if (typeof path !== "string") return "/placeholder.png";
+  const cleanPath = path.trim();
+  if (!cleanPath) return "/placeholder.png";
+  if (cleanPath.startsWith("http")) return cleanPath;
+  return `https://quvna-live.b-cdn.net/${cleanPath}`;
 }

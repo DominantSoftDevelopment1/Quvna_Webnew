@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { useAuthStore } from "@/store/auth.store";
 import { cdnUrl } from "@/lib/utils";
 import { useUnreadCount } from "@/hooks/useNotifications";
@@ -8,6 +9,11 @@ import { useUnreadCount } from "@/hooks/useNotifications";
 export function Topbar() {
   const { user, isLoggedIn } = useAuthStore();
   const { data: unreadCount = 0 } = useUnreadCount();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   return (
     <header className="topbar">
@@ -31,7 +37,7 @@ export function Topbar() {
           {unreadCount > 0 && <span className="topbar-notif-dot" />}
         </Link>
 
-        {isLoggedIn() ? (
+        {mounted && isLoggedIn() ? (
           <>
             <Link href="/profile" className="topbar-avatar">
               {user?.avatar ? (
