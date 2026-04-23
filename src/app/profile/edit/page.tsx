@@ -149,9 +149,8 @@ export default function EditProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-[var(--bg-primary)] pb-20 text-[var(--text-primary)]">
-      <div className="mx-auto w-full max-w-[1280px] px-4 py-4 sm:px-6">
-          <div className="mx-[50px] box-content w-full max-w-[980px] overflow-visible rounded-3xl border border-[var(--border)] bg-[var(--bg-primary)]">
+    <div className="w-full mx-auto pb-10" style={{ maxWidth: '900px', marginLeft: 'auto', marginRight: 'auto', paddingLeft: '1rem', paddingRight: '1rem' }}>
+      <div className="rounded-3xl overflow-hidden" style={{ background: "var(--bg-card)", marginBottom: 16 }}>
             {/* Header with banner */}
             <div className="relative h-[220px]">
               {bannerUrl ? (
@@ -163,7 +162,7 @@ export default function EditProfilePage() {
 
               {/* Back button */}
               <button
-                onClick={() => router.back()}
+                onClick={() => router.push('/profile')}
                 className="absolute left-4 top-4 flex h-10 w-10 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-sm"
               >
                 <ChevronLeft size={20} />
@@ -202,7 +201,6 @@ export default function EditProfilePage() {
         <div style={{ marginTop: 40 }}>
         <Section title="ASOSIY MA'LUMOT">
           <EditableNavRow label="Ism" value={formData.firstName} href="/profile/edit/firstName" />
-          <EditableNavRow label="Familiya" value={formData.lastName} href="/profile/edit/lastName" />
           <EditableNavRow label="Tahallus" value={formData.username} href="/profile/edit/username" />
           <EditableNavRow label="Tug'ilgan sana" value={formData.birthDate} href="/profile/edit/birthDate" />
           <button
@@ -401,30 +399,56 @@ export default function EditProfilePage() {
         </button>
               </div>
             </div>
-          </div>
       </div>
 
-      {/* Gender bottom sheet */}
+      {/* Gender center modal */}
       {showGenderSheet && (
-        <div className="fixed inset-0 z-50 flex items-end" onClick={() => setShowGenderSheet(false)}>
-          <div className="absolute inset-0" style={{ background: "rgba(0,0,0,0.6)" }} />
-          <div className="relative w-full rounded-t-3xl p-6 space-y-3" style={{ background: "var(--bg-card)" }}
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => setShowGenderSheet(false)}>
+          <div className="absolute inset-0 overflow-hidden" style={{ background: "rgba(0,0,0,0.6)" }} />
+          <div
+            className="relative w-full max-w-[420px] rounded-2xl border px-[15px] pt-[25px] pb-[25px] shadow-2xl"
+            style={{ background: "var(--bg-card)", borderColor: "var(--border)", display: "flex", flexDirection: "column", gap: "10px" }}
             onClick={(e) => e.stopPropagation()}>
-            <div className="w-10 h-1 rounded-full mx-auto mb-4" style={{ background: "var(--text-muted)" }} />
-            {["Erkak", "Ayol", "Ko'rsatmaslikni afzal ko'raman"].map((gender) => (
+            <div
+              className="mx-auto my-[10px] h-1 w-10 rounded-full"
+              style={{
+                background: "rgba(46, 45, 45, 1)",
+                paddingLeft: 20,
+                paddingRight: 20,
+                marginLeft: 190,
+                marginRight: 190,
+              }}
+            />
+            <p className="my-[10px] pt-[10px] pb-[10px] text-center text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
+              Jinsni tanlang
+            </p>
+            {["Erkak", "Ayol", "Ko'rsatmaslikni afzal ko'raman"].map((gender, idx) => (
               <button
                 key={gender}
                 onClick={() => {
                   setFormData({ ...formData, gender });
                   setShowGenderSheet(false);
                 }}
-                className="w-full p-4 rounded-2xl text-left flex items-center justify-between"
-                style={{ background: formData.gender === gender ? "var(--primary)" : "var(--bg-card2)" }}
+                className={`flex w-full items-center justify-center rounded-xl py-[5px] text-left ${idx > 0 ? "my-[10px]" : ""}`}
+                style={{ background: formData.gender === gender ? "rgba(143, 188, 169, 1)" : "var(--bg-card2)" }}
               >
-                <span className="font-medium" style={{ color: formData.gender === gender ? "#000" : "var(--text-primary)" }}>
+                <span
+                  className="font-medium"
+                  style={{
+                    color: formData.gender === gender ? "#000" : "var(--text-primary)",
+                    marginTop: 5,
+                    marginBottom: 5,
+                    marginLeft: 5,
+                    marginRight: 5,
+                    paddingLeft: 78,
+                    paddingRight: 78,
+                  }}
+                >
                   {gender}
                 </span>
-                {formData.gender === gender && <Check size={20} />}
+                {formData.gender === gender && (
+                  <Check size={20} style={{ marginTop: 5, marginBottom: 5, marginLeft: 10, marginRight: 10, color: "rgba(243, 237, 237, 1)" }} />
+                )}
               </button>
             ))}
           </div>

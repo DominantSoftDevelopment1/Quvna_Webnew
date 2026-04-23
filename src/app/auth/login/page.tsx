@@ -43,22 +43,22 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-[80vh] flex items-center justify-center">
+    <div className="flex min-h-[80vh] items-center justify-center gap-5 leading-8">
       <div className="w-full max-w-sm">
-        <div className="flex flex-col items-center mb-8">
+        <div className="mb-8 flex flex-col items-center my-2.5">
           <div
-            className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl font-bold text-white mb-3"
+            className="mb-3 flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl text-2xl font-bold leading-8 text-white"
             style={{ background: "var(--primary)" }}
           >
             Q
           </div>
           <h1 className="text-xl font-bold" style={{ color: "var(--text-primary)" }}>Quvnaga kirish</h1>
-          <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>
+          <p className="mt-1 py-[5px] text-sm" style={{ color: "var(--text-muted)" }}>
             Hisobingizga kiring
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+        <form onSubmit={handleSubmit} className="flex flex-col gap-5">
           <div>
             <label className="block text-base font-medium mb-2" style={{ color: "var(--text-secondary)" }}>
               Telefon raqam
@@ -69,11 +69,12 @@ export default function LoginPage() {
               onChange={(e) => setPhoneNumber(e.target.value)}
               placeholder="+998901234567"
               required
-              className="w-full px-4 py-3.5 rounded-xl text-base outline-none focus:ring-2"
+              className="my-[5px] w-full rounded-xl text-base outline-none focus:ring-2"
               style={{
                 background: "var(--bg-card)",
                 border: "1px solid var(--border)",
                 color: "var(--text-primary)",
+                padding: "8px",
               }}
             />
           </div>
@@ -89,11 +90,13 @@ export default function LoginPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
                 required
-                className="w-full px-4 py-3.5 pr-12 rounded-xl text-base outline-none focus:ring-2"
+                className="my-[5px] w-full rounded-xl text-base outline-none focus:ring-2"
                 style={{
                   background: "var(--bg-card)",
                   border: "1px solid var(--border)",
                   color: "var(--text-primary)",
+                  padding: "8px",
+                  paddingRight: "48px",
                 }}
               />
               <button
@@ -114,8 +117,8 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-4 rounded-xl text-base font-semibold text-white flex items-center justify-center gap-2 disabled:opacity-60"
-            style={{ background: "var(--primary)" }}
+            className="mx-0 my-2.5 flex w-full items-center justify-center gap-2 rounded-xl text-base font-semibold text-white disabled:opacity-60"
+            style={{ background: "var(--primary)", padding: "8px" }}
           >
             {loading ? (
               <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />

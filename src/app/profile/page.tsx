@@ -145,7 +145,7 @@ function ProfileContent({ userId, isLoggedIn, onLogout }: { userId: number | nul
           {bannerUrl ? (
             <img src={cdnUrl(bannerUrl)} alt="" className="absolute inset-0 w-full h-full object-cover" />
           ) : (
-            <div className="absolute inset-0" style={{ background: "linear-gradient(135deg, #1a3a2f 0%, #0d1f17 100%)" }} />
+            <div className="absolute inset-0 bg-gradient-to-br from-green-900 to-black" />
           )}
           {/* Pastga gradient overlay — avatar ustiga */}
           <div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, transparent 40%, rgba(0,0,0,0.7) 100%)" }} />

@@ -54,7 +54,6 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: "quvna-auth",
-      skipHydration: true,
     }
   )
 );

@@ -104,8 +104,8 @@ export default function RegisterPage() {
     }
   }
 
-  const inputClass = "w-full px-4 py-3.5 rounded-xl text-base outline-none focus:ring-2";
-  const inputStyle = { background: "var(--bg-card)", border: "1px solid var(--border)", color: "var(--text-primary)" };
+  const inputClass = "w-full rounded-xl text-base outline-none focus:ring-2";
+  const inputStyle = { background: "var(--bg-card)", border: "1px solid var(--border)", color: "var(--text-primary)", padding: "8px" };
   const labelStyle = { color: "var(--text-secondary)" };
 
   return (
@@ -155,7 +155,7 @@ export default function RegisterPage() {
                 placeholder="+998901234567" required className={inputClass} style={inputStyle} />
             </div>
             {error && <p className="text-sm text-red-400 text-center">{error}</p>}
-            <button type="submit" disabled={loading} className="w-full py-4 rounded-xl text-base font-semibold flex items-center justify-center gap-2 disabled:opacity-60" style={{ background: "var(--primary)", color: "#000" }}>
+            <button type="submit" disabled={loading} className="w-full rounded-xl text-base font-semibold flex items-center justify-center gap-2 disabled:opacity-60" style={{ background: "var(--primary)", color: "#000", padding: "8px" }}>
               {loading ? <div className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin" /> : "SMS kod yuborish"}
             </button>
           </form>
@@ -175,7 +175,7 @@ export default function RegisterPage() {
                 className={inputClass + " text-center text-xl tracking-widest"} style={inputStyle} />
             </div>
             {error && <p className="text-sm text-red-400 text-center">{error}</p>}
-            <button type="submit" disabled={loading} className="w-full py-4 rounded-xl text-base font-semibold flex items-center justify-center gap-2 disabled:opacity-60" style={{ background: "var(--primary)", color: "#000" }}>
+            <button type="submit" disabled={loading} className="w-full rounded-xl text-base font-semibold flex items-center justify-center gap-2 disabled:opacity-60" style={{ background: "var(--primary)", color: "#000", padding: "8px" }}>
               {loading ? <div className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin" /> : "Tasdiqlash"}
             </button>
             <button type="button" onClick={() => { setStep("phone"); setError(""); }} className="w-full flex items-center justify-center gap-1 text-sm" style={{ color: "var(--text-muted)" }}>
@@ -209,7 +209,7 @@ export default function RegisterPage() {
                 <div className="relative">
                   <input type={showPassword ? "text" : "password"} value={form[key as keyof typeof form]}
                     onChange={(e) => setField(key, e.target.value)} placeholder="••••••••" required
-                    className={inputClass + " pr-12"} style={inputStyle} />
+                    className={inputClass} style={{...inputStyle, paddingRight: "48px"}} />
                   <button type="button" onClick={() => setShowPassword((v) => !v)} className="absolute right-4 top-1/2 -translate-y-1/2" style={{ color: "var(--text-muted)" }}>
                     {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                   </button>
@@ -219,7 +219,7 @@ export default function RegisterPage() {
 
             {error && <p className="text-sm text-red-400 text-center">{error}</p>}
 
-            <button type="submit" disabled={loading} className="w-full py-4 rounded-xl text-base font-semibold flex items-center justify-center gap-2 disabled:opacity-60" style={{ background: "var(--primary)", color: "#000" }}>
+            <button type="submit" disabled={loading} className="w-full rounded-xl text-base font-semibold flex items-center justify-center gap-2 disabled:opacity-60" style={{ background: "var(--primary)", color: "#000", padding: "8px" }}>
               {loading ? (
                 <div className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin" />
               ) : (
