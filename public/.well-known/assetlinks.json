@@ -1,0 +1,14 @@
+[
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.dsd.uz.Quvna",
+      "sha256_cert_fingerprints": [
+        "79:6D:E6:A2:88:E3:1C:CB:38:7E:24:31:9B:2B:C4:0C:16:89:4F:4C:05:DC:C4:CE:5D:E0:9D:EF:17:6B:83:6F"
+      ]
+    }
+  }
+]
