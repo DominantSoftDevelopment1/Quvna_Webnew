@@ -19,6 +19,9 @@
 
   --error: #FC363F;
   --warning: #FEBC2F;
+
+  /* Used by profile switch (Yopiq hisob) */
+  --color-green-900: #14532d;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -510,6 +513,7 @@ body {
   flex: 1;
   overflow-y: auto;
   padding-bottom: 64px;
+  background: var(--bg-primary);
 }
 @media (min-width: 1024px) {
   .main-scroll {

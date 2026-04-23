@@ -20,11 +20,30 @@ import {
   ChevronLeft,
   Star,
   Edit3,
-  Gamepad2,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useRef } from "react";
+
+function dashDisplay(v: unknown): string {
+  if (v == null) return "—";
+  const s = String(v).trim();
+  return s.length > 0 ? s : "—";
+}
+
+function formatGameAmount(n: number | null | undefined): string {
+  if (n == null || !Number.isFinite(n) || n <= 0) return "—";
+  return formatCount(n);
+}
+
+/** Tashqi havolada shema bo‘lmasa — brauzer noto‘g‘ri manzilga olib bormasligi uchun */
+function safeExternalUrl(url: string): string {
+  const t = url.trim();
+  if (!t) return "#";
+  if (/^https?:\/\//i.test(t)) return t;
+  if (t.startsWith("mailto:") || t.startsWith("tel:")) return t;
+  return `https://${t}`;
+}
 
 export default function ProfilePage() {
   const { user, isLoggedIn, logout } = useAuthStore();
@@ -60,12 +79,55 @@ function ProfileContent({ userId, isLoggedIn, onLogout }: { userId: number | nul
 
   if (isLoading && !profile) return <ProfileSkeleton />;
 
-  const p = profile ?? {};
+  const p = (profile ?? {}) as {
+    firstName?: string;
+    lastName?: string;
+    username?: string;
+    id?: number;
+    bio?: string;
+    rating?: unknown;
+    totalScore?: unknown;
+    attachmentResponseDTO?: { preSignedUrl?: string; contentURL?: string };
+    userBannerAttachmentResponseDTO?: { preSignedUrl?: string; contentURL?: string };
+    followerCount?: number;
+    followingCount?: number;
+    playName?: string;
+    gameID?: string;
+    mobileLegendsName?: string;
+    mobileLegendsUID?: string;
+    freeFireName?: string;
+    freeFireUID?: string;
+    steamName?: string;
+    telegramUrl?: string;
+    instagramUrl?: string;
+    youtubeUrl?: string;
+    tiktokUrl?: string;
+    facebookUrl?: string;
+    discordUrl?: string;
+    linkedinUrl?: string;
+    twitterUrl?: string;
+    donationAlertsUrl?: string;
+    websiteUrl?: string;
+  };
   const fullName = p.firstName && p.lastName ? `${p.firstName} ${p.lastName}` : (p.username ?? "Foydalanuvchi");
   const avatarUrl = p.attachmentResponseDTO?.preSignedUrl ?? p.attachmentResponseDTO?.contentURL ?? null;
   const bannerUrl = p.userBannerAttachmentResponseDTO?.preSignedUrl ?? p.userBannerAttachmentResponseDTO?.contentURL ?? null;
-  // rating object yoki number bo'lishi mumkin
-  const ratingScore = typeof p.rating === "object" ? (p.rating?.ucAmount ?? 0) : (p.rating ?? 0);
+  // rating: umumiy ball yoki { ucAmount, mlamount, ffAmount, steamAmount }
+  const ratingObj =
+    typeof p.rating === "object" && p.rating != null && !Array.isArray(p.rating)
+      ? (p.rating as Record<string, number>)
+      : null;
+  const ratingScore = ratingObj
+    ? Number(ratingObj.ucAmount ?? 0)
+    : typeof p.rating === "number"
+      ? p.rating
+      : 0;
+  const ucR = Number(ratingObj?.ucAmount ?? ratingScore);
+  const mlR = Number(ratingObj?.mlamount ?? (ratingObj as { mlAmount?: number })?.mlAmount ?? 0);
+  const ffR = Number(ratingObj?.ffAmount ?? 0);
+  const stR = Number(ratingObj?.steamAmount ?? 0);
+  const steamId =
+    (p as { steamId?: string; steamUID?: string }).steamId ?? (p as { steamId?: string; steamUID?: string }).steamUID;
 
   return (
     <div className="w-full mx-auto pb-10" style={{ maxWidth: '900px', marginLeft: 'auto', marginRight: 'auto', paddingLeft: '1rem', paddingRight: '1rem' }}>
@@ -89,11 +151,11 @@ function ProfileContent({ userId, isLoggedIn, onLogout }: { userId: number | nul
           <div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, transparent 40%, rgba(0,0,0,0.7) 100%)" }} />
 
           {/* Tahrirlash tugmasi — 5px chapga */}
-          <button type="button" className="absolute top-4 flex items-center gap-1.5 text-xs font-medium"
+          <Link href="/profile/edit" className="absolute top-4 flex items-center gap-1.5 text-xs font-medium"
             style={{ right: "calc(1rem - 5px)", color: "rgba(255,255,255,0.85)" }}>
             <Edit3 size={13} />
             Tahrirlash
-          </button>
+          </Link>
 
           {/* Avatar + Ism + Rating — banner pastki qismida, 5px yuqoriroq */}
           <div className="absolute left-0 right-0 flex items-end justify-between px-4 gap-3"
@@ -152,32 +214,36 @@ function ProfileContent({ userId, isLoggedIn, onLogout }: { userId: number | nul
             <Stat label="Obunalar" value={formatCount(p.followingCount ?? following.length)} />
           </div>
 
-          {/* Social links — stats dan 16px past */}
+          {/* Ijtimoiy tarmoqlar — ikonlar public/icons (quvna_icon to‘plami bilan mos) */}
           <div className="flex flex-wrap gap-3" style={{ marginTop: 16 }}>
-            <a href={p.telegramUrl ?? "#"} target="_blank" rel="noopener noreferrer"
-              className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold"
-              style={{ background: "var(--bg-card2)", color: "var(--text-secondary)" }}>
-              <img src="/icons/telegram.png" alt="" className="w-5 h-5 object-contain" />
-              Telegram
-            </a>
-            <a href={p.instagramUrl ?? "#"} target="_blank" rel="noopener noreferrer"
-              className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold"
-              style={{ background: "var(--bg-card2)", color: "var(--text-secondary)" }}>
-              <img src="/icons/instagram.png" alt="" className="w-5 h-5 object-contain" />
-              Instagram
-            </a>
-            <a href={p.youtubeUrl ?? "#"} target="_blank" rel="noopener noreferrer"
-              className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold"
-              style={{ background: "var(--bg-card2)", color: "var(--text-secondary)" }}>
-              <img src="/icons/youtube.png" alt="" className="w-5 h-5 object-contain" />
-              YouTube
-            </a>
-            <a href={p.donationAlertsUrl ?? "#"} target="_blank" rel="noopener noreferrer"
-              className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold"
-              style={{ background: "var(--bg-card2)", color: "var(--text-secondary)" }}>
-              <Gamepad2 size={16} style={{ color: "var(--primary)" }} />
-              Donation Alerts
-            </a>
+            {(
+              [
+                { url: p.telegramUrl, label: "Telegram", icon: "/icons/telegram.svg" },
+                { url: p.instagramUrl, label: "Instagram", icon: "/icons/instagram.svg" },
+                { url: p.youtubeUrl, label: "YouTube", icon: "/icons/youtube.svg" },
+                { url: p.tiktokUrl, label: "TikTok", icon: "/icons/tiktok.svg" },
+                { url: p.facebookUrl, label: "Facebook", icon: "/icons/facebook.svg" },
+                { url: p.discordUrl, label: "Discord", icon: "/icons/discord.svg" },
+                { url: p.linkedinUrl, label: "LinkedIn", icon: "/icons/linkedin.svg" },
+                { url: p.twitterUrl, label: "X", icon: "/icons/twitter.svg" },
+                { url: p.donationAlertsUrl, label: "Donation Alerts", icon: "/icons/donation-alerts.svg" },
+                { url: p.websiteUrl, label: "Veb-sayt", icon: "/icons/internet.svg" },
+              ] as const
+            )
+              .filter((row) => typeof row.url === "string" && row.url.trim().length > 0)
+              .map((row) => (
+                <a
+                  key={row.label}
+                  href={safeExternalUrl(String(row.url))}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold"
+                  style={{ background: "var(--bg-card2)", color: "var(--text-secondary)" }}
+                >
+                  <img src={row.icon} alt="" className="h-5 w-5 object-contain" width={20} height={20} />
+                  {row.label}
+                </a>
+              ))}
           </div>
 
           {/* Game rating cards — 4 ta, swipe, scrollbar yo'q */}
@@ -192,10 +258,10 @@ function ProfileContent({ userId, isLoggedIn, onLogout }: { userId: number | nul
             {/* Scrollable row */}
             <div ref={cardsRef} className="flex overflow-x-auto"
               style={{ gap: '16px', paddingLeft: 16, paddingRight: 16, scrollbarWidth: "none", msOverflowStyle: "none" }}>
-              <RatingCard title="PUBG MOBILE"    rating={ratingScore} name={p.playName ?? "Azimovas"}            uid={p.gameID ?? "5971521"}           total={p.totalScore ?? "1 571"} />
-              <RatingCard title="MOBILE LEGENDS" rating={ratingScore} name={p.mobileLegendsName ?? "Azimovas"}   uid={p.mobileLegendsUID ?? "5971521"} total="2 340" />
-              <RatingCard title="FREE FIRE"      rating={ratingScore} name={p.freeFireName ?? "Azimovas"}        uid={p.freeFireUID ?? "5971521"}      total="892" />
-              <RatingCard title="STEAM"          rating={ratingScore} name={p.playName ?? "Azimovas"}            uid={p.gameID ?? "5971521"}           total="450" />
+              <RatingCard title="PUBG MOBILE"    rating={ucR}  name={dashDisplay(p.playName)}           uid={dashDisplay(p.gameID)}              total={formatGameAmount(ucR || Number(p.totalScore) || 0)} />
+              <RatingCard title="MOBILE LEGENDS" rating={mlR}  name={dashDisplay(p.mobileLegendsName)}  uid={dashDisplay(p.mobileLegendsUID)}    total={formatGameAmount(mlR)} />
+              <RatingCard title="FREE FIRE"      rating={ffR}  name={dashDisplay(p.freeFireName)}        uid={dashDisplay(p.freeFireUID)}         total={formatGameAmount(ffR)} />
+              <RatingCard title="STEAM"          rating={stR}  name={dashDisplay(p.steamName)}            uid={dashDisplay(steamId)}               total={formatGameAmount(stR)} />
             </div>
             {/* Right arrow */}
             <button type="button" aria-label="O'ngga" onClick={() => scrollCards("right")}

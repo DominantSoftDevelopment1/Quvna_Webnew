@@ -53,7 +53,8 @@ Profil sahifasi to'liq qayta ishlangan:
 
 ## Backend API
 
-- **Base URL**: `http://95.130.227.48:8066`
+- **Base URL (mobil bilan bir xil, default)**: `https://quvna.dominantsoftdevelopment.uz` — `NEXT_PUBLIC_API_BASE_URL` bilan boshqariladi.
+- **Server (IP)**: `http://95.130.227.48:8066`
 - **CDN**: `https://quvna-live.b-cdn.net`
 - **Swagger**: `/v3/api-docs`
 
@@ -65,6 +66,27 @@ npm run dev
 ```
 
 Server `http://localhost:3000` da ishga tushadi.
+
+## quvna.com — CI/CD
+
+Repozitoriya: [github.com/Quvna/Quvna_web2](https://github.com/Quvna/Quvna_web2).
+
+| Workflow | Tavsif |
+|----------|--------|
+| `CI` | `master` / `main` push yoki PR da `npm ci` + `npm run build` |
+| `Deploy to quvna.com` | `master` ga push yoki qo‘lda (`workflow_dispatch`) — SSH orqali serverda `git` yangilaydi, `npm ci`, `npm run build`, `pm2 restart quvna_web2` |
+
+**GitHub** → Settings → Secrets and variables → Actions:
+
+- `VPS_HOST` — server IP yoki domeni
+- `VPS_USER` — SSH foydalanuvchi
+- `VPS_SSH_KEY` — to‘liq shaxsiy kalit (PEM, `-----BEGIN` …)
+
+**Server (bir marta):** loyiha katalogi (`/var/www/quvna_web2` — workflow dagi kabi) ichida `git clone`, `npm ci`, `npm run build`, PM2: `pm2 start npm --name quvna_web2 -- start` (yoki `ecosystem.config` bilan `node` → `node_modules/.bin/next start`).
+
+**Domen:** Nginx (yoki boshqa reverse proxy) `quvna.com` ni lokal `127.0.0.1:3000` ga, SSL — Certbot yoki panellar orqali.
+
+CORS: brauzer to‘g‘ridan-to‘g‘ri API domeniga urilganda backend `https://quvna.com` (va kerakli subdomenlar) uchun CORS ruxsatini bering. Lokalda CORS muammosi bo‘lsa: `NEXT_PUBLIC_API_BASE_URL=/api-proxy` (Next rewrites) ishlatiladi.
 
 ## Muallif
 

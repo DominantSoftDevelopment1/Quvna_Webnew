@@ -22,6 +22,21 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (res) => res,
   async (err) => {
+    // 502 Bad Gateway - backend qayta ishga tushganda retry qilish
+    if (err.response?.status === 502 || err.code === 'ECONNREFUSED') {
+      const maxRetries = 3;
+      const retryDelay = 2000; // 2 soniya
+      const retryCount = err.config.__retryCount || 0;
+
+      if (retryCount < maxRetries) {
+        err.config.__retryCount = retryCount + 1;
+        console.log(`Backend unavailable, retrying... (${retryCount + 1}/${maxRetries})`);
+
+        await new Promise(resolve => setTimeout(resolve, retryDelay));
+        return api(err.config);
+      }
+    }
+
     if (err.response?.status === 401) {
       const refresh = localStorage.getItem("refresh_token");
       if (refresh) {
