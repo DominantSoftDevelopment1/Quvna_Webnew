@@ -270,7 +270,7 @@ export default function CountrySelectPage() {
     <div className="min-h-screen bg-[#0A0A0A] text-white">
       {/* Header */}
       <div className="sticky top-0 z-10 bg-[#0A0A0A] border-b border-zinc-800">
-        <div className="max-w-4xl mx-auto px-4 py-4 flex items-center gap-4">
+        <div className="max-w-[500px] mx-auto px-4 py-4 flex items-center gap-4">
           <button
             onClick={() => router.back()}
             className="p-2 hover:bg-zinc-800 rounded-lg transition-colors"
@@ -283,7 +283,7 @@ export default function CountrySelectPage() {
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto px-4 py-6">
+      <div className="max-w-[500px] mx-auto px-4 py-6">
         {/* Search */}
         <div className="mb-6">
           <div className="relative">
@@ -326,11 +326,7 @@ export default function CountrySelectPage() {
                 }`}
               >
                 {/* Flag */}
-                <img
-                  src={country.flag}
-                  alt={country.country}
-                  className="w-8 h-8 rounded object-cover"
-                />
+                <span className="text-2xl">{country.flag}</span>
 
                 {/* Country Name */}
                 <span className="flex-1 text-left text-base">{country.country}</span>
@@ -362,7 +358,7 @@ export default function CountrySelectPage() {
 
       {/* Bottom Button */}
       <div className="fixed bottom-0 left-0 right-0 bg-[#0A0A0A] border-t border-zinc-800">
-        <div className="max-w-4xl mx-auto px-4 py-4">
+        <div className="max-w-[500px] mx-auto px-4 py-4">
           <button
             onClick={handleSave}
             disabled={!selectedCountry || saving}
