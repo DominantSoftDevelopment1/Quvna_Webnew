@@ -24,7 +24,7 @@
   --color-green-900: #14532d;
 }
 
-* { box-sizing: border-box; margin: 0; padding: 0; }
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
   background-color: var(--bg-dark);
@@ -40,6 +40,15 @@ body {
 ::-webkit-scrollbar-thumb:hover { background: #4E505C; }
 .scrollbar-none { scrollbar-width: none; -ms-overflow-style: none; }
 .scrollbar-none::-webkit-scrollbar { display: none; }
+
+/* Profil: davlat tanlash roʻyxati (country-preview.html) */
+.country-select-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: #3f3f46 transparent;
+}
+.country-select-scroll::-webkit-scrollbar { width: 4px; }
+.country-select-scroll::-webkit-scrollbar-track { background: transparent; }
+.country-select-scroll::-webkit-scrollbar-thumb { background: #3f3f46; border-radius: 2px; }
 
 /* ── Line clamp ── */
 .line-clamp-1 { display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
@@ -527,6 +536,20 @@ body {
     padding-left: 32px;
     padding-right: 32px;
   }
+}
+
+/* Profil tahriri: country-preview kabi to'liq ekran (Sidebar + 220px margin olib tashlanadi) */
+body.profile-edit-focus .sidebar {
+  display: none !important;
+}
+body.profile-edit-focus .main-content {
+  margin-left: 0 !important;
+}
+body.profile-edit-focus .main-scroll {
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+  padding-bottom: 0 !important;
+  background: #0a0a0a;
 }
 
 /* ── Sidebar ── */
