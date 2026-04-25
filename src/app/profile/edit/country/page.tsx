@@ -1,26 +1,15 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
+import { useAuthStore } from "@/store/auth.store";
 import { useProfile } from "@/hooks/useProfile";
 
 export interface Country {
   flag: string;
   country: string;
   code: string;
-}
-
-// Flag emoji largeni to'g'ri ko'rsatish uchun
-const flagEmojiStyle: React.CSSProperties = {
-  fontFamily: '"Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif',
-  fontSize: '1.5rem',
-  lineHeight: 1,
-  display: 'inline-flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  width: '2rem',
-  height: '2rem',
 }
 
 // Davlatlar ro'yxati (static data)
@@ -222,13 +211,48 @@ export const COUNTRIES: Country[] = [
   { flag: "🇿🇼", country: "Zimbabwe", code: "ZW" },
 ];
 
+function resolveCurrentCountry(
+  profile: Record<string, unknown> | null | undefined,
+  list: Country[]
+): Country | null {
+  if (!profile) return null;
+  const reg = profile.region as { code?: string; name?: string } | string | undefined;
+  if (reg && typeof reg === "object" && reg !== null) {
+    const code = reg.code != null && String(reg.code).trim() ? String(reg.code).toUpperCase() : "";
+    if (code) {
+      const byCode = list.find((c) => c.code === code);
+      if (byCode) return byCode;
+    }
+  }
+  const name = String(profile.country ?? (typeof reg === "object" && reg && "name" in reg ? (reg as { name?: string }).name : "") ?? "").trim();
+  if (!name) return null;
+  return list.find((c) => c.country.toLowerCase() === name.toLowerCase()) ?? null;
+}
+
 export default function CountrySelectPage() {
   const router = useRouter();
+  const { user } = useAuthStore();
+  const userId = user?.id ? Number(user.id) : null;
+  const { data: profile } = useProfile(userId);
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const [countries, setCountries] = useState<Country[]>(COUNTRIES);
   const [selectedCountry, setSelectedCountry] = useState<Country | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (!profile) return;
+    const c = resolveCurrentCountry(profile as Record<string, unknown>, countries);
+    if (!c) return;
+    setSelectedCountry((prev) => (prev == null ? c : prev));
+  }, [profile, countries]);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      searchInputRef.current?.focus();
+    }, 120);
+    return () => window.clearTimeout(timer);
+  }, []);
 
   // API dan davlatlar olishga harakat qilish (fallback: static data)
   useEffect(() => {
@@ -279,115 +303,146 @@ export default function CountrySelectPage() {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-[#0A0A0A] flex items-center justify-center">
-        <div className="w-8 h-8 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen bg-[#0A0A0A] text-white flex items-center justify-center p-4">
-      <div className="w-full max-w-[420px] rounded-3xl border border-zinc-700/80 bg-gradient-to-b from-[#18181B] to-[#101012] shadow-2xl shadow-black/40 backdrop-blur overflow-hidden">
-      {/* Header */}
-      <div className="border-b border-zinc-700/70">
-        <div className="px-4 py-3 flex items-center gap-3">
+    <div className="min-h-[100dvh] w-full bg-[#050505] text-white flex items-center justify-center p-4">
+      <div className="w-full max-w-[560px] h-[860px] max-h-[calc(100dvh-32px)] rounded-[28px] border border-zinc-700/80 bg-[#141416] overflow-hidden flex flex-col">
+
+        {/* Header */}
+        <header className="h-[72px] px-6 flex items-center gap-3 border-b border-zinc-700/70 shrink-0">
           <button
+            type="button"
             onClick={() => router.back()}
-            className="p-2 hover:bg-zinc-800/80 rounded-xl transition-colors"
+            aria-label="Orqaga"
+            className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-zinc-800 transition-colors"
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
             </svg>
           </button>
-          <h1 className="text-lg font-semibold tracking-tight">Davlatni tanlang</h1>
-        </div>
-      </div>
+          <h1 className="text-[22px] font-bold">Davlatni tanlang</h1>
+        </header>
 
-      <div className="px-4 pb-4 flex flex-col gap-3">
         {/* Search */}
-        <div className="relative">
+        <div style={{ width: "100%", paddingLeft: 24, paddingRight: 24, paddingTop: 16, paddingBottom: 12, boxSizing: "border-box" }}>
           <input
+            ref={searchInputRef}
             type="text"
             placeholder="Qidirish..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-zinc-900/90 border border-zinc-700 rounded-xl pl-10 pr-4 py-3 text-white placeholder-zinc-500 focus:outline-none focus:border-emerald-500/80 focus:ring-2 focus:ring-emerald-500/20 transition-all"
+            style={{
+              width: "100%",
+              height: 58,
+              borderRadius: 16,
+              border: "1px solid #3f3f46",
+              background: "#151518",
+              color: "white",
+              paddingLeft: 16,
+              paddingRight: 16,
+              boxSizing: "border-box",
+              outline: "none",
+              fontSize: 16,
+            }}
           />
-          <svg
-            className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-500"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-            />
-          </svg>
         </div>
 
         {/* Countries List */}
-        <div className="max-h-[60vh] overflow-y-auto pr-1 space-y-2">
+        <div
+          className="custom-scroll"
+          style={{
+            flex: 1,
+            minHeight: 0,
+            overflowY: "auto",
+            paddingLeft: 24,
+            paddingRight: 24,
+            paddingBottom: 16,
+            display: "flex",
+            flexDirection: "column",
+            gap: 12,
+            boxSizing: "border-box",
+          }}
+        >
           {filteredCountries.map((country) => {
             const isSelected = selectedCountry?.code === country.code;
-
             return (
               <button
                 key={country.code}
+                type="button"
                 onClick={() => setSelectedCountry(country)}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
-                  isSelected
-                    ? "bg-emerald-500/12 border border-emerald-500/40 shadow-[0_0_0_1px_rgba(16,185,129,0.18)]"
-                    : "bg-zinc-900/40 hover:bg-zinc-900/70 border border-zinc-800/80"
-                }`}
+                style={{
+                  width: "100%",
+                  minHeight: 64,
+                  borderRadius: 16,
+                  border: isSelected ? "1px solid #10b981" : "1px solid #3f3f46",
+                  background: isSelected ? "rgba(16,185,129,0.15)" : "#151518",
+                  color: "white",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  paddingLeft: 20,
+                  paddingRight: 20,
+                  boxSizing: "border-box",
+                  cursor: "pointer",
+                  flexShrink: 0,
+                }}
               >
-                {/* Flag */}
-                <span style={flagEmojiStyle} role="img" aria-label={country.country}>
-                  {country.flag}
+                <span style={{ display: "flex", alignItems: "center", gap: 16 }}>
+                  <span style={{ width: 40, textAlign: "left", fontWeight: 700 }}>
+                    {country.code}
+                  </span>
+                  <span>{country.country}</span>
                 </span>
-
-                {/* Country Name */}
-                <span className="flex-1 text-left text-base font-medium">{country.country}</span>
-
-                {/* Radio */}
-                <div
-                  className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 ${
-                    isSelected
-                      ? "border-emerald-500 bg-emerald-500"
-                      : "border-zinc-600"
-                  }`}
-                >
-                  {isSelected && (
-                    <div className="w-2 h-2 bg-white rounded-full" />
-                  )}
-                </div>
+                <span
+                  style={{
+                    width: 18,
+                    height: 18,
+                    borderRadius: "50%",
+                    border: isSelected ? "2px solid #10b981" : "2px solid #777",
+                    background: isSelected ? "#10b981" : "transparent",
+                    flexShrink: 0,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                />
               </button>
             );
           })}
+
+          {filteredCountries.length === 0 && (
+            <div style={{ textAlign: "center", padding: "48px 0", color: "#71717a", fontSize: 17 }}>
+              Davlat topilmadi
+            </div>
+          )}
         </div>
 
-        {/* Empty State */}
-        {filteredCountries.length === 0 && (
-          <div className="text-center py-12 text-zinc-500">
-            Davlat topilmadi
-          </div>
-        )}
-      </div>
+        {/* Footer */}
+        <div style={{ padding: "16px 24px", borderTop: "1px solid #3f3f46", boxSizing: "border-box", background: "#141416" }}>
+          <button
+            onClick={handleSave}
+            disabled={!selectedCountry || saving}
+            style={{
+              width: "100%",
+              height: 50,
+              borderRadius: 16,
+              border: "none",
+              background: !selectedCountry || saving ? "#27272a" : "#10b981",
+              color: !selectedCountry || saving ? "#71717a" : "#000",
+              fontSize: 18,
+              fontWeight: 700,
+              cursor: !selectedCountry || saving ? "not-allowed" : "pointer",
+              boxSizing: "border-box",
+            }}
+          >
+            {saving ? "Saqlanmoqda..." : "Saqlash"}
+          </button>
+        </div>
 
-      {/* Bottom Button */}
-      <div className="border-t border-zinc-700/70 p-4">
-        <button
-          onClick={handleSave}
-          disabled={!selectedCountry || saving}
-          className="w-full h-11 bg-emerald-500 hover:bg-emerald-600 disabled:bg-zinc-800 disabled:text-zinc-500 text-white font-semibold rounded-xl transition-colors"
-        >
-          {saving ? "Saqlanmoqda..." : "Saqlash"}
-        </button>
-      </div>
+        <style jsx>{`
+          .custom-scroll::-webkit-scrollbar { width: 5px; }
+          .custom-scroll::-webkit-scrollbar-track { background: transparent; }
+          .custom-scroll::-webkit-scrollbar-thumb { background: #52525b; border-radius: 999px; }
+        `}</style>
       </div>
     </div>
   );

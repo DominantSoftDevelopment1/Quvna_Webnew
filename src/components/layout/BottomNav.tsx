@@ -13,44 +13,49 @@ const navItems = [
 
 export function BottomNav() {
   const pathname = usePathname();
+  const hideBottomNav = pathname?.startsWith("/profile/edit");
+
+  if (hideBottomNav) return null;
 
   return (
-    <nav className="bottom-nav">
-      {navItems.map(({ href, label, icon }) => {
-        const active = href === "/" ? pathname === "/" : pathname.startsWith(href);
-        const isStream = href === "/stream";
+    <>
+      <nav className="bottom-nav">
+        {navItems.map(({ href, label, icon }) => {
+          const active = href === "/" ? pathname === "/" : pathname.startsWith(href);
+          const isStream = href === "/stream";
 
-        if (isStream) {
+          if (isStream) {
+            return (
+              <Link key={href} href={href} className="bottom-nav-stream">
+                <img
+                  src={icon}
+                  alt={label}
+                  width={40}
+                  height={40}
+                  className={`bottom-nav-stream-icon${active ? " active" : ""}`}
+                />
+              </Link>
+            );
+          }
+
           return (
-            <Link key={href} href={href} className="bottom-nav-stream">
+            <Link
+              key={href}
+              href={href}
+              className={`bottom-nav-item${active ? " active" : ""}`}
+            >
               <img
                 src={icon}
-                alt={label}
-                width={40}
-                height={40}
-                className={`bottom-nav-stream-icon${active ? " active" : ""}`}
+                alt=""
+                width={22}
+                height={22}
+                className={`bottom-nav-icon${active ? " active" : ""}`}
               />
+              <span className="text-xs font-medium">{label}</span>
             </Link>
           );
-        }
-
-        return (
-          <Link
-            key={href}
-            href={href}
-            className={`bottom-nav-item${active ? " active" : ""}`}
-          >
-            <img
-              src={icon}
-              alt=""
-              width={22}
-              height={22}
-              className={`bottom-nav-icon${active ? " active" : ""}`}
-            />
-            <span className="text-xs font-medium">{label}</span>
-          </Link>
-        );
-      })}
-    </nav>
+        })}
+      </nav>
+    </>
   );
 }

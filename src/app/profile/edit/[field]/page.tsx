@@ -227,248 +227,161 @@ export default function EditFieldPage() {
 
   return (
     <>
-    <div className="w-full mx-auto pb-10" style={{ maxWidth: '900px', marginLeft: 'auto', marginRight: 'auto', paddingLeft: '1rem', paddingRight: '1rem' }}>
-      <div
-        className="rounded-3xl overflow-hidden"
-        style={{ background: "var(--bg-card)", marginTop: 5, marginBottom: 16, padding: "1.5rem" }}
-      >
-        <div className="relative mb-8 flex h-11 items-center justify-center">
-          <button
-            onClick={() => router.push("/profile/edit")}
-            className="absolute left-0 flex h-11 w-11 items-center justify-center rounded-xl bg-transparent"
-          >
-            <ChevronLeft size={20} />
-          </button>
-          <h1
-            className="text-[30px] font-semibold leading-none"
-            style={{ marginLeft: 0, marginRight: 0, paddingTop: 5, paddingBottom: 5, paddingLeft: 5, paddingRight: 5 }}
-          >
-            {config.label}
-          </h1>
-        </div>
+      {/* Page */}
+      <div style={{ minHeight: "100dvh", width: "100%", background: "#050505", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
+        <div style={{ width: "100%", maxWidth: 560, background: "#141416", border: "1px solid rgba(63,63,70,0.8)", borderRadius: 28, boxShadow: "0 25px 50px rgba(0,0,0,0.5)", overflow: "hidden", display: "flex", flexDirection: "column" }}>
 
-        <div
-          className={`w-full ${field === "birthDate" ? "rounded-2xl border border-[var(--border)] bg-[var(--bg-card)] p-4" : ""}`}
-        >
-          <label
-            className={`mb-2 block text-sm text-[var(--text-secondary)] ${field === "birthDate" ? "text-center" : ""}`}
-            style={{ paddingTop: 10, paddingBottom: 10, paddingLeft: 5, paddingRight: 5 }}
-          >
-            {config.label}
-          </label>
-          {field === "birthDate" ? (
-            <div className="space-y-3">
-              <button
-                type="button"
-                onClick={openBirthDatePicker}
-                className="relative my-[10px] flex h-12 w-full items-center justify-center rounded-xl border border-[var(--border)] bg-[var(--bg-card2)] px-3.5"
-                style={{ marginLeft: 0, marginRight: 0, paddingTop: 10, paddingBottom: 10, paddingLeft: 5, paddingRight: 5 }}
-              >
-                <span
-                  className={`block w-full px-7 text-center text-sm ${
-                    birthDatePreview ? "text-[var(--text-primary)]" : "text-[var(--text-muted)]"
-                  }`}
-                  style={{ marginTop: 0, marginBottom: 0, paddingTop: 3, paddingBottom: 3 }}
+          {/* Header */}
+          <div style={{ height: 72, paddingLeft: 24, paddingRight: 24, display: "flex", alignItems: "center", gap: 12, borderBottom: "1px solid rgba(63,63,70,0.7)", flexShrink: 0 }}>
+            <button
+              type="button"
+              onClick={() => router.push("/profile/edit")}
+              aria-label="Orqaga"
+              style={{ width: 40, height: 40, borderRadius: "50%", border: "none", background: "transparent", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff" }}
+              onMouseEnter={e => (e.currentTarget.style.background = "#27272a")}
+              onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
+            >
+              <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
+              </svg>
+            </button>
+            <h1 style={{ fontSize: 22, fontWeight: 700, margin: 0 }}>{config.label}</h1>
+          </div>
+
+          {/* Content */}
+          <div style={{ padding: "24px 24px 8px", display: "flex", flexDirection: "column", gap: 12 }}>
+
+            {field === "birthDate" ? (
+              <>
+                <button
+                  type="button"
+                  onClick={openBirthDatePicker}
+                  style={{ width: "100%", height: 58, borderRadius: 16, border: "1px solid #3f3f46", background: "#1c1c1f", color: birthDatePreview ? "#fff" : "#71717a", fontSize: 16, display: "flex", alignItems: "center", justifyContent: "space-between", paddingLeft: 20, paddingRight: 20, boxSizing: "border-box", cursor: "pointer" }}
                 >
-                  {birthDatePreview || "Tug'ilgan sanangizni kiriting"}
-                </span>
-                <ChevronRight
-                  size={18}
-                  className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 shrink-0 text-[var(--text-muted)]"
-                  aria-hidden
-                />
-              </button>
-              <p className="text-xs leading-5 text-amber-600" style={{ paddingTop: 10, paddingBottom: 10, marginLeft: 5, marginRight: 5 }}>
-                Ushbu ma’lumotni siz faqatgina bir marotaba o‘zgartira olasiz, ma’lumotni kiritayotganingizda e’tiborli
-                bo‘ling. Sizning tug‘ilgan sanangiz ommaga ko‘rsatilmaydi.
-              </p>
-              <div className="border-t border-[var(--border)] pt-3">
-                <div className="flex items-start justify-between gap-3">
+                  <span>{birthDatePreview || "Tug’ilgan sanangizni kiriting"}</span>
+                  <ChevronRight size={18} color="#71717a" />
+                </button>
+
+                <p style={{ fontSize: 12, lineHeight: 1.6, color: "#d97706", margin: 0 }}>
+                  Ushbu ma&apos;lumotni siz faqatgina bir marotaba o&apos;zgartira olasiz. Sizning tug&apos;ilgan sanangiz ommaga ko&apos;rsatilmaydi.
+                </p>
+
+                <div style={{ borderTop: "1px solid rgba(63,63,70,0.5)", paddingTop: 16, display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16 }}>
                   <div>
-                    <p
-                      className="text-sm font-medium text-[var(--text-primary)]"
-                      style={{ marginTop: 5, marginBottom: 5, marginLeft: 5, marginRight: 5 }}
-                    >
-                      Tug‘ilgan kun haqida habar berish
-                    </p>
-                    <p
-                      className="mt-0 max-w-[260px] text-xs leading-5 text-[var(--text-muted)]"
-                      style={{ marginTop: 0, marginBottom: 0, marginLeft: 5, marginRight: 5, paddingTop: 5, paddingBottom: 5 }}
-                    >
-                      Tug‘ilgan kuningizda biz kanalingizda maxsus chat fonini ko‘rsatamiz, shunda Quvna foydalanuvchilari
-                      ushbu muhim kun haqida bilishadi.
+                    <p style={{ fontSize: 14, fontWeight: 500, color: "#fff", margin: "0 0 4px" }}>Tug&apos;ilgan kun haqida habar berish</p>
+                    <p style={{ fontSize: 12, lineHeight: 1.6, color: "#71717a", margin: 0, maxWidth: 260 }}>
+                      Tug&apos;ilgan kuningizda maxsus chat foni ko&apos;rsatiladi.
                     </p>
                   </div>
                   <button
                     type="button"
-                    aria-label="Tug‘ilgan kun xabari"
+                    aria-label="Tug’ilgan kun xabari"
                     onClick={() => setBirthdayNoticeEnabled((v) => !v)}
-                    className={`relative mt-1 h-7 w-12 rounded-full transition-colors ${
-                      birthdayNoticeEnabled ? "bg-emerald-500" : "bg-zinc-600"
-                    }`}
-                    style={{ marginTop: 10, marginBottom: 10, marginLeft: 5, marginRight: 5 }}
+                    style={{ position: "relative", width: 48, height: 28, borderRadius: 999, border: "none", background: birthdayNoticeEnabled ? "#10b981" : "#4b5563", cursor: "pointer", flexShrink: 0, marginTop: 2 }}
                   >
-                    <span
-                      className={`absolute top-0.5 h-6 w-6 rounded-full bg-white shadow transition-all ${
-                        birthdayNoticeEnabled ? "left-[24px]" : "left-[2px]"
-                      }`}
-                    />
+                    <span style={{ position: "absolute", top: 3, left: birthdayNoticeEnabled ? 23 : 3, width: 22, height: 22, borderRadius: "50%", background: "#fff", transition: "left 0.2s" }} />
                   </button>
                 </div>
+              </>
+            ) : config.multiline ? (
+              <>
+                <textarea
+                  value={value}
+                  onChange={(e) => setValue(e.target.value)}
+                  maxLength={config.maxLength}
+                  placeholder={config.placeholder}
+                  style={{ width: "100%", minHeight: 160, borderRadius: 16, border: "1px solid #3f3f46", background: "#1c1c1f", color: "#fff", fontSize: 16, padding: "12px 16px", boxSizing: "border-box", outline: "none", resize: "none" }}
+                />
+                {!!config.maxLength && (
+                  <p style={{ textAlign: "right", fontSize: 12, color: "#71717a", margin: 0 }}>{chars}/{config.maxLength}</p>
+                )}
+              </>
+            ) : (
+              <div style={{ position: "relative" }}>
+                <input
+                  value={value}
+                  onChange={(e) => setValue(e.target.value)}
+                  maxLength={config.maxLength}
+                  placeholder={config.placeholder}
+                  style={{ width: "100%", height: 58, borderRadius: 16, border: "1px solid #3f3f46", background: "#1c1c1f", color: "#fff", fontSize: 16, paddingLeft: 16, paddingRight: config.maxLength ? 60 : 16, boxSizing: "border-box", outline: "none" }}
+                  onFocus={e => (e.currentTarget.style.borderColor = "rgba(16,185,129,0.6)")}
+                  onBlur={e => (e.currentTarget.style.borderColor = "#3f3f46")}
+                />
+                {!!config.maxLength && (
+                  <span style={{ position: "absolute", right: 16, top: "50%", transform: "translateY(-50%)", fontSize: 12, color: "#71717a", pointerEvents: "none" }}>
+                    {chars}/{config.maxLength}
+                  </span>
+                )}
               </div>
-            </div>
-          ) : config.multiline ? (
-            <textarea
-              value={value}
-              onChange={(e) => setValue(e.target.value)}
-              maxLength={config.maxLength}
-              placeholder={config.placeholder}
-              className="min-h-[220px] w-full rounded-xl border border-[var(--border)] bg-[var(--bg-card2)] text-base outline-none placeholder:text-[var(--text-muted)]"
-              style={{
-                marginLeft: 0,
-                marginRight: 0,
-                paddingLeft: 10,
-                paddingRight: 10,
-                paddingTop: 5,
-                paddingBottom: 5,
-              }}
-            />
-          ) : (
-            <div className="relative mt-3">
-              <input
-                value={value}
-                onChange={(e) => setValue(e.target.value)}
-                maxLength={config.maxLength}
-                placeholder={config.placeholder}
-                className="h-12 w-full rounded-2xl border border-[var(--border)] bg-[var(--bg-card2)] pr-16 text-base outline-none placeholder:text-[var(--text-muted)]"
-                style={{ paddingLeft: 10, paddingRight: 10, paddingTop: 5, paddingBottom: 5, marginTop: 0, marginBottom: 0 }}
-              />
-              {!!config.maxLength && (
-                <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-xs text-[var(--text-muted)]">
-                  {chars}/{config.maxLength}
-                </span>
-              )}
-            </div>
-          )}
-          {!!changeLimitHint && (
-            <p
-              className="mt-3 text-sm text-[var(--text-muted)]"
-              style={{ paddingTop: 0, paddingBottom: 0, marginTop: 2, marginBottom: 2 }}
+            )}
+
+            {!!changeLimitHint && <p style={{ fontSize: 12, color: "#71717a", margin: 0 }}>{changeLimitHint}</p>}
+            {!!visibilityHint && <p style={{ fontSize: 12, color: "#71717a", margin: 0 }}>{visibilityHint}</p>}
+            {config.note && <p style={{ fontSize: 12, color: "#71717a", margin: 0 }}>{config.note}</p>}
+
+            {saveError && (
+              <p style={{ fontSize: 13, color: "#fca5a5", background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.4)", borderRadius: 12, padding: "8px 12px", margin: 0 }} role="alert">
+                {saveError}
+              </p>
+            )}
+          </div>
+
+          {/* Footer */}
+          <div style={{ padding: "16px 24px 24px", boxSizing: "border-box" }}>
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              style={{ width: "100%", height: 52, borderRadius: 16, border: "none", background: saving ? "#27272a" : "#10b981", color: saving ? "#71717a" : "#000", fontSize: 16, fontWeight: 700, cursor: saving ? "not-allowed" : "pointer", boxSizing: "border-box" }}
             >
-              {changeLimitHint}
-            </p>
-          )}
-          {!!visibilityHint && (
-            <p className="mt-2 text-sm text-[var(--text-muted)]" style={{ paddingTop: 0, paddingBottom: 0 }}>
-              {visibilityHint}
-            </p>
-          )}
-          {config.note && <p className="mt-3 text-xs text-[var(--text-muted)]">{config.note}</p>}
+              {saving ? "Saqlanmoqda..." : "Saqlash"}
+            </button>
+          </div>
         </div>
-
-        {saveError && (
-          <p
-            className="mt-4 rounded-xl border border-red-500/40 bg-red-500/10 px-3 py-2 text-sm text-red-200"
-            role="alert"
-          >
-            {saveError}
-          </p>
-        )}
-
-        <button
-          onClick={handleSave}
-          disabled={saving}
-          className="mt-auto w-full rounded-2xl bg-[var(--primary)] py-3 text-base font-semibold text-black disabled:opacity-70"
-          style={{ paddingTop: 5, paddingBottom: 5, marginTop: 10, marginBottom: 10 }}
-        >
-          {saving ? "Saqlanmoqda..." : "Saqlash"}
-        </button>
       </div>
-    </div>
 
-    {field === "birthDate" && showBirthDatePicker && (
+      {/* BirthDate Picker Modal */}
+      {field === "birthDate" && showBirthDatePicker && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6"
+          style={{ position: "fixed", inset: 0, zIndex: 50, display: "flex", alignItems: "center", justifyContent: "center", padding: 16, background: "rgba(0,0,0,0.7)" }}
           role="dialog"
           aria-modal="true"
         >
           <button
-            className="absolute inset-0 bg-black/70"
+            style={{ position: "absolute", inset: 0, background: "transparent", border: "none", cursor: "pointer" }}
             onClick={() => setShowBirthDatePicker(false)}
             aria-label="Yopish"
           />
-          <div
-            className={cn(
-              "relative z-10 flex w-full max-w-sm flex-col",
-              "aspect-square min-h-0",
-              "rounded-md border border-[var(--border)] bg-[var(--bg-card)] p-4 shadow-lg",
-              "lg:translate-x-[110px]"
-            )}
-          >
-            <div className="mb-2 flex min-h-8 shrink-0 items-center justify-between gap-2 border-b border-[var(--border)] px-[5px] pb-2">
-              <button
-                type="button"
-                className="shrink-0 text-sm text-[var(--text-secondary)] transition-colors hover:text-[var(--text-primary)]"
-                onClick={() => setShowBirthDatePicker(false)}
-              >
+          <div style={{ position: "relative", zIndex: 10, width: "100%", maxWidth: 380, background: "#141416", border: "1px solid rgba(63,63,70,0.8)", borderRadius: 24, boxShadow: "0 25px 50px rgba(0,0,0,0.5)", overflow: "hidden" }}>
+
+            {/* Modal header */}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 24px", borderBottom: "1px solid rgba(63,63,70,0.5)" }}>
+              <button type="button" onClick={() => setShowBirthDatePicker(false)} style={{ fontSize: 14, color: "#a1a1aa", background: "none", border: "none", cursor: "pointer" }}>
                 Bekor qilish
               </button>
-              <button
-                type="button"
-                className="shrink-0 text-sm font-semibold text-[var(--primary)]"
-                onClick={applyBirthDatePicker}
-              >
+              <p style={{ fontSize: 15, fontWeight: 600, color: "#fff", margin: 0 }}>Sana tanlang</p>
+              <button type="button" onClick={applyBirthDatePicker} style={{ fontSize: 14, fontWeight: 600, color: "#10b981", background: "none", border: "none", cursor: "pointer" }}>
                 Tayyor
               </button>
             </div>
-            <div className="flex min-h-0 flex-1 items-center">
-              <div className="grid w-full grid-cols-3 gap-2">
-              <select
-                value={pickerMonth}
-                onChange={(e) => setPickerMonth(e.target.value)}
-                className={cn(
-                  "h-9 w-full min-w-0 rounded-md border border-[var(--border)] bg-[var(--bg-card2)] px-2",
-                  "text-sm text-[var(--text-primary)] outline-none",
-                  "focus-visible:ring-2 focus-visible:ring-[var(--primary)]/25"
-                )}
-              >
-                {MONTHS.map((month, i) => (
-                  <option key={month} value={String(i + 1)}>
-                    {month}
-                  </option>
-                ))}
-              </select>
-              <select
-                value={pickerDay}
-                onChange={(e) => setPickerDay(e.target.value)}
-                className={cn(
-                  "h-9 w-full min-w-0 rounded-md border border-[var(--border)] bg-[var(--bg-card2)] px-2",
-                  "text-sm text-[var(--text-primary)] outline-none",
-                  "focus-visible:ring-2 focus-visible:ring-[var(--primary)]/25"
-                )}
-              >
-                {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => (
-                  <option key={d} value={String(d)}>
-                    {d}
-                  </option>
-                ))}
-              </select>
-              <select
-                value={pickerYear}
-                onChange={(e) => setPickerYear(e.target.value)}
-                className={cn(
-                  "h-9 w-full min-w-0 rounded-md border border-[var(--border)] bg-[var(--bg-card2)] px-2",
-                  "text-sm text-[var(--text-primary)] outline-none",
-                  "focus-visible:ring-2 focus-visible:ring-[var(--primary)]/25"
-                )}
-              >
-                {yearOptions.map((y) => (
-                  <option key={y} value={y}>
-                    {y}
-                  </option>
-                ))}
-              </select>
-              </div>
+
+            {/* Selects */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, padding: "20px 24px 24px", boxSizing: "border-box" }}>
+              {([
+                { value: pickerMonth, onChange: setPickerMonth, options: MONTHS.map((m, i) => ({ value: String(i + 1), label: m })) },
+                { value: pickerDay, onChange: setPickerDay, options: Array.from({ length: 31 }, (_, i) => ({ value: String(i + 1), label: String(i + 1) })) },
+                { value: pickerYear, onChange: setPickerYear, options: yearOptions.map(y => ({ value: y, label: y })) },
+              ] as const).map((sel, idx) => (
+                <select
+                  key={idx}
+                  value={sel.value}
+                  onChange={(e) => (sel.onChange as (v: string) => void)(e.target.value)}
+                  style={{ width: "100%", height: 44, borderRadius: 12, border: "1px solid #3f3f46", background: "#1c1c1f", color: "#fff", fontSize: 14, paddingLeft: 8, boxSizing: "border-box", outline: "none" }}
+                >
+                  {sel.options.map(opt => (
+                    <option key={opt.value} value={opt.value} style={{ background: "#141416" }}>{opt.label}</option>
+                  ))}
+                </select>
+              ))}
             </div>
           </div>
         </div>

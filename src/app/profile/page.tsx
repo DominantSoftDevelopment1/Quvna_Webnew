@@ -12,7 +12,6 @@ import {
   Gift,
   History,
   Users,
-  Moon,
   Globe,
   Info,
   HelpCircle,
@@ -67,7 +66,6 @@ function ProfileContent({ userId, isLoggedIn, onLogout }: { userId: number | nul
   const followers = Array.isArray(followersRaw) ? followersRaw : [];
   const following = Array.isArray(followingRaw) ? followingRaw : [];
   const videos = Array.isArray(videosRaw) ? videosRaw : [];
-  const [darkMode, setDarkMode] = useState(true);
   const [activeTab, setActiveTab] = useState<"overview" | "videos">("overview");
   const cardsRef = useRef<HTMLDivElement>(null);
 
@@ -130,12 +128,15 @@ function ProfileContent({ userId, isLoggedIn, onLogout }: { userId: number | nul
     (p as { steamId?: string; steamUID?: string }).steamId ?? (p as { steamId?: string; steamUID?: string }).steamUID;
 
   return (
-    <div className="w-full mx-auto pb-10" style={{ maxWidth: '900px', marginLeft: 'auto', marginRight: 'auto', paddingLeft: '1rem', paddingRight: '1rem' }}>
+    <div
+      className="w-full mx-auto pb-24 lg:pb-10 min-h-[calc(100dvh-96px)]"
+      style={{ maxWidth: '960px', marginLeft: 'auto', marginRight: 'auto', paddingLeft: '1rem', paddingRight: '1rem' }}
+    >
       {/* ===== HEADER CARD + TABS — bitta card ===== */}
       <div className="rounded-3xl overflow-hidden" style={{ background: "var(--bg-card)", marginBottom: 16 }}>
 
         {/* Banner — katta, sahifa orqa foniga blur effekti */}
-        <div className="relative" style={{ height: 200 }}>
+        <div className="relative" style={{ height: 230 }}>
           {/* Orqa fon blur — banner rangi sahifaga singadi */}
           {bannerUrl && (
             <div className="absolute inset-0 scale-110"
@@ -304,28 +305,15 @@ function ProfileContent({ userId, isLoggedIn, onLogout }: { userId: number | nul
           {/* ===== MENU LIST ===== */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             <MenuItem icon={<Gift size={20} />} label="Quvna bonus" href="/profile/bonus" />
+            <MenuActionItem
+              icon={<Play size={20} />}
+              label="Videolarim"
+              onClick={() => setActiveTab("videos")}
+            />
             <MenuItem icon={<History size={20} />} label="Tarix" href="/profile/history" />
             <MenuItem icon={<Users size={20} />} label="Mening klubim" href="/profile/club" />
 
-            {/* Tungi rejim - toggle */}
-            <div className="flex items-center justify-between px-5 py-4 rounded-2xl cursor-pointer"
-              style={{ background: "var(--bg-card)" }}
-              onClick={() => setDarkMode(!darkMode)}>
-              <div className="flex items-center gap-4">
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center"
-                  style={{ background: "var(--bg-card2)", color: "var(--primary)" }}>
-                  <Moon size={20} />
-                </div>
-                <span className="text-base font-medium" style={{ color: "var(--text-primary)" }}>Tungi rejim</span>
-              </div>
-              <div className="w-12 h-7 rounded-full relative transition-colors"
-                style={{ background: darkMode ? "var(--primary)" : "var(--bg-card2)" }}>
-                <div className="absolute top-1 w-5 h-5 rounded-full bg-white transition-all"
-                  style={{ left: darkMode ? "25px" : "3px" }} />
-              </div>
-            </div>
-
-            <MenuItem icon={<Settings size={20} />} label="Sozlamalar" href="/profile/settings" />
+<MenuItem icon={<Settings size={20} />} label="Sozlamalar" href="/profile/settings" />
             <MenuItem icon={<Globe size={20} />} label="Til" href="/profile/language" />
             <MenuItem icon={<Info size={20} />} label="Quvna haqida" href="/profile/about" />
             <MenuItem icon={<HelpCircle size={20} />} label="Qo'llab-quvvatlash" href="/profile/support" />
@@ -335,10 +323,10 @@ function ProfileContent({ userId, isLoggedIn, onLogout }: { userId: number | nul
           {isLoggedIn && (
             <button
               onClick={onLogout}
-              className="w-full py-3.5 rounded-2xl text-sm font-semibold flex items-center justify-center gap-2"
-              style={{ background: "var(--bg-card)", color: "var(--error)", marginTop: 16 }}
+              className="w-full rounded-2xl text-base font-semibold flex items-center justify-center gap-3"
+              style={{ background: "var(--bg-card)", color: "var(--error)", marginTop: 16, padding: "18px 20px" }}
             >
-              <LogOut size={16} />
+              <LogOut size={20} />
               Chiqish
             </button>
           )}
@@ -401,19 +389,41 @@ function ProfileContent({ userId, isLoggedIn, onLogout }: { userId: number | nul
 function MenuItem({ icon, label, href }: { icon: React.ReactNode; label: string; href: string }) {
   return (
     <Link href={href}
-      className="flex items-center justify-between px-5 py-4 rounded-2xl transition-colors"
-      style={{ background: "var(--bg-card)" }}
+      className="flex items-center justify-between rounded-2xl transition-colors"
+      style={{ background: "var(--bg-card)", padding: "18px 20px" }}
       onMouseEnter={(e) => (e.currentTarget.style.background = "var(--bg-hover)")}
       onMouseLeave={(e) => (e.currentTarget.style.background = "var(--bg-card)")}>
       <div className="flex items-center gap-4">
-        <div className="w-10 h-10 rounded-xl flex items-center justify-center"
+        <div className="w-11 h-11 rounded-xl flex items-center justify-center"
           style={{ background: "var(--bg-card2)", color: "var(--primary)" }}>
           {icon}
         </div>
-        <span className="text-base font-medium" style={{ color: "var(--text-primary)" }}>{label}</span>
+        <span className="text-base font-semibold" style={{ color: "var(--text-primary)" }}>{label}</span>
       </div>
-      <ChevronRight size={18} style={{ color: "var(--text-muted)" }} />
+      <ChevronRight size={20} style={{ color: "var(--text-muted)" }} />
     </Link>
+  );
+}
+
+function MenuActionItem({ icon, label, onClick }: { icon: React.ReactNode; label: string; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="w-full flex items-center justify-between rounded-2xl transition-colors"
+      style={{ background: "var(--bg-card)", padding: "18px 20px" }}
+      onMouseEnter={(e) => (e.currentTarget.style.background = "var(--bg-hover)")}
+      onMouseLeave={(e) => (e.currentTarget.style.background = "var(--bg-card)")}
+    >
+      <div className="flex items-center gap-4">
+        <div className="w-11 h-11 rounded-xl flex items-center justify-center"
+          style={{ background: "var(--bg-card2)", color: "var(--primary)" }}>
+          {icon}
+        </div>
+        <span className="text-base font-semibold" style={{ color: "var(--text-primary)" }}>{label}</span>
+      </div>
+      <ChevronRight size={20} style={{ color: "var(--text-muted)" }} />
+    </button>
   );
 }
 
@@ -428,7 +438,7 @@ function Stat({ label, value }: { label: string; value: string }) {
 
 function ProfileSkeleton() {
   return (
-    <div className="w-full max-w-xl mx-auto pb-10 px-4 sm:px-6">
+    <div className="w-full max-w-3xl mx-auto pb-10 px-4 sm:px-6">
       <div className="rounded-3xl overflow-hidden mb-6" style={{ background: "var(--bg-card)" }}>
         <Skeleton className="h-44 sm:h-56" />
         <div className="px-5 pb-6 -mt-12 relative space-y-4">

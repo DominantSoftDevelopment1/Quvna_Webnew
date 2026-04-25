@@ -131,19 +131,37 @@ export default function EditProfilePage() {
 
   if (!userId) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-[var(--bg-primary)] px-4 text-[var(--text-primary)]">
-        <p className="text-center text-sm" style={{ color: "var(--text-secondary)" }}>
-          Profil va o‘yin ma’lumotlarini tahrirlash uchun tizimga kiring.
-        </p>
-        <Link
-          href="/auth/login"
-          className="rounded-2xl bg-[var(--primary)] px-6 py-3 text-base font-bold text-black"
-        >
-          Kirish
-        </Link>
-        <Link href="/profile" className="text-sm" style={{ color: "var(--text-muted)" }}>
-          Profilga qaytish
-        </Link>
+      <div style={{ minHeight: "100dvh", width: "100%", background: "#050505", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
+        <div style={{ width: "100%", maxWidth: 400, background: "#141416", border: "1px solid rgba(63,63,70,0.8)", borderRadius: 28, boxShadow: "0 25px 50px rgba(0,0,0,0.5)", overflow: "hidden", display: "flex", flexDirection: "column", alignItems: "center", padding: "48px 24px 40px" }}>
+
+          {/* Icon */}
+          <div style={{ width: 72, height: 72, borderRadius: "50%", background: "rgba(16,185,129,0.12)", border: "1px solid rgba(16,185,129,0.3)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 24 }}>
+            <svg width="32" height="32" fill="none" stroke="#10b981" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+            </svg>
+          </div>
+
+          <p style={{ fontSize: 20, fontWeight: 700, color: "#fff", margin: "0 0 8px", textAlign: "center" }}>
+            Tizimga kiring
+          </p>
+          <p style={{ fontSize: 14, color: "#71717a", margin: "0 0 32px", textAlign: "center", lineHeight: 1.6 }}>
+            Profil va o&apos;yin ma&apos;lumotlarini tahrirlash uchun tizimga kiring.
+          </p>
+
+          <Link
+            href="/auth/login"
+            style={{ width: "100%", height: 52, borderRadius: 16, background: "#10b981", color: "#000", fontSize: 16, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none", marginBottom: 12, boxSizing: "border-box" }}
+          >
+            Kirish
+          </Link>
+
+          <Link
+            href="/profile"
+            style={{ fontSize: 14, color: "#71717a", textDecoration: "none" }}
+          >
+            Profilga qaytish
+          </Link>
+        </div>
       </div>
     );
   }
@@ -401,56 +419,85 @@ export default function EditProfilePage() {
             </div>
       </div>
 
-      {/* Gender center modal */}
+      {/* Gender modal */}
       {showGenderSheet && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => setShowGenderSheet(false)}>
-          <div className="absolute inset-0 overflow-hidden" style={{ background: "rgba(0,0,0,0.6)" }} />
+        <div
+          style={{
+            position: "fixed", inset: 0, zIndex: 50,
+            display: "flex", alignItems: "center", justifyContent: "center",
+            padding: 16, background: "rgba(0,0,0,0.7)",
+          }}
+          onClick={() => setShowGenderSheet(false)}
+        >
           <div
-            className="relative w-full max-w-[420px] rounded-2xl border px-[15px] pt-[25px] pb-[25px] shadow-2xl"
-            style={{ background: "var(--bg-card)", borderColor: "var(--border)", display: "flex", flexDirection: "column", gap: "10px" }}
-            onClick={(e) => e.stopPropagation()}>
-            <div
-              className="mx-auto my-[10px] h-1 w-10 rounded-full"
-              style={{
-                background: "rgba(46, 45, 45, 1)",
-                paddingLeft: 20,
-                paddingRight: 20,
-                marginLeft: 190,
-                marginRight: 190,
-              }}
-            />
-            <p className="my-[10px] pt-[10px] pb-[10px] text-center text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
+            style={{
+              position: "relative",
+              width: "100%",
+              maxWidth: 400,
+              background: "#141416",
+              border: "1px solid rgba(63,63,70,0.8)",
+              borderRadius: 24,
+              boxShadow: "0 25px 50px rgba(0,0,0,0.5)",
+              display: "flex",
+              flexDirection: "column",
+              overflow: "hidden",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Handle */}
+            <div style={{ display: "flex", justifyContent: "center", paddingTop: 12, paddingBottom: 4 }}>
+              <div style={{ width: 40, height: 4, borderRadius: 999, background: "#3f3f46" }} />
+            </div>
+
+            {/* Title */}
+            <p style={{ textAlign: "center", fontSize: 16, fontWeight: 600, color: "#fff", padding: "12px 24px 8px" }}>
               Jinsni tanlang
             </p>
-            {["Erkak", "Ayol", "Ko'rsatmaslikni afzal ko'raman"].map((gender, idx) => (
-              <button
-                key={gender}
-                onClick={() => {
-                  setFormData({ ...formData, gender });
-                  setShowGenderSheet(false);
-                }}
-                className={`flex w-full items-center justify-center rounded-xl py-[5px] text-left ${idx > 0 ? "my-[10px]" : ""}`}
-                style={{ background: formData.gender === gender ? "rgba(143, 188, 169, 1)" : "var(--bg-card2)" }}
-              >
-                <span
-                  className="font-medium"
-                  style={{
-                    color: formData.gender === gender ? "#000" : "var(--text-primary)",
-                    marginTop: 5,
-                    marginBottom: 5,
-                    marginLeft: 5,
-                    marginRight: 5,
-                    paddingLeft: 78,
-                    paddingRight: 78,
-                  }}
-                >
-                  {gender}
-                </span>
-                {formData.gender === gender && (
-                  <Check size={20} style={{ marginTop: 5, marginBottom: 5, marginLeft: 10, marginRight: 10, color: "rgba(243, 237, 237, 1)" }} />
-                )}
-              </button>
-            ))}
+
+            {/* Options */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 8, padding: "8px 24px 24px" }}>
+              {["Erkak", "Ayol", "Ko'rsatmaslikni afzal ko'raman"].map((gender) => {
+                const isActive = formData.gender === gender;
+                return (
+                  <button
+                    key={gender}
+                    type="button"
+                    onClick={() => {
+                      setFormData({ ...formData, gender });
+                      setShowGenderSheet(false);
+                    }}
+                    style={{
+                      width: "100%",
+                      height: 52,
+                      borderRadius: 14,
+                      border: isActive ? "1px solid rgba(16,185,129,0.5)" : "1px solid rgba(63,63,70,0.6)",
+                      background: isActive ? "rgba(16,185,129,0.15)" : "#1c1c1f",
+                      color: isActive ? "#10b981" : "#fff",
+                      fontSize: 15,
+                      fontWeight: 500,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      paddingLeft: 20,
+                      paddingRight: 20,
+                      boxSizing: "border-box",
+                      cursor: "pointer",
+                    }}
+                  >
+                    <span>{gender}</span>
+                    {isActive && (
+                      <span style={{
+                        width: 20, height: 20, borderRadius: "50%",
+                        background: "#10b981",
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                      }}>
+                        <Check size={12} color="#000" />
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
       )}
@@ -519,16 +566,15 @@ function SwitchRow({
 }
 
 function EditableNavRow({ label, value, href }: { label: string; value: string; href: string }) {
-  const display = value || "Kiritilmagan";
+  const display = value || "Tanlang";
   const isPlaceholder = !value;
   return (
     <Link href={href} className="flex min-h-[56px] items-center justify-between border-b py-3" style={{ borderColor: "var(--border)" }}>
       <span className="text-sm text-[var(--text-secondary)] md:text-base">{label}</span>
       <div className="flex items-center gap-3">
         <span
-          className={`max-w-[220px] truncate text-sm font-semibold text-[var(--text-primary)] md:text-base ${
-            isPlaceholder ? "text-white/50" : ""
-          }`}
+          className="max-w-[220px] truncate text-sm md:text-base"
+          style={{ color: isPlaceholder ? "var(--text-muted)" : "var(--text-primary)", fontWeight: isPlaceholder ? 400 : 600 }}
         >
           {display}
         </span>
