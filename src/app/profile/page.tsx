@@ -5,6 +5,7 @@ import { useAuthStore } from "@/store/auth.store";
 import { useProfile, useFollowers, useFollowing, useUserVideos } from "@/hooks/useProfile";
 import { cdnUrl, formatCount } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/Skeleton";
+import { VideoTermsModal } from "@/components/videos/VideoTermsModal";
 import {
   Play,
   LogOut,
@@ -67,6 +68,11 @@ function ProfileContent({ userId, isLoggedIn, onLogout }: { userId: number | nul
   const following = Array.isArray(followingRaw) ? followingRaw : [];
   const videos = Array.isArray(videosRaw) ? videosRaw : [];
   const [activeTab, setActiveTab] = useState<"overview" | "videos">("overview");
+  const [showVideoTermsNotice, setShowVideoTermsNotice] = useState(false);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [showRestrictionsCard, setShowRestrictionsCard] = useState(false);
+  const [restrictionSeconds, setRestrictionSeconds] = useState(30);
+  const [activeRestrictionId, setActiveRestrictionId] = useState<string | null>(null);
   const cardsRef = useRef<HTMLDivElement>(null);
 
   const scrollCards = (dir: "left" | "right") => {
@@ -74,6 +80,41 @@ function ProfileContent({ userId, isLoggedIn, onLogout }: { userId: number | nul
       cardsRef.current.scrollBy({ left: dir === "right" ? 180 : -180, behavior: "smooth" });
     }
   };
+
+  const openVideosTabWithNotice = () => {
+    setAcceptedTerms(false);
+    setShowVideoTermsNotice(true);
+  };
+
+  const closeVideoTermsNotice = () => {
+    setShowVideoTermsNotice(false);
+    setActiveTab("videos");
+    setShowRestrictionsCard(true);
+    setRestrictionSeconds(30);
+  };
+
+  useEffect(() => {
+    if (!showRestrictionsCard) return;
+    const intervalId = window.setInterval(() => {
+      setRestrictionSeconds((prev) => {
+        if (prev <= 1) {
+          window.clearInterval(intervalId);
+          setShowRestrictionsCard(false);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => window.clearInterval(intervalId);
+  }, [showRestrictionsCard]);
+
+  useEffect(() => {
+    if (!activeRestrictionId) return;
+    const timeoutId = window.setTimeout(() => {
+      setActiveRestrictionId(null);
+    }, 5000);
+    return () => window.clearTimeout(timeoutId);
+  }, [activeRestrictionId]);
 
   if (isLoading && !profile) return <ProfileSkeleton />;
 
@@ -126,6 +167,8 @@ function ProfileContent({ userId, isLoggedIn, onLogout }: { userId: number | nul
   const stR = Number(ratingObj?.steamAmount ?? 0);
   const steamId =
     (p as { steamId?: string; steamUID?: string }).steamId ?? (p as { steamId?: string; steamUID?: string }).steamUID;
+  const restrictionProgress = Math.max(0, (restrictionSeconds / 30) * 100);
+  const showRestrictionFocus = restrictionSeconds >= 28;
 
   return (
     <div
@@ -274,13 +317,23 @@ function ProfileContent({ userId, isLoggedIn, onLogout }: { userId: number | nul
         </div>
 
         {/* ===== TABS — card ichida, 16px pastda ===== */}
-        <div className="flex" style={{ marginTop: 16, marginBottom: 4, height: 32, borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+        <div
+          className="flex items-stretch"
+          style={{ marginTop: 16, marginBottom: 4, borderTop: "1px solid rgba(255,255,255,0.06)", paddingTop: 4 }}
+        >
           <button
             type="button"
             onClick={() => setActiveTab("overview")}
-            className="flex-1 flex items-center justify-center text-sm font-semibold transition-all relative"
+            className="flex-1 h-10 px-3 flex items-center justify-center gap-2 text-sm font-semibold transition-all relative"
             style={{ color: activeTab === "overview" ? "var(--primary)" : "var(--text-muted)" }}
           >
+            <img
+              src="/icons/more-03.svg"
+              alt=""
+              width={16}
+              height={16}
+              className={activeTab === "overview" ? "opacity-100" : "opacity-60"}
+            />
             Umumiy
             {activeTab === "overview" && (
               <span className="absolute bottom-0 left-1/2 -translate-x-1/2 h-0.5 w-8 rounded-full" style={{ background: "var(--primary)" }} />
@@ -288,10 +341,17 @@ function ProfileContent({ userId, isLoggedIn, onLogout }: { userId: number | nul
           </button>
           <button
             type="button"
-            onClick={() => setActiveTab("videos")}
-            className="flex-1 flex items-center justify-center text-sm font-semibold transition-all relative"
+            onClick={openVideosTabWithNotice}
+            className="flex-1 h-10 px-3 flex items-center justify-center gap-2 text-sm font-semibold transition-all relative"
             style={{ color: activeTab === "videos" ? "var(--primary)" : "var(--text-muted)" }}
           >
+            <img
+              src="/icons/video-replay.svg"
+              alt=""
+              width={16}
+              height={16}
+              className={activeTab === "videos" ? "opacity-100" : "opacity-60"}
+            />
             Videolarim
             {activeTab === "videos" && (
               <span className="absolute bottom-0 left-1/2 -translate-x-1/2 h-0.5 w-12 rounded-full" style={{ background: "var(--primary)" }} />
@@ -308,7 +368,7 @@ function ProfileContent({ userId, isLoggedIn, onLogout }: { userId: number | nul
             <MenuActionItem
               icon={<Play size={20} />}
               label="Videolarim"
-              onClick={() => setActiveTab("videos")}
+              onClick={openVideosTabWithNotice}
             />
             <MenuItem icon={<History size={20} />} label="Tarix" href="/profile/history" />
             <MenuItem icon={<Users size={20} />} label="Mening klubim" href="/profile/club" />
@@ -338,11 +398,217 @@ function ProfileContent({ userId, isLoggedIn, onLogout }: { userId: number | nul
         </>
       ) : (
         /* ===== VIDEOS TAB ===== */
-        <div>
+        <div className="space-y-4">
+          {acceptedTerms && showRestrictionsCard && (
+            <div
+              style={{
+                width: "100%",
+                boxSizing: "border-box",
+                padding: "0 14px",
+                marginTop: 16,
+                marginBottom: 18,
+              }}
+            >
+              <div
+                style={{
+                  position: "relative",
+                  width: "100%",
+                  boxSizing: "border-box",
+                  borderRadius: 18,
+                  padding: "18px 16px 16px",
+                  background: "rgba(24,24,26,0.96)",
+                  border: "1px solid rgba(255,255,255,0.08)",
+                  boxShadow: "0 16px 38px rgba(0,0,0,0.35)",
+                  overflow: "hidden",
+                }}
+              >
+                <div
+                  style={{
+                    position: "absolute",
+                    top: 10,
+                    right: 12,
+                    width: 24,
+                    height: 24,
+                    borderRadius: "50%",
+                    background: "rgba(255,255,255,0.08)",
+                    color: "#d1d1d6",
+                    fontSize: 12,
+                    fontWeight: 700,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    boxShadow: showRestrictionFocus ? "0 0 0 6px rgba(255,176,32,0.18)" : "none",
+                    transition: "box-shadow 220ms ease",
+                  }}
+                >
+                  {restrictionSeconds}
+                </div>
+                <h3
+                  style={{
+                    margin: "0 36px 18px 0",
+                    color: "#fff",
+                    fontSize: 15,
+                    fontWeight: 700,
+                    lineHeight: "20px",
+                  }}
+                >
+                  Taqiqlangan kontentlar
+                </h3>
+                <p
+                  style={{
+                    margin: "0 0 10px 0",
+                    color: "#8e8e93",
+                    fontSize: 11,
+                    lineHeight: "14px",
+                  }}
+                >
+                  30 soniyalik sanog&apos; ketmoqda
+                </p>
+                <div
+                  style={{
+                    width: "100%",
+                    height: 4,
+                    borderRadius: 999,
+                    background: "rgba(255,255,255,0.08)",
+                    marginBottom: 14,
+                    overflow: "hidden",
+                  }}
+                >
+                  <div
+                    style={{
+                      width: `${restrictionProgress}%`,
+                      height: "100%",
+                      borderRadius: 999,
+                      background: "linear-gradient(90deg, #FFB020 0%, #FC363F 100%)",
+                      transition: "width 950ms linear",
+                    }}
+                  />
+                </div>
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
+                    gap: 14,
+                    width: "100%",
+                    boxSizing: "border-box",
+                  }}
+                >
+                  {PROHIBITED_CONTENT_CARDS.map((card) => (
+                    <button
+                      key={card.id}
+                      type="button"
+                      onClick={() => setActiveRestrictionId(card.id)}
+                      style={{
+                        width: "100%",
+                        minWidth: 0,
+                        boxSizing: "border-box",
+                        padding: 0,
+                        border: "none",
+                        background: "transparent",
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        gap: 8,
+                        cursor: "pointer",
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: 52,
+                          height: 52,
+                          borderRadius: 16,
+                          background: "rgba(255,255,255,0.05)",
+                          border: "1px solid rgba(255,255,255,0.08)",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          flexShrink: 0,
+                        }}
+                      >
+                        <img
+                          src={card.icon}
+                          alt=""
+                          width={26}
+                          height={26}
+                          style={{
+                            width: 26,
+                            height: 26,
+                            objectFit: "contain",
+                            display: "block",
+                          }}
+                        />
+                      </div>
+                      <p
+                        style={{
+                          width: "100%",
+                          margin: 0,
+                          color: "#e5e5ea",
+                          fontSize: 11,
+                          lineHeight: "14px",
+                          textAlign: "center",
+                          whiteSpace: "normal",
+                          wordBreak: "normal",
+                        }}
+                      >
+                        {card.title}
+                      </p>
+                    </button>
+                  ))}
+                </div>
+
+                {activeRestrictionId && (
+                  <div
+                    style={{
+                      marginTop: 12,
+                      borderRadius: 12,
+                      border: "1px solid rgba(252,54,63,0.35)",
+                      background: "rgba(255,255,255,0.03)",
+                      padding: "10px 12px",
+                    }}
+                  >
+                    <p
+                      style={{
+                        margin: 0,
+                        color: "#FF8B92",
+                        fontSize: 12,
+                        fontWeight: 700,
+                      }}
+                    >
+                      {PROHIBITED_CONTENT_CARDS.find((card) => card.id === activeRestrictionId)?.title}
+                    </p>
+                    <p
+                      style={{
+                        margin: "6px 0 0",
+                        color: "#d5d7da",
+                        fontSize: 11,
+                        lineHeight: "15px",
+                      }}
+                    >
+                      {PROHIBITED_CONTENT_CARDS.find((card) => card.id === activeRestrictionId)?.details}
+                      {" "}
+                      <a
+                        href={PROHIBITED_CONTENT_CARDS.find((card) => card.id === activeRestrictionId)?.detailsUrl ?? "#"}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{ color: "#FFB020", fontWeight: 600 }}
+                      >
+                        Batafsil
+                      </a>
+                    </p>
+                  </div>
+                )}
+              </div>
+              {activeRestrictionId && <RestrictionToast cardId={activeRestrictionId} />}
+            </div>
+          )}
+
           {videosLoading ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
               {Array.from({ length: 6 }).map((_, i) => (
-                <div key={i} className="space-y-2">
+                <div
+                  key={i}
+                  className="space-y-2"
+                >
                   <Skeleton className="aspect-[9/16] rounded-xl" />
                   <Skeleton className="h-4 w-3/4" />
                 </div>
@@ -351,7 +617,7 @@ function ProfileContent({ userId, isLoggedIn, onLogout }: { userId: number | nul
           ) : videos.length === 0 ? (
             <div className="flex flex-col items-center py-20 gap-4">
               <Play size={56} style={{ color: "var(--text-muted)" }} />
-              <p className="text-base" style={{ color: "var(--text-muted)" }}>Hali video yo'q</p>
+              <p className="text-base" style={{ color: "var(--text-muted)" }}>Hali video yo&apos;q</p>
             </div>
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
@@ -382,6 +648,12 @@ function ProfileContent({ userId, isLoggedIn, onLogout }: { userId: number | nul
           )}
         </div>
       )}
+      <VideoTermsModal
+        isOpen={showVideoTermsNotice}
+        accepted={acceptedTerms}
+        onToggleAccepted={setAcceptedTerms}
+        onAccept={closeVideoTermsNotice}
+      />
     </div>
   );
 }
@@ -467,6 +739,59 @@ interface VideoItem {
   thumbnailUrl?: string;
   thumbnail?: string;
   viewCount?: number;
+}
+
+const PROHIBITED_CONTENT_CARDS = [
+  {
+    id: "adult",
+    title: "+18 materiallar",
+    icon: "/icons/prohibited/no-18.svg",
+    details: "Kattalar uchun mo‘ljallangan materiallarni joylash taqiqlanadi.",
+    detailsUrl: "#",
+  },
+  {
+    id: "gambling",
+    title: "Qimor o‘yinlari",
+    icon: "/icons/prohibited/no-gambling.svg",
+    details: "Qimor va pul tikishga undovchi kontent taqiqlanadi.",
+    detailsUrl: "#",
+  },
+  {
+    id: "hate",
+    title: "Diniy va irqiy nizo",
+    icon: "/icons/prohibited/no-hate.svg",
+    details: "Diniy yoki irqiy adovat uyg‘otuvchi kontent bloklanadi.",
+    detailsUrl: "#",
+  },
+  {
+    id: "substances",
+    title: "Alkogol va tamaki",
+    icon: "/icons/prohibited/no-alcohol.svg",
+    details: "Alkogol va tamaki mahsulotlarini targ‘ib qilish mumkin emas.",
+    detailsUrl: "#",
+  },
+] as const;
+
+function RestrictionToast({ cardId }: { cardId: string }) {
+  const activeCard = PROHIBITED_CONTENT_CARDS.find((card) => card.id === cardId);
+  if (!activeCard) return null;
+
+  return (
+    <div
+      className="absolute left-2 right-2 top-full mt-2 rounded-md border px-3 py-2.5 z-10"
+      style={{ borderColor: "#FF5A5A", background: "#121315F5", boxShadow: "0 10px 24px rgba(0,0,0,0.45)" }}
+    >
+      <p className="text-[12px] font-semibold" style={{ color: "#FF7D7D" }}>
+        {activeCard.title}
+      </p>
+      <p className="text-[10px] mt-1 leading-[1.35]" style={{ color: "#d5d7da" }}>
+        {activeCard.details}
+      </p>
+      <p className="text-[9px] mt-1.5" style={{ color: "#9ca3af" }}>
+        Auto close: 30s
+      </p>
+    </div>
+  );
 }
 
 function RatingCard({ title, rating, name, uid, total }: {
