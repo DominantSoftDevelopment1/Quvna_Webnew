@@ -8,6 +8,10 @@ import { Skeleton } from "@/components/ui/Skeleton";
 import { VideoTermsModal } from "@/components/videos/VideoTermsModal";
 import {
   Play,
+  Film,
+  Heart,
+  Eye,
+  Plus,
   LogOut,
   Settings,
   Gift,
@@ -71,9 +75,12 @@ function ProfileContent({ userId, isLoggedIn, onLogout }: { userId: number | nul
   const [showVideoTermsNotice, setShowVideoTermsNotice] = useState(false);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [showRestrictionsCard, setShowRestrictionsCard] = useState(false);
+  const [showCreateSheet, setShowCreateSheet] = useState(false);
   const [restrictionSeconds, setRestrictionSeconds] = useState(30);
   const [activeRestrictionId, setActiveRestrictionId] = useState<string | null>(null);
   const cardsRef = useRef<HTMLDivElement>(null);
+  const videoTermsSeenKey = `profile_video_terms_seen_v1_${userId ?? "guest"}`;
+  const restrictionsSeenKey = `profile_video_restrictions_seen_v1_${userId ?? "guest"}`;
 
   const scrollCards = (dir: "left" | "right") => {
     if (cardsRef.current) {
@@ -82,15 +89,44 @@ function ProfileContent({ userId, isLoggedIn, onLogout }: { userId: number | nul
   };
 
   const openVideosTabWithNotice = () => {
+    setActiveTab("videos");
+    setActiveRestrictionId(null);
+
+    const termsSeen = window.localStorage.getItem(videoTermsSeenKey) === "1";
+    const restrictionsSeen = window.localStorage.getItem(restrictionsSeenKey) === "1";
+
+    if (termsSeen) {
+      setAcceptedTerms(true);
+      setShowVideoTermsNotice(false);
+      if (!restrictionsSeen) {
+        setShowRestrictionsCard(true);
+        setRestrictionSeconds(30);
+        window.localStorage.setItem(restrictionsSeenKey, "1");
+      } else {
+        setShowRestrictionsCard(false);
+      }
+      return;
+    }
+
     setAcceptedTerms(false);
+    setShowRestrictionsCard(false);
     setShowVideoTermsNotice(true);
   };
 
   const closeVideoTermsNotice = () => {
     setShowVideoTermsNotice(false);
     setActiveTab("videos");
-    setShowRestrictionsCard(true);
-    setRestrictionSeconds(30);
+    setAcceptedTerms(true);
+    window.localStorage.setItem(videoTermsSeenKey, "1");
+
+    const restrictionsSeen = window.localStorage.getItem(restrictionsSeenKey) === "1";
+    if (!restrictionsSeen) {
+      setShowRestrictionsCard(true);
+      setRestrictionSeconds(30);
+      window.localStorage.setItem(restrictionsSeenKey, "1");
+    } else {
+      setShowRestrictionsCard(false);
+    }
   };
 
   useEffect(() => {
@@ -336,7 +372,7 @@ function ProfileContent({ userId, isLoggedIn, onLogout }: { userId: number | nul
             />
             Umumiy
             {activeTab === "overview" && (
-              <span className="absolute bottom-0 left-1/2 -translate-x-1/2 h-0.5 w-8 rounded-full" style={{ background: "var(--primary)" }} />
+              <span className="absolute bottom-0 left-1/2 -translate-x-1/2 h-0.5 w-20 rounded-full" style={{ background: "var(--primary)" }} />
             )}
           </button>
           <button
@@ -354,7 +390,7 @@ function ProfileContent({ userId, isLoggedIn, onLogout }: { userId: number | nul
             />
             Videolarim
             {activeTab === "videos" && (
-              <span className="absolute bottom-0 left-1/2 -translate-x-1/2 h-0.5 w-12 rounded-full" style={{ background: "var(--primary)" }} />
+              <span className="absolute bottom-0 left-1/2 -translate-x-1/2 h-0.5 w-24 rounded-full" style={{ background: "var(--primary)" }} />
             )}
           </button>
         </div>
@@ -399,6 +435,66 @@ function ProfileContent({ userId, isLoggedIn, onLogout }: { userId: number | nul
       ) : (
         /* ===== VIDEOS TAB ===== */
         <div className="space-y-4">
+          {acceptedTerms && !showRestrictionsCard && (
+            <div
+              style={{
+                width: "100%",
+                boxSizing: "border-box",
+                padding: "0 14px",
+                marginTop: 16,
+                marginBottom: 10,
+              }}
+            >
+              <div
+                style={{
+                  width: "100%",
+                  boxSizing: "border-box",
+                  borderRadius: 12,
+                  background: "transparent",
+                  border: "none",
+                  padding: "6px 4px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  gap: 12,
+                }}
+              >
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-1.5 text-[13px] font-semibold text-white">
+                    <Film size={24} style={{ color: "#1DBF73" }} />
+                    54
+                  </div>
+                  <div className="flex items-center gap-1.5 text-[13px] font-semibold text-white">
+                    <Heart size={24} style={{ color: "#1DBF73" }} />
+                    1 571
+                  </div>
+                  <div className="flex items-center gap-1.5 text-[13px] font-semibold text-white">
+                    <Eye size={24} style={{ color: "#1DBF73" }} />
+                    1M
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setShowCreateSheet(true)}
+                  className="flex items-center gap-1.5 text-[13px] font-medium"
+                  style={{
+                    color: "#d5d7da",
+                    borderRadius: 6,
+                    border: "1px solid rgba(255,255,255,0.16)",
+                    padding: "8px 10px",
+                    background: "rgba(255,255,255,0.06)",
+                    backdropFilter: "blur(8px)",
+                    boxShadow: "0 6px 16px rgba(0,0,0,0.22)",
+                  }}
+                >
+                  <Plus size={16} />
+                  Yaratish
+                </button>
+              </div>
+            </div>
+          )}
+
           {acceptedTerms && showRestrictionsCard && (
             <div
               style={{
@@ -648,6 +744,10 @@ function ProfileContent({ userId, isLoggedIn, onLogout }: { userId: number | nul
           )}
         </div>
       )}
+      <CreateVideoSheetModal
+        isOpen={showCreateSheet}
+        onClose={() => setShowCreateSheet(false)}
+      />
       <VideoTermsModal
         isOpen={showVideoTermsNotice}
         accepted={acceptedTerms}
@@ -790,6 +890,112 @@ function RestrictionToast({ cardId }: { cardId: string }) {
       <p className="text-[9px] mt-1.5" style={{ color: "#9ca3af" }}>
         Auto close: 30s
       </p>
+    </div>
+  );
+}
+
+function CreateVideoSheetModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
+  if (!isOpen) return null;
+
+  return (
+    <div
+      className="fixed inset-0 z-[100] flex items-center justify-center px-4"
+      style={{ background: "rgba(0,0,0,0.55)" }}
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-[375px]"
+        style={{ boxSizing: "border-box" }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div
+          style={{
+            width: "100%",
+            boxSizing: "border-box",
+            borderRadius: 20,
+            background: "#222326",
+            border: "1px solid rgba(255,255,255,0.08)",
+            padding: "12px 16px 16px",
+          }}
+        >
+          <div className="flex justify-center mb-3">
+            <div
+              style={{
+                width: 32,
+                height: 4,
+                borderRadius: 999,
+                background: "rgba(170,178,188,0.35)",
+              }}
+            />
+          </div>
+
+          <p
+            style={{
+              margin: "0 0 14px 0",
+              textAlign: "center",
+              color: "#d5d7da",
+              fontSize: 20,
+              fontWeight: 500,
+            }}
+          >
+            Video yuklash
+          </p>
+
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+              gap: 12,
+              width: "100%",
+              boxSizing: "border-box",
+            }}
+          >
+            <button
+              type="button"
+              style={{
+                border: "1px solid #292929",
+                background: "#141414",
+                borderRadius: 20,
+                padding: 16,
+                minHeight: 165,
+                color: "#fff",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 14,
+              }}
+            >
+              <img src="/icons/short-video-upload.svg" alt="" width={56} height={56} />
+              <span style={{ textAlign: "center", fontSize: 14, fontWeight: 500, lineHeight: "18px" }}>
+                Qisqa video{"\n"}yuklash
+              </span>
+            </button>
+
+            <button
+              type="button"
+              style={{
+                border: "1px solid #292929",
+                background: "#141414",
+                borderRadius: 20,
+                padding: 16,
+                minHeight: 165,
+                color: "#fff",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 14,
+              }}
+            >
+              <img src="/icons/science-upload.svg" alt="" width={56} height={56} />
+              <span style={{ textAlign: "center", fontSize: 14, fontWeight: 500, lineHeight: "18px" }}>
+                Ilmiy-ommabop{"\n"}kontent yuklash
+              </span>
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
