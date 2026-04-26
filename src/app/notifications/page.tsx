@@ -42,7 +42,7 @@ export default function NotificationsPage() {
   const unread = personal.filter((n) => !n.isRead).length;
 
   return (
-    <div className="max-w-3xl mx-auto pb-8">
+    <div className="max-w-6xl mx-auto pb-8">
       {/* Header */}
       <div className="notif-header">
         <button type="button" className="game-back-btn" onClick={() => router.back()} aria-label="Orqaga">

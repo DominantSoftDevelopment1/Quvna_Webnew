@@ -72,7 +72,7 @@ export default function GamePage() {
   const GameComponent = game.component;
 
   return (
-    <div className="max-w-2xl mx-auto pb-8">
+    <div className="max-w-5xl mx-auto pb-8">
       {/* Header */}
       <div className="game-page-header">
         <button type="button" className="game-back-btn" onClick={() => router.back()} aria-label="Orqaga">

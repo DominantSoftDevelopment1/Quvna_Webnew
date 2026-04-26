@@ -38,7 +38,7 @@ export default function RatingPage() {
   const rest = list.slice(10);
 
   return (
-    <div className="max-w-3xl mx-auto pb-8">
+    <div className="max-w-6xl mx-auto pb-8">
 
       {/* ── Sticky header ── */}
       <div className="rating-header">

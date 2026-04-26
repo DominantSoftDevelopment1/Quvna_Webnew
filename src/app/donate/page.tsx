@@ -14,7 +14,7 @@ export default function DonatePage() {
   const router = useRouter();
 
   return (
-    <div className="max-w-3xl mx-auto pb-8">
+    <div className="max-w-6xl mx-auto pb-8">
       {/* Header */}
       <div className="game-page-header">
         <button type="button" className="game-back-btn" onClick={() => router.back()} aria-label="Orqaga">

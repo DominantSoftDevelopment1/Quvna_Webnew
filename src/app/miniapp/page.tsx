@@ -105,7 +105,7 @@ export default function MiniAppPage() {
   const newApps = MINI_APPS.filter((a) => a.isNew);
 
   return (
-    <div className="max-w-3xl mx-auto pb-8">
+    <div className="max-w-6xl mx-auto pb-8">
 
       {/* ── Kategoriyalar ── */}
       <div className="miniapp-cat-bar">

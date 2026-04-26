@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 import { useAuthStore } from "@/store/auth.store";
 import { cdnUrl } from "@/lib/utils";
 import { useUnreadCount } from "@/hooks/useNotifications";
@@ -10,22 +11,21 @@ export function Topbar() {
   const { user, isLoggedIn } = useAuthStore();
   const { data: unreadCount = 0 } = useUnreadCount();
   const [mounted, setMounted] = useState(false);
+  const pathname = usePathname();
+
+  const hideTopbar = pathname?.startsWith("/profile/edit");
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
+  if (hideTopbar) return null;
+
   return (
     <header className="topbar">
-      {/* Mobile logo */}
-      <Link href="/" className="topbar-logo lg:hidden">
-        <img src="/quvna_logo.png" alt="Quvna" width={32} height={32} className="rounded-lg" />
-        <img src="/icons/text_quvna.svg" alt="Quvna" className="topbar-logo-text" />
-      </Link>
-
       {/* Search removed per user request */}
 
-      <div className="flex items-center gap-2 ml-auto">
+      <div className="flex items-center justify-center gap-2 ml-auto my-[10px]">
         {/* Rating always visible */}
         <Link href="/rating" className="topbar-rating-btn" aria-label="Reyting">
           <img src="/icons/star.svg" alt="" width={22} height={22} className="topbar-rating-star" />
