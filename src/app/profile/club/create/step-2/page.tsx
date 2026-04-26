@@ -1,12 +1,12 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { BottomActions, cardInputStyle, ClubShell, StepProgress } from "../../_components";
 import { getClubDraft, setClubDraft } from "../../_lib";
 import type { CSSProperties } from "react";
 
-export default function ClubCreateStep2Page() {
+function ClubCreateStep2Content() {
   const router = useRouter();
   const search = useSearchParams();
   const mode = search.get("mode");
@@ -75,6 +75,14 @@ export default function ClubCreateStep2Page() {
       {error ? <p style={{ margin: "8px 0 0", color: "#fda4af", fontSize: 13 }}>{error}</p> : null}
       <BottomActions onBack={() => router.push(`/profile/club/create/step-1${mode === "edit" && id ? `?mode=edit&id=${id}` : ""}`)} onNext={next} />
     </ClubShell>
+  );
+}
+
+export default function ClubCreateStep2Page() {
+  return (
+    <Suspense fallback={null}>
+      <ClubCreateStep2Content />
+    </Suspense>
   );
 }
 

@@ -1,12 +1,12 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { BottomActions, ClubShell, StepProgress } from "../../_components";
 import { clearClubDraft, getClubDraft, setClubDraft, type ClubDraft } from "../../_lib";
 
-export default function ClubCreateStep5Page() {
+function ClubCreateStep5Content() {
   const router = useRouter();
   const search = useSearchParams();
   const mode = search.get("mode");
@@ -103,6 +103,14 @@ export default function ClubCreateStep5Page() {
         disabled={isSaving}
       />
     </ClubShell>
+  );
+}
+
+export default function ClubCreateStep5Page() {
+  return (
+    <Suspense fallback={null}>
+      <ClubCreateStep5Content />
+    </Suspense>
   );
 }
 

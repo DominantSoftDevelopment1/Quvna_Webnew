@@ -2,12 +2,12 @@
 
 import { Plus, X } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import type { ChangeEvent } from "react";
 import { BottomActions, ClubShell, StepProgress } from "../../_components";
 import { getClubDraft, setClubDraft } from "../../_lib";
 
-export default function ClubCreateStep4Page() {
+function ClubCreateStep4Content() {
   const router = useRouter();
   const search = useSearchParams();
   const mode = search.get("mode");
@@ -127,6 +127,14 @@ export default function ClubCreateStep4Page() {
       {error ? <p style={{ margin: "8px 0 0", color: "#fda4af", fontSize: 13 }}>{error}</p> : null}
       <BottomActions onBack={() => router.push(`/profile/club/create/step-3${mode === "edit" && id ? `?mode=edit&id=${id}` : ""}`)} onNext={next} />
     </ClubShell>
+  );
+}
+
+export default function ClubCreateStep4Page() {
+  return (
+    <Suspense fallback={null}>
+      <ClubCreateStep4Content />
+    </Suspense>
   );
 }
 
