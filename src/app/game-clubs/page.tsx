@@ -15,7 +15,7 @@ export default function GameClubsPage() {
   const { data: clubs = [], isLoading } = useGameClubs();
 
   return (
-    <div className="max-w-3xl mx-auto pb-8">
+    <div className="max-w-6xl mx-auto pb-8">
       {/* Header */}
       <div className="game-page-header">
         <button type="button" className="game-back-btn" onClick={() => router.back()} aria-label="Orqaga">

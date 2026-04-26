@@ -18,15 +18,15 @@ export function BottomNav() {
   if (hideBottomNav) return null;
 
   return (
-    <>
-      <nav className="bottom-nav">
+    <nav className="bottom-nav">
+      <div className="bottom-nav-shell">
         {navItems.map(({ href, label, icon }) => {
           const active = href === "/" ? pathname === "/" : pathname.startsWith(href);
           const isStream = href === "/stream";
 
           if (isStream) {
             return (
-              <Link key={href} href={href} className="bottom-nav-stream">
+              <Link key={href} href={href} className={`bottom-nav-stream${active ? " active" : ""}`}>
                 <img
                   src={icon}
                   alt={label}
@@ -51,11 +51,11 @@ export function BottomNav() {
                 height={22}
                 className={`bottom-nav-icon${active ? " active" : ""}`}
               />
-              <span className="text-xs font-medium">{label}</span>
+              <span className="bottom-nav-label">{label}</span>
             </Link>
           );
         })}
-      </nav>
-    </>
+      </div>
+    </nav>
   );
 }

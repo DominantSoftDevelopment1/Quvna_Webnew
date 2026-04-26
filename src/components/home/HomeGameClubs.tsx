@@ -10,7 +10,7 @@ export function HomeGameClubs() {
 
   if (isLoading) {
     return (
-      <div className="flex gap-3 overflow-x-auto scrollbar-none">
+      <div className="flex justify-center items-center gap-[100px] overflow-x-auto scrollbar-none">
         {[0, 1, 2].map((i) => (
           <div key={i} className="club-card">
             <Skeleton className="w-[200px] h-[164px] rounded-2xl" />
@@ -34,7 +34,7 @@ export function HomeGameClubs() {
   }
 
   return (
-    <div className="flex gap-3 overflow-x-auto scrollbar-none pb-2">
+    <div className="flex justify-center items-center gap-[100px] overflow-x-auto scrollbar-none pb-2">
       {clubs.map((club: ClubItem) => (
         <GameClubCard key={club.id} club={club} />
       ))}

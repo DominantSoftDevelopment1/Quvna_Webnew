@@ -47,7 +47,7 @@ export default function TournamentDetailPage() {
   const { data: prizes = [] } = useTournamentPrizes(id);
 
   if (isLoading) return (
-    <div className="max-w-2xl mx-auto py-6 flex flex-col gap-4">
+    <div className="max-w-5xl mx-auto py-6 flex flex-col gap-4">
       <Skeleton className="h-56 rounded-2xl" />
       <Skeleton className="h-20 rounded-xl" />
       <Skeleton className="h-32 rounded-xl" />
@@ -65,7 +65,7 @@ export default function TournamentDetailPage() {
   const name = t.name ?? t.title ?? "Turnir";
 
   return (
-    <div className="max-w-2xl mx-auto pb-8">
+    <div className="max-w-5xl mx-auto pb-8">
       {/* Back */}
       <div className="game-page-header">
         <button type="button" className="game-back-btn" onClick={() => router.back()} aria-label="Orqaga">

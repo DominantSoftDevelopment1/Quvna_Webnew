@@ -21,9 +21,9 @@ import {
   Info,
   HelpCircle,
   ChevronRight,
-  ChevronLeft,
   Star,
   Edit3,
+  Trophy,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -81,12 +81,6 @@ function ProfileContent({ userId, isLoggedIn, onLogout }: { userId: number | nul
   const cardsRef = useRef<HTMLDivElement>(null);
   const videoTermsSeenKey = `profile_video_terms_seen_v1_${userId ?? "guest"}`;
   const restrictionsSeenKey = `profile_video_restrictions_seen_v1_${userId ?? "guest"}`;
-
-  const scrollCards = (dir: "left" | "right") => {
-    if (cardsRef.current) {
-      cardsRef.current.scrollBy({ left: dir === "right" ? 180 : -180, behavior: "smooth" });
-    }
-  };
 
   const openVideosTabWithNotice = () => {
     setActiveTab("videos");
@@ -209,10 +203,21 @@ function ProfileContent({ userId, isLoggedIn, onLogout }: { userId: number | nul
   return (
     <div
       className="w-full mx-auto pb-24 lg:pb-10 min-h-[calc(100dvh-96px)]"
-      style={{ maxWidth: '960px', marginLeft: 'auto', marginRight: 'auto', paddingLeft: '1rem', paddingRight: '1rem' }}
+      style={{
+        maxWidth: "960px",
+        marginLeft: "auto",
+        marginRight: "auto",
+        paddingLeft: "1rem",
+        paddingRight: "1rem",
+        paddingTop: "20px",
+        paddingBottom: "20px",
+      }}
     >
       {/* ===== HEADER CARD + TABS — bitta card ===== */}
-      <div className="rounded-3xl overflow-hidden" style={{ background: "var(--bg-card)", marginBottom: 16 }}>
+      <div
+        className="rounded-3xl overflow-hidden"
+        style={{ background: "var(--bg-card)", marginBottom: 16, marginTop: 0, paddingTop: 0, paddingBottom: 0 }}
+      >
 
         {/* Banner — katta, sahifa orqa foniga blur effekti */}
         <div className="relative" style={{ height: 230 }}>
@@ -228,7 +233,16 @@ function ProfileContent({ userId, isLoggedIn, onLogout }: { userId: number | nul
             <div className="absolute inset-0 bg-gradient-to-br from-green-900 to-black" />
           )}
           {/* Pastga gradient overlay — avatar ustiga */}
-          <div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, transparent 40%, rgba(0,0,0,0.7) 100%)" }} />
+          <div
+            className="absolute inset-0"
+            style={{
+              background: "linear-gradient(to bottom, transparent 40%, rgba(0,0,0,0.7) 100%)",
+              paddingTop: 0,
+              paddingBottom: 0,
+              marginTop: 0,
+              marginBottom: 0,
+            }}
+          />
 
           {/* Tahrirlash tugmasi — 5px chapga */}
           <Link href="/profile/edit" className="absolute top-4 flex items-center gap-1.5 text-xs font-medium"
@@ -327,14 +341,8 @@ function ProfileContent({ userId, isLoggedIn, onLogout }: { userId: number | nul
           </div>
 
           {/* Game rating cards — 4 ta, swipe, scrollbar yo'q */}
-          {/* Cards + nav arrows */}
+          {/* Cards (swipe) */}
           <div className="relative" style={{ marginTop: 16, marginLeft: -16, marginRight: -16 }}>
-            {/* Left arrow */}
-            <button type="button" aria-label="Chapga" onClick={() => scrollCards("left")}
-              className="absolute left-0 top-1/2 -translate-y-1/2 z-10 flex items-center justify-center"
-              style={{ width: 28, height: 28, borderRadius: "50%", background: "rgba(0,0,0,0.45)", color: "#fff", backdropFilter: "blur(4px)" }}>
-              <ChevronLeft size={16} />
-            </button>
             {/* Scrollable row */}
             <div ref={cardsRef} className="flex overflow-x-auto"
               style={{ gap: '16px', paddingLeft: 16, paddingRight: 16, scrollbarWidth: "none", msOverflowStyle: "none" }}>
@@ -343,12 +351,6 @@ function ProfileContent({ userId, isLoggedIn, onLogout }: { userId: number | nul
               <RatingCard title="FREE FIRE"      rating={ffR}  name={dashDisplay(p.freeFireName)}        uid={dashDisplay(p.freeFireUID)}         total={formatGameAmount(ffR)} />
               <RatingCard title="STEAM"          rating={stR}  name={dashDisplay(p.steamName)}            uid={dashDisplay(steamId)}               total={formatGameAmount(stR)} />
             </div>
-            {/* Right arrow */}
-            <button type="button" aria-label="O'ngga" onClick={() => scrollCards("right")}
-              className="absolute right-0 top-1/2 -translate-y-1/2 z-10 flex items-center justify-center"
-              style={{ width: 28, height: 28, borderRadius: "50%", background: "rgba(0,0,0,0.45)", color: "#fff", backdropFilter: "blur(4px)" }}>
-              <ChevronRight size={16} />
-            </button>
           </div>
         </div>
 
@@ -407,6 +409,7 @@ function ProfileContent({ userId, isLoggedIn, onLogout }: { userId: number | nul
               onClick={openVideosTabWithNotice}
             />
             <MenuItem icon={<History size={20} />} label="Tarix" href="/profile/history" />
+            <MenuItem icon={<Trophy size={20} />} label="Turnirlarim" href="/profile/tournaments" />
             <MenuItem icon={<Users size={20} />} label="Mening klubim" href="/profile/club" />
 
 <MenuItem icon={<Settings size={20} />} label="Sozlamalar" href="/profile/settings" />
