@@ -1,8 +1,7 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { StreamViewerContent } from "@/components/stream/StreamViewerContent";
+import { Suspense, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useStreams } from "@/hooks/useMedia";
 import { CategoryEmptyState } from "@/components/videos/CategoryEmptyState";
 import { cdnUrl, formatCount } from "@/lib/utils";
@@ -26,32 +25,12 @@ type EfirlarStreamItem = {
 
 function EfirlarPageContent() {
   const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
   const { data: streams = [], isLoading } = useStreams();
   const [search, setSearch] = useState("");
-  const selectedStreamId = searchParams.get("streamId");
 
   const openStream = (streamId: string) => {
-    const params = new URLSearchParams(searchParams.toString());
-    params.set("streamId", streamId);
-    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+    router.push(`/videos/efirlar/${streamId}`);
   };
-
-  const closeStream = () => {
-    const params = new URLSearchParams(searchParams.toString());
-    params.delete("streamId");
-    const query = params.toString();
-    router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
-  };
-
-  useEffect(() => {
-    const shouldCompact = !!selectedStreamId;
-    document.body.classList.toggle("stream-compact-sidebar", shouldCompact);
-    return () => {
-      document.body.classList.remove("stream-compact-sidebar");
-    };
-  }, [selectedStreamId]);
 
   if (isLoading) {
     return (
@@ -156,25 +135,6 @@ function EfirlarPageContent() {
         </div>
         </div>
       </div>
-      {selectedStreamId && (
-        <div className="fixed inset-0 z-50 bg-black/75 p-1.5 md:p-2 lg:left-[76px] lg:p-2">
-          <div className="flex h-full w-full flex-col border border-white/15 bg-[#0f1011]">
-            <div className="flex items-center justify-between border-b border-white/10 px-5 py-[14px]">
-              <p className="text-[16px] font-semibold text-white">Jonli efir</p>
-              <button
-                type="button"
-                onClick={closeStream}
-                className="border border-white/20 px-3.5 py-2 text-[13px] font-semibold text-white"
-              >
-                Yopish
-              </button>
-            </div>
-            <div className="h-full w-full min-h-0 flex-1 overflow-auto">
-              <StreamViewerContent streamId={selectedStreamId} />
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

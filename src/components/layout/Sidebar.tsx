@@ -4,6 +4,9 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { Moon } from "lucide-react";
+import { useAuthStore } from "@/store/auth.store";
+import { cdnUrl } from "@/lib/utils";
+import { useProfile } from "@/hooks/useProfile";
 
 const navItems = [
   { href: "/",        label: "Asosiy",   icon: "/icons/game.svg"    },
@@ -15,10 +18,28 @@ const navItems = [
 
 export function Sidebar() {
   const pathname = usePathname();
+  const isCompactSidebar =
+    pathname.startsWith("/stream") || pathname.startsWith("/videos/efirlar/");
+
+  const { user } = useAuthStore();
+  const userId = user?.id != null ? Number(user.id) : null;
+  const { data: profile } = useProfile(userId);
   const [darkMode, setDarkMode] = useState(true);
   const [showVideosFlyout, setShowVideosFlyout] = useState(false);
   const [selectedFlyoutItem, setSelectedFlyoutItem] = useState<string | null>(null);
   const openFlyoutTimeoutRef = useRef<number | null>(null);
+  const p = (profile ?? {}) as {
+    fullName?: string;
+    firstName?: string;
+    username?: string;
+    avatar?: string;
+    attachmentResponseDTO?: { preSignedUrl?: string; contentURL?: string };
+  };
+  const displayName = p.fullName || p.firstName || p.username || user?.fullName || user?.firstName || user?.username || "User";
+  const avatarSrc =
+    p.avatar || p.attachmentResponseDTO?.preSignedUrl || p.attachmentResponseDTO?.contentURL ||
+    user?.avatar || user?.attachmentResponseDTO?.preSignedUrl || user?.attachmentResponseDTO?.contentURL;
+  const avatarLetter = displayName.trim().charAt(0).toUpperCase() || "U";
 
   const openFlyoutWithDelay = () => {
     if (openFlyoutTimeoutRef.current) {
@@ -44,20 +65,20 @@ export function Sidebar() {
   };
 
   useEffect(() => {
-    document.body.classList.toggle("stream-compact-sidebar", pathname.startsWith("/stream"));
+    document.body.classList.toggle("stream-compact-sidebar", isCompactSidebar);
     return () => {
       document.body.classList.remove("stream-compact-sidebar");
       if (openFlyoutTimeoutRef.current) {
         window.clearTimeout(openFlyoutTimeoutRef.current);
       }
     };
-  }, [pathname]);
+  }, [isCompactSidebar]);
 
   return (
     <aside className="sidebar" onMouseLeave={handleSidebarMouseLeave}>
       {/* Logo */}
       <Link href="/" className="sidebar-logo">
-        <img src="/quvna_logo.png" alt="Quvna" width={32} height={32} className="rounded-lg shrink-0" />
+        <img src="/quvna_logo.png" alt="Quvna" width={40} height={40} className="rounded-lg shrink-0" />
         <img src="/icons/text_quvna.svg" alt="Quvna" className="sidebar-logo-text" />
       </Link>
 
@@ -71,7 +92,7 @@ export function Sidebar() {
               key={href}
               className="sidebar-nav-item-wrap"
               onMouseEnter={() => {
-                if (isVideos) {
+                if (isVideos && !isCompactSidebar) {
                   openFlyoutWithDelay();
                 } else {
                   closeFlyoutNow();
@@ -81,14 +102,29 @@ export function Sidebar() {
               <Link
                 href={href}
                 className={`sidebar-nav-item${active ? " active" : ""}`}
+                data-label={label}
               >
-                <img
-                  src={icon}
-                  alt=""
-                  width={20}
-                  height={20}
-                  className={`sidebar-nav-icon${active ? " active" : ""}`}
-                />
+                {href === "/profile" ? (
+                  avatarSrc ? (
+                    <img
+                      src={avatarSrc.startsWith("http") ? avatarSrc : cdnUrl(avatarSrc)}
+                      alt={displayName}
+                      width={28}
+                      height={28}
+                      className={`sidebar-nav-avatar${active ? " active" : ""}`}
+                    />
+                  ) : (
+                    <span className={`sidebar-nav-avatar-fallback${active ? " active" : ""}`}>{avatarLetter}</span>
+                  )
+                ) : (
+                  <img
+                    src={icon}
+                    alt=""
+                    width={20}
+                    height={20}
+                    className={`sidebar-nav-icon${active ? " active" : ""}`}
+                  />
+                )}
                 {label}
               </Link>
             </div>
@@ -96,7 +132,7 @@ export function Sidebar() {
         })}
       </nav>
 
-      {showVideosFlyout && (
+      {showVideosFlyout && !isCompactSidebar && (
         <div
           className="videos-hover-flyout"
           onMouseEnter={() => setShowVideosFlyout(true)}

@@ -22,9 +22,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <Sidebar />
           <div className="main-content">
             <Topbar />
-            <main className="main-scroll">
-              {children}
-            </main>
+            <div className="main-body-scroll">{children}</div>
           </div>
           <BottomNav />
         </Providers>
