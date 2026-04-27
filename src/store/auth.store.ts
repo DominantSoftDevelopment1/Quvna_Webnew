@@ -9,7 +9,7 @@ interface User {
   fullName?: string;
   phoneNumber?: string;
   avatar?: string;
-  attachmentResponseDTO?: { preSignedUrl?: string };
+  attachmentResponseDTO?: { preSignedUrl?: string; contentURL?: string };
   score?: number;
 }
 
