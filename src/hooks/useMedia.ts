@@ -39,6 +39,24 @@ export interface CommentItem {
   };
 }
 
+export interface StreamListItem {
+  id: number | string;
+  name?: string;
+  title?: string;
+  thumbnailUrl?: string;
+  thumbnail?: string;
+  liveUserCount?: number;
+  user?: {
+    id?: number | string;
+    username?: string;
+    firstName?: string;
+    lastName?: string;
+    fullName?: string;
+    avatar?: string;
+    attachmentResponseDTO?: { preSignedUrl?: string };
+  };
+}
+
 function isYouTubeUrl(url: string | null | undefined): boolean {
   if (!url) return false;
   return url.includes("youtube.com") || url.includes("youtu.be");
@@ -98,11 +116,32 @@ export function useInfiniteShorts() {
 }
 
 export function useStreams() {
-  return useQuery({
+  return useQuery<StreamListItem[]>({
     queryKey: ["streams"],
     queryFn: async () => {
-      const { data } = await api.get("/streams/all");
-      return data?.data ?? [];
+      try {
+        // New backend requires pagination on /streams/all
+        const { data } = await api.get("/streams/all", { params: { page: 0, size: 20 } });
+        const list = (data?.data ?? []) as Array<Record<string, unknown>>;
+        return list.map((item): StreamListItem => {
+          const user = (item.user ?? {}) as Record<string, unknown>;
+          const attachment = (user.attachmentResponseDTO ?? {}) as Record<string, unknown>;
+          const firstName = typeof user.firstName === "string" ? user.firstName : "";
+          const lastName = typeof user.lastName === "string" ? user.lastName : "";
+          return {
+            ...item,
+            user: {
+              ...user,
+              avatar: (attachment.preSignedUrl as string | undefined) ?? undefined,
+              fullName: `${firstName} ${lastName}`.trim(),
+            },
+          } as StreamListItem;
+        });
+      } catch {
+        // Legacy endpoint fallback
+        const { data } = await api.get("/streams");
+        return (data ?? []) as StreamListItem[];
+      }
     },
   });
 }

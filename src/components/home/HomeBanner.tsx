@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
-import { useStreams } from "@/hooks/useMedia";
+import { useStreams, type StreamListItem } from "@/hooks/useMedia";
 import { cdnUrl, formatCount } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/Skeleton";
 
@@ -111,7 +111,7 @@ export function HomeBanner() {
         onMouseLeave={handleMouseUp}
       >
         <div className="flex gap-3">
-          {streams.map((stream: StreamItem) => (
+          {streams.map((stream: StreamListItem) => (
             <StreamBannerCard key={stream.id} stream={stream} />
           ))}
         </div>
@@ -134,7 +134,7 @@ export function HomeBanner() {
   );
 }
 
-function StreamBannerCard({ stream }: { stream: StreamItem }) {
+function StreamBannerCard({ stream }: { stream: StreamListItem }) {
   return (
     <Link href={`/stream/${stream.id}`} className="banner-card">
       {stream.thumbnailUrl || stream.thumbnail ? (
@@ -189,12 +189,3 @@ function LiveAvatar({ avatar }: { avatar?: string }) {
   );
 }
 
-interface StreamItem {
-  id: number;
-  name?: string;
-  title?: string;
-  thumbnailUrl?: string;
-  thumbnail?: string;
-  liveUserCount?: number;
-  user?: { username?: string; fullName?: string; avatar?: string };
-}
