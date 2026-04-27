@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { StreamViewerContent } from "@/components/stream/StreamViewerContent";
 import { useStreams } from "@/hooks/useMedia";
@@ -11,7 +11,7 @@ import { Search, Users } from "lucide-react";
 const FALLBACK_STREAM_IMAGE =
   "https://images.unsplash.com/photo-1542751110-97427bbecf20?auto=format&fit=crop&w=1200&q=80";
 
-export default function EfirlarPage() {
+function EfirlarPageContent() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -163,6 +163,14 @@ export default function EfirlarPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function EfirlarPage() {
+  return (
+    <Suspense fallback={null}>
+      <EfirlarPageContent />
+    </Suspense>
   );
 }
 
