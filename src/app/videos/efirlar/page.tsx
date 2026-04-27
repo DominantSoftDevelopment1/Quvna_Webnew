@@ -4,6 +4,7 @@ import { Suspense, useEffect, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { StreamViewerContent } from "@/components/stream/StreamViewerContent";
 import { useStreams } from "@/hooks/useMedia";
+import type { StreamListItem } from "@/hooks/useMedia";
 import { CategoryEmptyState } from "@/components/videos/CategoryEmptyState";
 import { cdnUrl, formatCount } from "@/lib/utils";
 import { Search, Users } from "lucide-react";
@@ -97,7 +98,7 @@ function EfirlarPageContent() {
         </h1>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 justify-items-center gap-x-6 gap-y-8">
-          {streams.map((stream) => {
+          {streams.map((stream: StreamListItem) => {
             const cardContent = (
               <>
                 <div className="relative aspect-video w-full overflow-hidden rounded-xl bg-[#111315] border border-white/10">
