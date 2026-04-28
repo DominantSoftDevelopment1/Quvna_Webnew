@@ -14,7 +14,7 @@ export const api = axios.create({
 // watchdog avtomatik ravishda Axios interceptor qo'shadi
 
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem("access_token");
+  const token = localStorage.getItem("access_token") || localStorage.getItem("accessToken");
   if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;
 });
@@ -38,7 +38,7 @@ api.interceptors.response.use(
     }
 
     if (err.response?.status === 401) {
-      const refresh = localStorage.getItem("refresh_token");
+      const refresh = localStorage.getItem("refresh_token") || localStorage.getItem("refreshToken");
       if (refresh) {
         try {
           const { data } = await axios.patch(`${BASE_URL}/api/auth/refresh-token`, null, {
@@ -48,12 +48,16 @@ api.interceptors.response.use(
           if (newToken) {
             localStorage.setItem("access_token", newToken);
             localStorage.setItem("refresh_token", data?.data?.refreshToken);
+            localStorage.setItem("accessToken", newToken);
+            localStorage.setItem("refreshToken", data?.data?.refreshToken);
             err.config.headers.Authorization = `Bearer ${newToken}`;
             return api(err.config);
           }
         } catch {
           localStorage.removeItem("access_token");
           localStorage.removeItem("refresh_token");
+          localStorage.removeItem("accessToken");
+          localStorage.removeItem("refreshToken");
           window.location.href = "/auth/login";
         }
       }

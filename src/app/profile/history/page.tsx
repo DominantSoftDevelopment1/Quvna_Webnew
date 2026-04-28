@@ -51,10 +51,21 @@ const EMPTY_TAB_STATE: TabState = {
 
 function statusLabel(status?: string | null): { text: string; bg: string; color: string } {
   const normalized = String(status ?? "").toUpperCase();
-  if (normalized.includes("SUCCESS")) return { text: "Muvaffaqiyatli", bg: "rgba(16,185,129,0.16)", color: "#34d399" };
-  if (normalized.includes("PENDING")) return { text: "Jarayonda", bg: "rgba(245,158,11,0.16)", color: "#fbbf24" };
-  if (normalized.includes("CANCEL")) return { text: "Bekor qilingan", bg: "rgba(239,68,68,0.16)", color: "#f87171" };
-  if (normalized.includes("FAIL")) return { text: "Xatolik", bg: "rgba(239,68,68,0.16)", color: "#f87171" };
+  if (normalized.includes("COMPLETED") || normalized.includes("SUCCESS")) {
+    return { text: "Muvaffaqiyatli", bg: "rgba(16,185,129,0.16)", color: "#34d399" };
+  }
+  if (normalized.includes("WAITING") || normalized.includes("PENDING") || normalized.includes("PROCESSING")) {
+    return { text: "Jarayonda", bg: "rgba(59,130,246,0.16)", color: "#60a5fa" };
+  }
+  if (normalized.includes("ACCEPTED")) {
+    return { text: "Qabul qilindi", bg: "rgba(16,185,129,0.16)", color: "#34d399" };
+  }
+  if (normalized.includes("CANCEL") || normalized.includes("REJECT")) {
+    return { text: "Rad etilgan", bg: "rgba(239,68,68,0.16)", color: "#f87171" };
+  }
+  if (normalized.includes("FAIL") || normalized.includes("ERROR")) {
+    return { text: "Xatolik", bg: "rgba(239,68,68,0.16)", color: "#f87171" };
+  }
   return { text: "Noma'lum", bg: "rgba(148,163,184,0.18)", color: "#cbd5e1" };
 }
 
@@ -159,6 +170,7 @@ export default function ProfileHistoryPage() {
   }
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     void loadTab(activeTab, true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab, userId]);
@@ -369,13 +381,13 @@ function ReceiptModal({ item, tab, onClose }: { item: HistoryItem; tab: ProductT
       >
         <div style={{ width: 36, height: 4, borderRadius: 999, background: "rgba(255,255,255,0.34)", margin: "0 auto 10px" }} />
         <h3 style={{ margin: "0 0 12px", textAlign: "center", fontSize: 18, fontWeight: 700 }}>
-          {isUcCouponReceipt ? "To'lov cheki - Voucher" : "To'lov cheki"}
+          {isUcCouponReceipt ? "To&apos;lov cheki - Voucher" : "To&apos;lov cheki"}
         </h3>
 
         <div style={{ textAlign: "center" }}>
           <img src={config.icon} alt="" width={74} height={74} style={{ borderRadius: 18, objectFit: "cover", border: "1px solid rgba(255,255,255,0.24)" }} />
           <p style={{ margin: "10px 0 0", fontSize: 18, fontWeight: 700 }}>{amount} {config.amountName}</p>
-          <p style={{ margin: "6px 0 0", fontSize: 24, fontWeight: 800 }}>{Number(item.totalPrice ?? 0).toLocaleString()} so'm</p>
+          <p style={{ margin: "6px 0 0", fontSize: 24, fontWeight: 800 }}>{Number(item.totalPrice ?? 0).toLocaleString()} so&apos;m</p>
           <div style={{ marginTop: 8, display: "inline-flex", borderRadius: 999, padding: "4px 10px", fontSize: 11, fontWeight: 700, color: status.color, background: status.bg }}>
             {status.text}
           </div>
@@ -415,7 +427,7 @@ function ReceiptModal({ item, tab, onClose }: { item: HistoryItem; tab: ProductT
                   </button>
                 }
               />
-              <Row label="To'lov turi" value={item.payType || "Coupon"} />
+              <Row label="To&apos;lov turi" value={item.payType || "Coupon"} />
               <Row label="Qabul qiluvchi" value={item.fullName || "-"} isLast />
             </>
           ) : (

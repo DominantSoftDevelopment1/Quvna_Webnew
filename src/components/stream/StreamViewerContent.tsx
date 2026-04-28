@@ -212,7 +212,7 @@ export function StreamViewerContent({ streamId }: StreamViewerContentProps) {
           </div>
 
           <div className="border-t border-white/10 px-5 py-4">
-            <div className="flex w-full items-center gap-4">
+            <div className="flex w-full items-center gap-4 py-[10px]">
               <div className="flex min-w-0 flex-1 items-center gap-3">
                 <div className="grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded-full bg-[#24262b] text-white">
                   {STREAMER.avatar ? (
@@ -235,8 +235,8 @@ export function StreamViewerContent({ streamId }: StreamViewerContentProps) {
                 </div>
               </div>
 
-              <div className="flex shrink-0 items-center gap-3">
-                <button className="inline-flex h-10 items-center justify-center rounded-md bg-[#03ff93] px-4 text-[14px] font-semibold text-black transition hover:bg-[#00e884]">
+              <div className="flex shrink-0 items-center gap-3 px-[10px]">
+                <button className="inline-flex h-10 items-center justify-center rounded-md bg-[#03ff93] px-5 text-[14px] font-semibold text-black transition hover:bg-[#00e884]">
                   Obuna bo&apos;lish
                 </button>
 
@@ -251,7 +251,7 @@ export function StreamViewerContent({ streamId }: StreamViewerContentProps) {
               </div>
             </div>
 
-            <h1 className="mt-4 break-words text-[22px] font-bold leading-[1.25] text-white md:text-[25px]">
+            <h1 className="my-[10px] break-words text-[22px] font-bold leading-[1.25] text-white md:text-[25px]">
               {STREAMER.username} — Jonli efir #{streamId}
             </h1>
 

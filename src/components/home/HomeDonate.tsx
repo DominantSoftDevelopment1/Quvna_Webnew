@@ -11,7 +11,7 @@ const DONATE_ITEMS = [
 
 export function HomeDonate() {
   return (
-    <div className="flex justify-center items-center gap-[100px] overflow-x-auto scrollbar-none">
+    <div className="flex justify-start items-start gap-[20px] overflow-x-auto scrollbar-none">
       {DONATE_ITEMS.map((item) => (
         <Link key={item.id} href={item.href} className="donate-card-home">
           <div className="donate-img-wrap-home">
