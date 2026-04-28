@@ -9,12 +9,14 @@ function apiBaseUrl(): string {
   const fromEnv = process.env.NEXT_PUBLIC_API_BASE_URL?.trim();
   if (fromEnv) return fromEnv.replace(/\/$/, "");
   if (process.env.NODE_ENV === "development") return "/api-proxy";
-  return "http://95.130.227.48:8066";
+  return "https://quvna.dominantsoftdevelopment.uz";
 }
 
 export const BASE_URL = apiBaseUrl();
 export const CDN_BASE_URL = "https://quvna-live.b-cdn.net";
 export const WS_URL =
-  BASE_URL.startsWith("/api-proxy") ? "wss://quvna.dominantsoftdevelopment.uz" : "ws://95.130.227.48:8066";
+  BASE_URL.startsWith("/api-proxy") || BASE_URL.startsWith("https://")
+    ? "wss://quvna.dominantsoftdevelopment.uz"
+    : "ws://95.130.227.48:8066";
 
 export const APP_NAME = "Quvna";

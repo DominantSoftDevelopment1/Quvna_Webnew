@@ -15,8 +15,12 @@ export function Providers({ children }: { children: React.ReactNode }) {
   const prevPathname = useRef<string | null>(null);
 
   useEffect(() => {
+    const isWatchdogEnabled = process.env.NEXT_PUBLIC_WATCHDOG_ENABLED === "true";
+    const watchdogUrl = process.env.NEXT_PUBLIC_WATCHDOG_URL?.trim();
+    if (!isWatchdogEnabled || !watchdogUrl) return;
+
     const watchdog = initWatchdogCloud({
-      serverUrl: process.env.NEXT_PUBLIC_WATCHDOG_URL || "ws://localhost:9999",
+      serverUrl: watchdogUrl,
       appName: "Quvna Web",
       appVersion: "2.0.0",
       enableConsoleCapture: true,
