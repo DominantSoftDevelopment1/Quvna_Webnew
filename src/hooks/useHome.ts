@@ -130,10 +130,6 @@ export function useDonateProducts(type: DonateProductType) {
           type,
           _ts: Date.now(),
         },
-        headers: {
-          "Cache-Control": "no-cache",
-          Pragma: "no-cache",
-        },
       });
       return (data?.data ?? []) as DonateProduct[];
     },
