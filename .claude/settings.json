@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(adb -s AYAV6R3627022184 logcat -d)",
+      "Bash(adb devices *)",
+      "Bash(adb -s AYAV6R3627022184 logcat -d -t 200)",
+      "Bash(where adb *)",
+      "Read(//c/Users/**)",
+      "PowerShell(& \"C:\\\\Users\\\\�omp X\\\\AppData\\\\Local\\\\Android\\\\Sdk\\\\platform-tools\\\\adb.exe\" -s AYAV6R3627022184 logcat -d 2>&1)",
+      "PowerShell(& \"C:\\\\Users\\\\�omp X\\\\AppData\\\\Local\\\\Android\\\\Sdk\\\\platform-tools\\\\adb.exe\" -s AYAV6R3627022184 logcat -d -t 500 2>&1)",
+      "PowerShell(& \"C:\\\\Users\\\\�omp X\\\\AppData\\\\Local\\\\Android\\\\Sdk\\\\platform-tools\\\\adb.exe\" -s AYAV6R3627022184 logcat -c 2>&1)"
+    ],
+    "additionalDirectories": [
+      "D:\\QUVNA OBSIDIAN\\quvna_mobile\\android\\app\\src\\main\\kotlin\\com\\dsd\\uz\\Quvna",
+      "D:\\QUVNA OBSIDIAN\\quvna_mobile\\lib\\features\\my_stream\\presentation\\bloc"
+    ]
+  }
+}
