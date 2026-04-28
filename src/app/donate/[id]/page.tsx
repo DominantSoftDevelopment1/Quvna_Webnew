@@ -1,141 +1,1051 @@
 "use client";
 
-import { useParams, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
+import {
+  DonateProductType,
+  PaymentServiceType,
+  fetchOrderHistoryByType,
+  useCreateDonateOrder,
+  useDonateProducts,
+} from "@/hooks/useHome";
+import { useAuthStore } from "@/store/auth.store";
 
-const DONATE_DATA: Record<string, DonateItem> = {
+type DonateId = "pubg" | "ml" | "freefire" | "steam";
+type PubgTab = "uid" | "promo";
+type PaymentState = "idle" | "success" | "error";
+type PaymentProvider = "OSON" | "OCTO";
+type PubgUidStep = "catalog" | "identity";
+type SteamCurrency = "UZS" | "USD";
+
+const STEAM_USD_TO_UZS_RATE = 13_000;
+
+interface DonatePackage {
+  amount: number | string;
+  price?: number;
+  bonus?: string;
+  image?: string;
+  productId?: number;
+}
+
+interface DonateProduct {
+  name: string;
+  image: string;
+  subtitle: string;
+  totalCount: number;
+  packages: DonatePackage[];
+}
+
+interface SavedIdentity {
+  uid: string;
+  nickname: string;
+}
+
+const DONATE_DATA: Record<DonateId, DonateProduct> = {
   pubg: {
     name: "PUBG Mobile UC",
-    image: "/images/donate_pubg.png",
-    currency: "UC",
+    image: "/images/profile-games/pubgmobile.png",
+    subtitle: "ID orqali",
+    totalCount: 17,
     packages: [
-      { amount: 60,   price: 15_000  },
-      { amount: 120,  price: 28_000  },
-      { amount: 325,  price: 72_000  },
-      { amount: 660,  price: 140_000 },
-      { amount: 1800, price: 370_000 },
-      { amount: 3850, price: 750_000 },
+      { amount: 60, price: 57_000, bonus: "+20 UC", image: "/images/donate/pubg/pubg_60.png" },
+      { amount: 300, price: 57_000, bonus: "+20 UC", image: "/images/donate/pubg/pubg_300.png" },
+      { amount: 600, price: 57_000, image: "/images/donate/pubg/pubg_300.png" },
+      { amount: 1200, price: 57_000, image: "/images/donate/pubg/pubg_1200.png" },
+      { amount: 2400, price: 57_000, bonus: "+20 UC", image: "/images/donate/pubg/pubg_2400.png" },
+      { amount: 4800, price: 57_000, bonus: "+20 UC", image: "/images/donate/pubg/pubg_4800.png" },
+      { amount: 9600, price: 57_000, bonus: "+20 UC", image: "/images/donate/pubg/pubg_9600.png" },
+      { amount: 10000, price: 57_000, bonus: "+20 UC", image: "/images/donate/pubg/pubg_10000.png" },
+      { amount: 16600, price: 57_000, bonus: "+20 UC", image: "/images/donate/pubg/pubg_16600.png" },
     ],
   },
   ml: {
-    name: "Mobile Legends Diamond",
-    image: "/images/donate_mobile_legends.png",
-    currency: "💎",
+    name: "Mobile Legends",
+    image: "/images/profile-games/mobilelegends.png",
+    subtitle: "Sotib olish",
+    totalCount: 15571,
     packages: [
-      { amount: 11,   price: 12_000  },
-      { amount: 22,   price: 23_000  },
-      { amount: 56,   price: 55_000  },
-      { amount: 112,  price: 108_000 },
-      { amount: 336,  price: 310_000 },
-      { amount: 570,  price: 520_000 },
+      { amount: 100, price: 57_000, image: "/images/donate/ml/ml_100.png" },
+      { amount: 400, price: 57_000, image: "/images/donate/ml/ml_400.png" },
+      { amount: 800, price: 57_000, image: "/images/donate/ml/ml_800.png" },
+      { amount: 1600, price: 57_000, image: "/images/donate/ml/ml_1600.png" },
+      { amount: 3400, price: 57_000, image: "/images/donate/ml/ml_3400.png" },
+      { amount: 6800, price: 57_000, image: "/images/donate/ml/ml_6800.png" },
+      { amount: 10000, price: 57_000, image: "/images/donate/ml/ml_3400.png" },
+      { amount: 6800, price: 57_000, image: "/images/donate/ml/ml_6800.png" },
     ],
   },
   freefire: {
-    name: "Free Fire Almaz",
-    image: "/images/donate_free_fire.png",
-    currency: "💎",
+    name: "Sotib olish",
+    image: "/images/donate/freefire/freefire_logo.png",
+    subtitle: "ID orqali sotib olish",
+    totalCount: 5,
     packages: [
-      { amount: 100,  price: 18_000  },
-      { amount: 210,  price: 35_000  },
-      { amount: 520,  price: 82_000  },
-      { amount: 1060, price: 160_000 },
-      { amount: 2180, price: 320_000 },
-      { amount: 5600, price: 790_000 },
+      { amount: "100 almaz", price: 12_000_000 },
+      { amount: "200 almaz", price: 12_000_000 },
+      { amount: "530 almaz", price: 12_000_000 },
+      { amount: "1080 almaz", price: 12_000_000 },
+      { amount: "2200 almaz", price: 12_000_000 },
     ],
   },
   steam: {
-    name: "Steam Wallet",
-    image: "/images/donate_steam.png",
-    currency: "$",
+    name: "STEAM",
+    image: "/images/donate/steam/steam_logo.png",
+    subtitle: "Steamda balansingizni to'ldiring",
+    totalCount: 0,
     packages: [
-      { amount: 5,   price: 65_000  },
-      { amount: 10,  price: 128_000 },
-      { amount: 20,  price: 250_000 },
-      { amount: 50,  price: 620_000 },
-      { amount: 100, price: 1_230_000 },
+      { amount: 15000, price: 15_000 },
+      { amount: 25000, price: 25_000 },
+      { amount: 100000, price: 100_000 },
+      { amount: 100000, price: 100_000 },
     ],
   },
 };
 
-interface DonateItem {
-  name: string; image: string; currency: string;
-  packages: { amount: number; price: number }[];
-}
+const PRODUCT_TYPE_BY_ID: Record<DonateId, DonateProductType> = {
+  pubg: "UC",
+  ml: "MOBILE_LEGENDS",
+  freefire: "FREE_FIRE",
+  steam: "STEAM",
+};
+
+const PACKAGE_IMAGE_BY_ID: Record<DonateId, string[]> = {
+  pubg: [
+    "/images/donate/pubg/pubg_60.png",
+    "/images/donate/pubg/pubg_300.png",
+    "/images/donate/pubg/pubg_300.png",
+    "/images/donate/pubg/pubg_1200.png",
+    "/images/donate/pubg/pubg_2400.png",
+    "/images/donate/pubg/pubg_4800.png",
+    "/images/donate/pubg/pubg_9600.png",
+    "/images/donate/pubg/pubg_10000.png",
+    "/images/donate/pubg/pubg_16600.png",
+  ],
+  ml: [
+    "/images/donate/ml/ml_100.png",
+    "/images/donate/ml/ml_400.png",
+    "/images/donate/ml/ml_800.png",
+    "/images/donate/ml/ml_1600.png",
+    "/images/donate/ml/ml_3400.png",
+    "/images/donate/ml/ml_6800.png",
+    "/images/donate/ml/ml_3400.png",
+    "/images/donate/ml/ml_6800.png",
+  ],
+  freefire: ["/images/donate/freefire/freefire_logo.png"],
+  steam: ["/images/donate/steam/steam_logo.png"],
+};
+
+const BACKGROUND_IMAGE_BY_ID: Record<DonateId, string> = {
+  pubg: "/images/profile-games/pubgmobile.png",
+  ml: "/images/profile-games/mobilelegends.png",
+  freefire: "/images/profile-games/freefire.png",
+  steam: "/images/profile-games/steam.png",
+};
+
+const BACKGROUND_CLASS_BY_ID: Record<DonateId, string> = {
+  pubg: "fixed inset-x-0 -top-16 -bottom-16 z-0 w-full bg-cover bg-center bg-no-repeat",
+  ml: "fixed inset-x-0 -top-16 -bottom-16 z-0 w-full bg-cover bg-center bg-no-repeat",
+  steam: "fixed inset-x-0 -top-16 -bottom-16 z-0 w-full bg-cover bg-center bg-no-repeat",
+  freefire: "fixed inset-x-0 -top-16 -bottom-16 z-0 w-full bg-cover bg-center bg-no-repeat",
+};
+
+const BACKGROUND_OVERLAY_BY_ID: Record<DonateId, string> = {
+  pubg: "linear-gradient(90deg, rgba(5,10,8,0.72) 0%, rgba(5,10,8,0.45) 40%, rgba(5,10,8,0.72) 100%)",
+  ml: "linear-gradient(90deg, rgba(5,10,8,0.72) 0%, rgba(5,10,8,0.45) 40%, rgba(5,10,8,0.72) 100%)",
+  steam:
+    "radial-gradient(circle at 70% 35%, rgba(0,120,255,0.22) 0%, transparent 35%), linear-gradient(90deg, rgba(3,7,13,0.92) 0%, rgba(3,7,13,0.72) 45%, rgba(3,7,13,0.90) 100%)",
+  freefire:
+    "radial-gradient(circle at 86% 34%, rgba(255,130,32,0.32) 0%, rgba(255,130,32,0) 38%), radial-gradient(circle at 72% 72%, rgba(255,180,80,0.18) 0%, rgba(255,180,80,0) 46%), linear-gradient(90deg, rgba(10,6,3,0.82) 0%, rgba(10,6,3,0.52) 44%, rgba(10,6,3,0.84) 100%)",
+};
 
 export default function DonateDetailPage() {
-  const { id } = useParams<{ id: string }>();
+  const params = useParams<{ id?: string | string[] }>();
+  const routeIdRaw = Array.isArray(params.id) ? params.id[0] : params.id;
+  const routeId = String(routeIdRaw ?? "pubg").toLowerCase().trim();
+  const donateId: DonateId =
+    routeId === "pubg" || routeId === "ml" || routeId === "freefire" || routeId === "steam"
+      ? (routeId as DonateId)
+      : "pubg";
   const router = useRouter();
-  const item = DONATE_DATA[id];
-  const [selected, setSelected] = useState<number | null>(null);
+  const searchParams = useSearchParams();
+  const { user } = useAuthStore();
+  const item = DONATE_DATA[donateId];
+  const resolvedItem = item;
   const [userId, setUserId] = useState("");
+  const [nickname, setNickname] = useState("");
+  const [selectedIndex, setSelectedIndex] = useState(donateId === "ml" ? -1 : 0);
+  const [activePubgTab, setActivePubgTab] = useState<PubgTab>(
+    searchParams.get("mode") === "promo" ? "promo" : "uid"
+  );
+  const [pubgUidStep, setPubgUidStep] = useState<PubgUidStep>("catalog");
+  const [rememberNickname, setRememberNickname] = useState(true);
+  const [savedIdentities, setSavedIdentities] = useState<SavedIdentity[]>(() => {
+    if (typeof window === "undefined") return [];
+    try {
+      const raw = localStorage.getItem("donate_pubg_identities");
+      const parsed = raw ? (JSON.parse(raw) as SavedIdentity[]) : [];
+      return Array.isArray(parsed) ? parsed.slice(0, 8) : [];
+    } catch {
+      return [];
+    }
+  });
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [providerModalOpen, setProviderModalOpen] = useState(false);
+  const [paymentProvider, setPaymentProvider] = useState<PaymentProvider>("OSON");
+  const [steamCurrency, setSteamCurrency] = useState<SteamCurrency>("UZS");
+  const [steamAmountInput, setSteamAmountInput] = useState("");
+  const [isIframeOpen, setIsIframeOpen] = useState(false);
+  const [paymentUrl, setPaymentUrl] = useState("");
+  const [paymentState, setPaymentState] = useState<PaymentState>("idle");
+  const iframeRef = useRef<HTMLIFrameElement | null>(null);
 
-  if (!item) {
+  const productType = PRODUCT_TYPE_BY_ID[donateId];
+  const donateProductsQuery = useDonateProducts(productType);
+  const createOrderMutation = useCreateDonateOrder();
+
+  const backendPackages = useMemo<DonatePackage[]>(() => {
+    const products = donateProductsQuery.data ?? [];
+    if (!products.length) return resolvedItem.packages;
+    const packageImages = PACKAGE_IMAGE_BY_ID[donateId];
+
+    return products.map((product, index) => ({
+      amount:
+        product.totalAmount ?? product.amount ?? resolvedItem.packages[index]?.amount ?? 0,
+      price: (() => {
+        const parsed =
+          typeof product.price === "number"
+            ? product.price
+            : Number(String(product.price ?? "").trim());
+        return Number.isFinite(parsed) ? parsed : 0;
+      })(),
+      bonus:
+        product.bonus && product.bonus > 0
+          ? `+${product.bonus} ${donateId === "pubg" ? "UC" : donateId === "ml" ? "💎" : ""}`
+          : resolvedItem.packages[index]?.bonus,
+      image:
+        packageImages[index] ??
+        resolvedItem.packages[index]?.image ??
+        resolvedItem.image,
+      productId: product.id,
+    }));
+  }, [donateProductsQuery.data, donateId, resolvedItem.image, resolvedItem.packages]);
+  const hasBackendProducts = (donateProductsQuery.data?.length ?? 0) > 0;
+
+  const currentPackage = backendPackages[selectedIndex] ?? backendPackages[0] ?? null;
+  const isCurrentPackageReady =
+    Boolean(currentPackage?.productId ?? backendPackages[0]?.productId) &&
+    Number(resolvePackagePrice(currentPackage) ?? 0) > 0;
+
+  useEffect(() => {
+    void donateProductsQuery.refetch();
+    // Pagega kirganda narxlar doim qayta olinadi
+  }, [donateId, donateProductsQuery.refetch]);
+
+  function resolvePackagePrice(pkg?: DonatePackage | null): number | undefined {
+    if (!pkg) return undefined;
+    return typeof pkg.price === "number" && Number.isFinite(pkg.price) ? pkg.price : 0;
+  }
+
+  function formatMoney(value?: number): string {
+    if (typeof value !== "number" || !Number.isFinite(value)) return "0";
+    return value.toLocaleString(undefined, { maximumFractionDigits: 2 });
+  }
+
+  function formatNumberInput(value: string): string {
+    const digitsOnly = value.replace(/[^\d]/g, "");
+    if (!digitsOnly) return "";
+    return Number(digitsOnly).toLocaleString("en-US");
+  }
+
+  function parseNumberInput(value: string): number {
+    const cleaned = value.replace(/[^\d]/g, "");
+    if (!cleaned) return 0;
+    return Number(cleaned);
+  }
+
+  function validateSteamLogin(login: string): boolean {
+    const trimmed = login.trim();
+    return /^[a-zA-Z0-9._-]{3,32}$/.test(trimmed);
+  }
+
+  function persistSavedIdentities(next: SavedIdentity[]) {
+    setSavedIdentities(next);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("donate_pubg_identities", JSON.stringify(next));
+    }
+  }
+
+  function addIdentityToHistory(uid: string, name: string) {
+    const cleaned: SavedIdentity = { uid: uid.trim(), nickname: name.trim() };
+    if (!cleaned.uid || !cleaned.nickname) return;
+    const deduped = savedIdentities.filter(
+      (item) =>
+        item.uid.toLowerCase() !== cleaned.uid.toLowerCase() ||
+        item.nickname.toLowerCase() !== cleaned.nickname.toLowerCase()
+    );
+    persistSavedIdentities([cleaned, ...deduped].slice(0, 8));
+  }
+
+  function deleteSavedIdentity(uid: string, name: string) {
+    const next = savedIdentities.filter(
+      (item) =>
+        !(item.uid.toLowerCase() === uid.toLowerCase() &&
+          item.nickname.toLowerCase() === name.toLowerCase())
+    );
+    persistSavedIdentities(next);
+  }
+
+  function normalizeOrderStatus(value?: string | null): string {
+    return String(value ?? "").toUpperCase();
+  }
+
+  function isRejectedStatus(value?: string | null): boolean {
+    const status = normalizeOrderStatus(value);
     return (
-      <div className="flex flex-col items-center justify-center h-64 gap-4">
-        <p className="text-muted">Donat turi topilmadi</p>
-        <button type="button" className="miniapp-play-btn" onClick={() => router.push("/donate")}>Orqaga</button>
-      </div>
+      status.includes("ERROR") ||
+      status.includes("CANCEL") ||
+      status.includes("REJECT") ||
+      status.includes("REFUSED")
     );
   }
 
-  const selectedPkg = selected !== null ? item.packages[selected] : null;
+  function detectPaymentState(url: string): PaymentState {
+    const lower = url.toLowerCase();
+    if (
+      lower.includes("payment_status=succeeded") ||
+      lower.includes("payment_status=success") ||
+      lower.includes("status=success") ||
+      lower.includes("succeeded")
+    ) {
+      return "success";
+    }
+    if (
+      lower.includes("payment_status=failed") ||
+      lower.includes("payment_status=error") ||
+      lower.includes("status=failed") ||
+      lower.includes("error") ||
+      lower.includes("canceled")
+    ) {
+      return "error";
+    }
+    return "idle";
+  }
+
+  async function isRetryFromRejectedStatus(): Promise<boolean> {
+    const numericUserId = user?.id ? Number(user.id) : null;
+    if (!numericUserId || donateId !== "pubg" || activePubgTab !== "uid") return false;
+
+    const { data } = await fetchOrderHistoryByType(
+      numericUserId,
+      PRODUCT_TYPE_BY_ID.pubg,
+      0,
+      20
+    );
+    const history = Array.isArray(data?.data) ? data.data : [];
+    return history.some((order: Record<string, unknown>) => {
+      const playerIdValue = String(order.playerId ?? "").trim();
+      const playerNameValue = String(order.playerName ?? "").trim().toLowerCase();
+      const matchesIdentity =
+        playerIdValue === userId.trim() &&
+        playerNameValue === nickname.trim().toLowerCase();
+      return matchesIdentity && isRejectedStatus(String(order.orderStatus ?? ""));
+    });
+  }
+
+  async function handlePurchase(packageIndex?: number) {
+    setSubmitError(null);
+    if (donateId === "pubg" && activePubgTab === "uid" && pubgUidStep === "catalog") {
+      setPubgUidStep("identity");
+      return;
+    }
+
+    const selectedPackage =
+      typeof packageIndex === "number"
+        ? backendPackages[packageIndex] ?? currentPackage
+        : currentPackage;
+
+    const steamAmountRaw = parseNumberInput(steamAmountInput);
+    const steamAmountInUzs =
+      steamCurrency === "USD" ? steamAmountRaw * STEAM_USD_TO_UZS_RATE : steamAmountRaw;
+    const effectiveProductId = selectedPackage?.productId ?? backendPackages[0]?.productId;
+    const selectedPackagePrice =
+      donateId === "steam" ? steamAmountInUzs : resolvePackagePrice(selectedPackage);
+
+    if (!effectiveProductId || typeof selectedPackagePrice !== "number" || selectedPackagePrice <= 0) {
+      setSubmitError("Narxlar yuklanmoqda, birozdan keyin qayta urinib ko'ring.");
+      if (!hasBackendProducts) {
+        void donateProductsQuery.refetch();
+      }
+      return;
+    }
+
+    if (donateId === "steam") {
+      if (!validateSteamLogin(userId)) {
+        setSubmitError("Steam login noto'g'ri. 3-32 ta harf/raqam (._-) kiriting.");
+        return;
+      }
+      if (!steamAmountRaw) {
+        setSubmitError("To'lov summasini kiriting.");
+        return;
+      }
+    }
+
+    if (donateId === "pubg" && activePubgTab === "uid" && pubgUidStep === "identity") {
+      if (!userId.trim() || !nickname.trim()) {
+        setSubmitError("UID va nickname kiriting.");
+        return;
+      }
+    }
+
+    setProviderModalOpen(true);
+  }
+
+  async function confirmPaymentProvider(
+    providerOverride?: PaymentProvider,
+    packageOverride?: DonatePackage
+  ) {
+    setSubmitError(null);
+    const packageForOrder = packageOverride ?? currentPackage ?? backendPackages[0] ?? null;
+    const steamAmountRaw = parseNumberInput(steamAmountInput);
+    const steamAmountInUzs =
+      steamCurrency === "USD" ? steamAmountRaw * STEAM_USD_TO_UZS_RATE : steamAmountRaw;
+    const effectiveProductId = packageForOrder?.productId ?? backendPackages[0]?.productId;
+    const currentPackagePrice =
+      donateId === "steam" ? steamAmountInUzs : resolvePackagePrice(packageForOrder);
+    if (!effectiveProductId || typeof currentPackagePrice !== "number" || currentPackagePrice <= 0) {
+      setSubmitError("Narxlar yuklanmoqda, birozdan keyin qayta urinib ko'ring.");
+      return;
+    }
+
+    try {
+      const selectedProvider = providerOverride ?? paymentProvider;
+      const shouldSkipIframe = await isRetryFromRejectedStatus();
+      const playerIdValue =
+        donateId === "steam"
+          ? userId.trim()
+          : donateId === "pubg" && activePubgTab === "uid"
+            ? userId.trim()
+            : "";
+      const playerNameValue =
+        donateId === "pubg" && activePubgTab === "uid" ? nickname.trim() : "";
+      const response = await createOrderMutation.mutateAsync({
+        orderItems: [
+          {
+            productId: effectiveProductId,
+            price: Number(currentPackagePrice),
+            productCount: 1,
+          },
+        ],
+        payType: "SUM",
+        playerId: playerIdValue,
+        playerName: playerNameValue,
+        isCupon: donateId === "pubg" && activePubgTab === "promo",
+        paymentServiceType: selectedProvider as PaymentServiceType,
+      });
+
+      if (donateId === "pubg" && activePubgTab === "uid" && rememberNickname) {
+        addIdentityToHistory(userId, nickname);
+      }
+
+      if (shouldSkipIframe) {
+        setProviderModalOpen(false);
+        router.push("/profile/history?tab=UC");
+        return;
+      }
+
+      if (!response?.url) {
+        const debugShape = Object.keys((response as Record<string, unknown>) ?? {}).join(", ");
+        console.log("[DONATE_DEBUG] createOrder response without url", response);
+        setSubmitError(
+          `To'lov havolasi topilmadi. Response keys: ${debugShape || "empty"}`
+        );
+        return;
+      }
+
+      setPaymentState("idle");
+      setPaymentUrl(response.url);
+      setProviderModalOpen(false);
+      const openedWindow = window.open(response.url, "_blank", "noopener,noreferrer");
+      if (!openedWindow) {
+        // Popup blok bo'lsa, avvalgi iframe fallback ishlaydi.
+        setIsIframeOpen(true);
+      }
+    } catch (err: unknown) {
+      const errorData = (err as { response?: { data?: unknown; status?: number } })?.response?.data;
+      const statusCode = (err as { response?: { status?: number } })?.response?.status;
+      const backendMsg =
+        (err as { response?: { data?: { message?: string; errors?: Array<{ msg?: string }> } } })?.response?.data
+          ?.message ||
+        (err as { response?: { data?: { errors?: Array<{ msg?: string }> } } })?.response?.data?.errors?.[0]?.msg;
+      console.log("[DONATE_DEBUG] createOrder error", { statusCode, errorData, err });
+      try {
+        console.log("[DONATE_DEBUG] createOrder error json", JSON.stringify(errorData));
+      } catch {}
+      if (String(backendMsg ?? "").toLowerCase().includes("access denied") || statusCode === 401 || statusCode === 403) {
+        setSubmitError("Sessiya tugagan yoki ruxsat yo'q. Qayta login qiling.");
+        router.push("/auth/login");
+        return;
+      }
+      setSubmitError(
+        `${backendMsg || "Xaridni boshlab bo'lmadi. Qayta urinib ko'ring."}${statusCode ? ` (status: ${statusCode})` : ""}`
+      );
+    }
+  }
+
+  function handleIframeLoad() {
+    if (!iframeRef.current) return;
+    try {
+      const currentUrl = iframeRef.current.contentWindow?.location?.href;
+      if (!currentUrl) return;
+      const detected = detectPaymentState(currentUrl);
+      if (detected === "success") {
+        setPaymentState("success");
+        setIsIframeOpen(false);
+        router.push("/profile/history");
+      } else if (detected === "error") {
+        setPaymentState("error");
+      }
+    } catch {
+      // cross-origin iframe; detection may be unavailable until redirect comes back.
+    }
+  }
 
   return (
-    <div className="max-w-3xl mx-auto pb-8">
-      {/* Header */}
-      <div className="game-page-header">
-        <button type="button" className="game-back-btn" onClick={() => router.back()} aria-label="Orqaga">
-          <img src="/icons/back_left.svg" alt="" width={20} height={20} className="icon-invert" />
-        </button>
-        <img src={item.image} alt={item.name} className="donate-detail-img" />
-        <div>
-          <h1 className="game-page-title">{item.name}</h1>
-          <p className="game-page-desc">Miqdorni tanlang</p>
-        </div>
+    <div className="min-h-[100dvh] w-full bg-black text-white box-border">
+      <div className="relative min-h-screen overflow-hidden box-border">
+        <div
+          className={BACKGROUND_CLASS_BY_ID[donateId]}
+          style={{
+            backgroundImage: `
+              ${BACKGROUND_OVERLAY_BY_ID[donateId]},
+              url('${BACKGROUND_IMAGE_BY_ID[donateId] ?? item.image}')
+            `,
+            backgroundSize: "cover",
+            backgroundPosition: donateId === "steam" ? "center center" : "center",
+          }}
+        />
+
+        <main className="relative z-10 mx-auto w-full max-w-[1180px] min-w-0 box-border px-6 py-10 lg:px-10 lg:py-12">
+          <header className="flex h-[60px] items-center justify-between">
+            <button
+              type="button"
+              onClick={() => {
+                if (donateId === "pubg" && pubgUidStep === "identity") {
+                  setPubgUidStep("catalog");
+                  return;
+                }
+                router.back();
+              }}
+              className="grid h-11 w-11 place-items-center rounded-full text-white"
+              aria-label="Orqaga"
+            >
+              <img src="/icons/back_left.svg" alt="" width={20} height={20} className="icon-invert" />
+            </button>
+            {donateId !== "steam" && <p className="text-[16px] font-semibold">{item.name}</p>}
+            <div className="w-11" />
+          </header>
+
+          {donateId === "steam" && (
+            <section className="relative z-10 flex min-h-[calc(100dvh-92px)] w-full min-w-0 items-start justify-center px-4 pt-[70px] pb-10 box-border">
+              <div className="flex w-full max-w-[920px] min-w-0 min-h-[520px] flex-col items-start justify-center rounded-[26px] border border-white/12 bg-black/55 px-[100px] pt-[50px] pb-[30px] shadow-[0_28px_90px_rgba(0,0,0,0.65)] backdrop-blur-xl box-border">
+                <div className="mx-auto flex w-full max-w-[760px] min-w-0 flex-col items-end justify-end gap-10 px-[30px]">
+                  <div className="mx-auto flex flex-col items-center pt-4 text-center">
+                    <img
+                      src={item.image}
+                      alt={item.name}
+                      className="mx-auto mb-3 block h-[58px] w-[58px] rounded-full object-cover shadow-[0_0_28px_rgba(40,150,255,0.45)]"
+                    />
+
+                    <h1 className="text-[34px] font-bold leading-tight text-white">
+                      Steamda balansingizni to&apos;ldiring
+                    </h1>
+
+                    <p className="mt-3 max-w-[520px] text-[17px] leading-[1.45] text-white/70">
+                      Oson va tez Steam akkauntingizni to&apos;ldirishingiz mumkin!
+                    </p>
+                  </div>
+
+                  <div className="grid w-full place-items-end">
+                    <div className="flex w-full max-w-[560px] min-w-0 flex-col gap-5">
+                      <input
+                        type="text"
+                        value={userId}
+                        onChange={(e) => setUserId(e.target.value)}
+                        placeholder="Steam loginingizni kiriting"
+                        className="h-[58px] w-full min-w-0 rounded-2xl border border-[#03ff93]/70 bg-[#1c1c1c]/90 px-6 text-center text-[16px] font-semibold text-white placeholder:text-white/35 outline-none shadow-[0_0_0_1px_rgba(3,255,147,0.12),0_14px_35px_rgba(0,0,0,0.45)] transition focus:border-[#03ff93] focus:shadow-[0_0_0_3px_rgba(3,255,147,0.16),0_18px_45px_rgba(0,0,0,0.55)]"
+                      />
+
+                  <div className="flex min-w-0 flex-wrap justify-center gap-x-5 gap-y-2">
+                    {["lord157", "lord157...", "kia157", "lord157"].map((login, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => setUserId(login.replace("...", ""))}
+                        className="text-[15px] font-bold text-[#03ff93] transition hover:text-[#72ffc4]"
+                      >
+                        <span className="text-[#03ff93]/70">login:</span>
+                        {login}
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={steamAmountInput}
+                      onChange={(e) => setSteamAmountInput(formatNumberInput(e.target.value))}
+                      placeholder="Summani kiriting"
+                      inputMode="numeric"
+                      className="h-[58px] w-full min-w-0 rounded-2xl border border-white/18 bg-[#1f1f1f]/92 px-6 pr-[120px] text-center text-[16px] font-semibold text-white placeholder:text-white/35 outline-none shadow-[0_14px_35px_rgba(0,0,0,0.45)] transition focus:border-[#03ff93]/80"
+                    />
+
+                    <div className="absolute inset-y-0 right-5 flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setSteamCurrency("UZS")}
+                        className={`text-[15px] font-bold ${
+                          steamCurrency === "UZS" ? "text-[#03ff93]" : "text-white/50"
+                        }`}
+                      >
+                        UZS
+                      </button>
+
+                      <span className="text-white/25">|</span>
+
+                      <button
+                        type="button"
+                        onClick={() => setSteamCurrency("USD")}
+                        className={`text-[15px] font-bold ${
+                          steamCurrency === "USD" ? "text-[#03ff93]" : "text-white/50"
+                        }`}
+                      >
+                        USD
+                      </button>
+                    </div>
+                  </div>
+
+                  <p className="text-center text-[13px] text-white/55">
+                    {steamCurrency === "USD"
+                      ? `To'lov: ${steamAmountInput || "0"} USD (~${formatMoney(
+                          parseNumberInput(steamAmountInput) * STEAM_USD_TO_UZS_RATE
+                        )} UZS)`
+                      : `To'lov: ${steamAmountInput || "0"} UZS`}
+                  </p>
+
+                      <button
+                        type="button"
+                        onClick={() => void handlePurchase()}
+                        disabled={createOrderMutation.isPending}
+                        className="mt-3 h-[54px] w-full rounded-2xl bg-[#03ff93] text-[17px] font-bold text-[#07110d] shadow-[0_18px_45px_rgba(3,255,147,0.22)] transition hover:brightness-110 disabled:cursor-default disabled:opacity-60"
+                      >
+                        {createOrderMutation.isPending ? "Yuborilmoqda..." : "To'lov"}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+          )}
+
+          {donateId === "ml" && (
+            <section className="mt-8 flex min-w-0 flex-col gap-7 box-border">
+              <div className="flex items-center gap-2 text-[16px]">
+                <span className="font-medium">Barchasi</span>
+                <span className="inline-block h-1 w-1 rounded-full bg-[#d5d7da]" />
+                <span className="text-[#d5d7da]">{item.totalCount.toLocaleString()}</span>
+              </div>
+
+              <div className="grid min-w-0 grid-cols-2 gap-5 box-border sm:grid-cols-3 lg:grid-cols-4">
+                {backendPackages.map((pkg, i) => (
+                  <article
+                    key={i}
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => {
+                      if (!pkg.productId || createOrderMutation.isPending) return;
+                      setSelectedIndex(i);
+                      void handlePurchase(i);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key !== "Enter" && e.key !== " ") return;
+                      e.preventDefault();
+                      if (!pkg.productId || createOrderMutation.isPending) return;
+                      setSelectedIndex(i);
+                      void handlePurchase(i);
+                    }}
+                    className="min-w-0 flex min-h-[260px] cursor-pointer flex-col items-center justify-start gap-4 rounded-2xl border border-[#2f352f] bg-[#121714]/90 p-5 box-border shadow-[0_18px_50px_rgba(0,0,0,0.35)] transition hover:-translate-y-1 hover:border-[#03ff93]/70 hover:bg-[#17201b]"
+                  >
+                    <img src={pkg.image ?? item.image} alt={item.name} className="mx-auto h-[120px] w-[120px] object-contain" />
+                    <p className="mt-4 whitespace-nowrap text-[30px] font-bold leading-none tracking-tight">
+                      {Number(pkg.amount).toLocaleString()} <span className="text-[16px]">💎</span>
+                    </p>
+                    <div className="mt-6 w-full min-w-0 box-border space-y-5">
+                      <p className="mt-4 whitespace-nowrap text-[22px] font-semibold leading-none text-white/95">
+                        <span aria-hidden="true" className="inline-block w-[1.2em]" />
+                        {formatMoney(resolvePackagePrice(pkg))} so&apos;m
+                      </p>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {donateId === "pubg" && pubgUidStep === "catalog" && (
+            <section className="mt-8 flex min-w-0 flex-col gap-7 box-border">
+              <div className="w-full max-w-[520px] rounded-2xl border border-[#292929] bg-[#1c1c1c]/90 p-[4px]">
+                <div className="grid grid-cols-2 gap-1">
+                  <button
+                    type="button"
+                    onClick={() => setActivePubgTab("uid")}
+                    className={`h-12 rounded-xl text-[16px] ${activePubgTab === "uid" ? "bg-[#03ff93] font-semibold text-black" : "text-[#d5d7da]"}`}
+                  >
+                    UID orqali
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActivePubgTab("promo");
+                      setPubgUidStep("catalog");
+                    }}
+                    className={`h-12 rounded-xl text-[16px] ${activePubgTab === "promo" ? "bg-[#03ff93] font-semibold text-black" : "text-[#d5d7da]"}`}
+                  >
+                    Promokod olish
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 text-[16px]">
+                <span className="font-medium">Barchasi</span>
+                <span className="inline-block h-1 w-1 rounded-full bg-[#d5d7da]" />
+                <span className="text-[#d5d7da]">{item.totalCount}</span>
+              </div>
+
+              <div className="grid min-w-0 grid-cols-2 gap-5 box-border sm:grid-cols-3 lg:grid-cols-4">
+                {backendPackages.map((pkg, i) => (
+                  <article
+                    key={i}
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => {
+                      if (createOrderMutation.isPending || (pubgUidStep !== "catalog" && !pkg.productId)) return;
+                      setSelectedIndex(i);
+                      if (activePubgTab === "uid" && pubgUidStep === "catalog") {
+                        setSubmitError(null);
+                        setPubgUidStep("identity");
+                        return;
+                      }
+                      void handlePurchase(i);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key !== "Enter" && e.key !== " ") return;
+                      e.preventDefault();
+                      if (createOrderMutation.isPending || (pubgUidStep !== "catalog" && !pkg.productId)) return;
+                      setSelectedIndex(i);
+                      if (activePubgTab === "uid" && pubgUidStep === "catalog") {
+                        setSubmitError(null);
+                        setPubgUidStep("identity");
+                        return;
+                      }
+                      void handlePurchase(i);
+                    }}
+                    className="min-w-0 flex min-h-[260px] cursor-pointer flex-col items-center justify-start gap-4 rounded-2xl border border-[#2f352f] bg-[#121714]/90 p-5 box-border shadow-[0_18px_50px_rgba(0,0,0,0.35)] transition hover:-translate-y-1 hover:border-[#03ff93]/70 hover:bg-[#17201b]"
+                  >
+                    <img src={pkg.image ?? item.image} alt={item.name} className="mx-auto h-[120px] w-[120px] object-contain" />
+                    <p className="mt-4 whitespace-nowrap text-[30px] font-bold leading-none tracking-tight">
+                      {Number(pkg.amount).toLocaleString()} UC{" "}
+                      {pkg.bonus && <span className="ml-1 align-middle text-[11px] font-bold text-[#03ff93]">{pkg.bonus}</span>}
+                    </p>
+                    <div className="mt-6 w-full min-w-0 box-border space-y-5">
+                      <p className="mt-4 whitespace-nowrap text-[22px] font-semibold leading-none text-white/95">
+                        <span aria-hidden="true" className="inline-block w-[1.2em]" />
+                        {formatMoney(resolvePackagePrice(pkg))} so&apos;m
+                      </p>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {donateId === "pubg" && pubgUidStep === "identity" && (
+            <section className="mt-6 flex min-w-0 flex-col gap-5 box-border">
+              <div className="flex flex-col items-center gap-3 text-center">
+                <img src="/images/profile-games/pubgmobile.png" alt="PUBG" className="h-[72px] w-auto object-contain" />
+                <h2 className="text-[38px] font-medium leading-tight">UID orqali sotib olish</h2>
+                <p className="text-[26px] leading-tight text-[#d5d7da]">
+                  Sotib olish uchun o&apos;z UID va nicknameingizni kiriting
+                </p>
+              </div>
+
+              <div className="grid min-w-0 grid-cols-1 gap-4">
+                <input
+                  value={userId}
+                  onChange={(e) => setUserId(e.target.value)}
+                  placeholder="UID kiriting"
+                  className="h-[45px] w-full rounded-[44px] border border-[#3a3a3a] bg-[#1c1c1c] px-4 text-[14px] text-white placeholder:text-[#717680] outline-none shadow-[inset_0_1px_0_rgba(255,255,255,0.04),0_8px_20px_rgba(0,0,0,0.3)] transition hover:border-[#4a4a4a] focus:border-[#03ff93]/60 focus:shadow-[inset_0_1px_0_rgba(255,255,255,0.05),0_10px_24px_rgba(0,0,0,0.34),0_0_0_2px_rgba(3,255,147,0.16)]"
+                />
+                <input
+                  value={nickname}
+                  onChange={(e) => setNickname(e.target.value)}
+                  placeholder="Nicknameingizni kiriting"
+                  className="h-[47px] w-full rounded-[52px] border border-[#3a3a3a] bg-[#1c1c1c] px-4 text-[14px] text-white placeholder:text-[#717680] outline-none shadow-[inset_0_1px_0_rgba(255,255,255,0.04),0_8px_20px_rgba(0,0,0,0.3)] transition hover:border-[#4a4a4a] focus:border-[#03ff93]/60 focus:shadow-[inset_0_1px_0_rgba(255,255,255,0.05),0_10px_24px_rgba(0,0,0,0.34),0_0_0_2px_rgba(3,255,147,0.16)]"
+                />
+                <label className="inline-flex items-center gap-2 text-[14px] text-[#d5d7da]">
+                  <input
+                    type="checkbox"
+                    checked={rememberNickname}
+                    onChange={(e) => setRememberNickname(e.target.checked)}
+                    className="h-4 w-4 rounded border-[#292929] accent-[#03ff93]"
+                  />
+                  Nicknameni eslab qol
+                </label>
+              </div>
+
+              {!!savedIdentities.length && (
+                <div className="min-w-0 overflow-x-auto pb-1">
+                  <div className="flex min-w-max gap-2">
+                    {savedIdentities.map((itemValue, idx) => (
+                      <div
+                        key={`${itemValue.uid}-${itemValue.nickname}-${idx}`}
+                        className="relative shrink-0 rounded-2xl border border-[#292929] bg-[#1c1c1c] px-4 py-2 pr-8"
+                      >
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setUserId(itemValue.uid);
+                            setNickname(itemValue.nickname);
+                          }}
+                          className="text-left"
+                        >
+                          <p className="text-[12px] text-[#4e505c]">UID: {itemValue.uid}</p>
+                          <p className="text-[12px] text-white">Nickname: {itemValue.nickname}</p>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => deleteSavedIdentity(itemValue.uid, itemValue.nickname)}
+                          className="absolute right-2 top-2 text-[11px] text-white/60 hover:text-white"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="rounded-[18px] border border-[#292929] bg-[#1c1c1c] p-[14px]">
+                <h3 className="text-[20px] font-semibold">Buyurtma tavsilotlari</h3>
+                <div className="mt-4 space-y-4">
+                  <div className="flex items-center justify-between text-[14px]">
+                    <span className="text-[#d5d7da]">Maxsulot</span>
+                    <span className="inline-flex items-center gap-2">
+                      <img
+                        src={currentPackage?.image ?? "/images/donate/pubg/pubg_60.png"}
+                        alt=""
+                        className="h-5 w-5 object-contain"
+                      />
+                      {isCurrentPackageReady ? `${Number(currentPackage?.amount ?? 0).toLocaleString()} UC` : "Yuklanmoqda..."}
+                    </span>
+                  </div>
+                  <div className="border-t border-dashed border-[#292929]" />
+                  <div className="flex items-center justify-between">
+                    <span className="text-[14px] font-semibold text-[#919eab]">Итого</span>
+                    <span className="text-[16px] font-semibold">
+                      {isCurrentPackageReady ? `${formatMoney(resolvePackagePrice(currentPackage))} UZS` : "Narxlar yuklanmoqda..."}
+                    </span>
+                  </div>
+                </div>
+                {!isCurrentPackageReady && (
+                  <p className="mt-3 text-[12px] text-[#d5d7da]">
+                    Paket va narxlar yangilanmoqda, bir necha soniyadan keyin davom eting.
+                  </p>
+                )}
+              </div>
+            </section>
+          )}
+
+          {donateId === "freefire" && (
+            <section className="mt-8 flex min-w-0 flex-col gap-5 box-border">
+              <div className="flex flex-col items-center gap-2">
+                <img src={item.image} alt="Free Fire" className="h-8 w-auto object-contain" />
+                <h2 className="text-center text-[30px] font-semibold leading-tight">{item.subtitle}</h2>
+                <p className="text-center text-[16px] text-[#d5d7da]">ID kiriting va paketni tanlang</p>
+              </div>
+
+              <div className="grid min-w-0 grid-cols-2 gap-5 box-border sm:grid-cols-3 lg:grid-cols-4">
+                {backendPackages.map((pkg, i) => (
+                  <article
+                    key={i}
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => {
+                      if (!pkg.productId || createOrderMutation.isPending) return;
+                      setSelectedIndex(i);
+                      void handlePurchase(i);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key !== "Enter" && e.key !== " ") return;
+                      e.preventDefault();
+                      if (!pkg.productId || createOrderMutation.isPending) return;
+                      setSelectedIndex(i);
+                      void handlePurchase(i);
+                    }}
+                    className="min-w-0 flex min-h-[260px] cursor-pointer flex-col items-center justify-start gap-4 rounded-2xl border border-[#2f352f] bg-[#121714]/90 p-5 box-border shadow-[0_18px_50px_rgba(0,0,0,0.35)] transition hover:-translate-y-1 hover:border-[#03ff93]/70 hover:bg-[#17201b]"
+                  >
+                    <img src={pkg.image ?? item.image} alt={item.name} className="mx-auto h-[120px] w-[120px] object-contain" />
+                    <p className="mt-4 whitespace-nowrap text-[30px] font-bold leading-none tracking-tight">
+                      {typeof pkg.amount === "number" ? Number(pkg.amount).toLocaleString() : String(pkg.amount)}
+                    </p>
+                    <div className="mt-6 w-full min-w-0 box-border space-y-5">
+                      <p className="mt-4 whitespace-nowrap text-[22px] font-semibold leading-none text-white/95">
+                        <span aria-hidden="true" className="inline-block w-[1.2em]" />
+                        {formatMoney(resolvePackagePrice(pkg))} so&apos;m
+                      </p>
+                    </div>
+                  </article>
+                ))}
+              </div>
+
+            </section>
+          )}
+          {submitError && (
+            <p className="mt-4 rounded-xl border border-red-400/40 bg-red-500/10 px-3 py-2 text-[13px] text-red-300">
+              {submitError}
+            </p>
+          )}
+        </main>
       </div>
 
-      <div className="flex flex-col gap-6">
-        {/* User ID input */}
-        <div className="donate-input-wrap">
-          <label className="donate-input-label">O'yinchi ID</label>
-          <input
-            type="text"
-            placeholder="ID raqamingizni kiriting"
-            value={userId}
-            onChange={(e) => setUserId(e.target.value)}
-            className="donate-input"
-          />
-        </div>
-
-        {/* Packages */}
-        <div>
-          <p className="donate-section-label">Miqdorni tanlang</p>
-          <div className="donate-packages-grid">
-            {item.packages.map((pkg, i) => (
+      {isIframeOpen && (
+        <div className="fixed inset-0 z-[100] bg-black/85 p-4">
+          <div className="mx-auto flex h-full w-full max-w-[900px] min-w-0 flex-col gap-3 rounded-2xl border border-white/15 bg-[#141414] p-3 box-border">
+            <div className="flex items-center justify-between">
+              <p className="text-[14px] text-white/90">Oson to&apos;lov sahifasi</p>
               <button
-                key={i}
                 type="button"
-                onClick={() => setSelected(i)}
-                className={`donate-pkg-card${selected === i ? " active" : ""}`}
+                onClick={() => setIsIframeOpen(false)}
+                className="rounded-lg border border-white/20 px-3 py-1 text-[12px] text-white/85"
               >
-                <span className="donate-pkg-amount">{pkg.amount} {item.currency}</span>
-                <span className="donate-pkg-price">{pkg.price.toLocaleString()} so'm</span>
+                Yopish
               </button>
-            ))}
+            </div>
+            <iframe
+              ref={iframeRef}
+              src={paymentUrl}
+              onLoad={handleIframeLoad}
+              className="h-full min-h-0 w-full min-w-0 rounded-xl border border-white/10 bg-white"
+              title="Oson Payment"
+            />
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-[12px] text-white/60">
+                To&apos;lov yakunlangach status tarix bo&apos;limida yangilanadi.
+              </p>
+              <button
+                type="button"
+                onClick={() => router.push("/profile/history")}
+                className="shrink-0 rounded-lg bg-[#03ff93] px-3 py-1.5 text-[12px] font-semibold text-[#1a1b1f]"
+              >
+                Tarixga o&apos;tish
+              </button>
+            </div>
+            {paymentState === "error" && (
+              <p className="rounded-lg border border-red-400/40 bg-red-500/10 px-3 py-2 text-[12px] text-red-300">
+                To&apos;lov holatida xatolik ko&apos;rindi. Qayta tekshirib ko&apos;ring.
+              </p>
+            )}
           </div>
         </div>
+      )}
 
-        {/* Buy button */}
-        <button
-          type="button"
-          className="donate-buy-btn"
-          disabled={!selectedPkg || !userId.trim()}
-        >
-          {selectedPkg
-            ? `${selectedPkg.price.toLocaleString()} so'm to'lash`
-            : "Miqdorni tanlang"}
-        </button>
-      </div>
+      {providerModalOpen && (
+        <div className="fixed inset-0 z-[110] grid place-items-center bg-[rgba(16,16,16,0.9)] p-4">
+          <div className="w-full max-w-[620px] min-w-0 rounded-2xl border border-white/10 bg-[#222326] px-[16px] py-[24px] my-0 mx-[20px] shadow-[0_30px_80px_rgba(0,0,0,0.55)]">
+            <div className="px-[10px] flex flex-col items-center text-center">
+              <img
+                src="https://www.figma.com/api/mcp/asset/c5aa4559-0694-4fd2-aa8d-4de4642da30b"
+                alt=""
+                className="h-[96px] w-[96px]"
+              />
+              <h3 className="mt-3 text-[20px] font-medium text-white">To&apos;lov usulini tanlang</h3>
+              <p className="mt-1 text-[14px] text-[#d5d7da]">
+                Quyidagi to&apos;lov usullaridan birini tanlang
+              </p>
+            </div>
+
+            <div className="w-full min-w-0 box-border px-[10px] pt-4 grid gap-4">
+              <button
+                type="button"
+                onClick={() => setPaymentProvider("OSON")}
+                className={`w-full min-h-[88px] rounded-xl border px-4 py-3 text-left ${
+                  paymentProvider === "OSON"
+                    ? "border-[#03ff93] bg-[#1c1c1c]"
+                    : "border-[#292929] bg-[#1c1c1c]"
+                }`}
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-[20px] font-extrabold tracking-wide text-white">OSON</p>
+                    <p className="mt-1 text-[13px] text-[#d5d7da]">Humo / Uzcard</p>
+                  </div>
+                  <span className="pt-0.5 text-[16px] text-[#03ff93]">
+                    {paymentProvider === "OSON" ? "●" : "○"}
+                  </span>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setPaymentProvider("OCTO")}
+                className={`w-full min-h-[88px] mb-6 rounded-xl border px-4 py-4 text-left ${
+                  paymentProvider === "OCTO"
+                    ? "border-[#03ff93] bg-[#1c1c1c]"
+                    : "border-[#292929] bg-[#1c1c1c]"
+                }`}
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-[20px] font-extrabold tracking-wide text-white">OCTOBANK</p>
+                    <div className="mt-1 flex items-center gap-2">
+                      <span className="inline-flex h-5 items-center rounded-md border border-white/20 px-1.5 text-[10px] font-bold tracking-wide text-white">
+                        VISA
+                      </span>
+                      <span className="inline-flex items-center">
+                        <span className="h-3.5 w-3.5 rounded-full bg-[#eb001b]/90" />
+                        <span className="-ml-1.5 h-3.5 w-3.5 rounded-full bg-[#f79e1b]/90" />
+                      </span>
+                      <p className="text-[13px] text-[#d5d7da]">Visa / Mastercard</p>
+                    </div>
+                  </div>
+                  <span className="pt-0.5 text-[16px] text-[#03ff93]">
+                    {paymentProvider === "OCTO" ? "●" : "○"}
+                  </span>
+                </div>
+              </button>
+            </div>
+
+            <div className="h-6" />
+
+            <div className="w-full min-w-0 box-border px-[10px] grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => setProviderModalOpen(false)}
+                className="h-12 rounded-xl border border-[#292929] bg-[#1c1c1c] px-4 py-3 text-[16px] text-[#d5d7da]"
+              >
+                Ortga
+              </button>
+              <button
+                type="button"
+                onClick={() => void confirmPaymentProvider()}
+                disabled={createOrderMutation.isPending}
+                className="h-12 rounded-xl bg-[#03ff93] px-4 py-3 text-[16px] font-semibold text-[#1a1b1f] disabled:opacity-60"
+              >
+                {createOrderMutation.isPending ? "Yuborilmoqda..." : "Tasdiqlash"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
