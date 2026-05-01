@@ -117,7 +117,6 @@ export function useDonate() {
     queryFn: async () => {
       const { data } = await api.get("/product/get/byType", {
         params: { type: "DONATE" },
-        headers: { "X-Skip-Auth-Redirect": "1" },
       });
       return data?.data ?? [];
     },
@@ -133,7 +132,6 @@ export function useDonateProducts(type: DonateProductType) {
           type,
           _ts: Date.now(),
         },
-        headers: { "X-Skip-Auth-Redirect": "1" },
       });
       return (data?.data ?? []) as DonateProduct[];
     },

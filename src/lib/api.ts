@@ -3,10 +3,6 @@ import { BASE_URL } from "./constants";
 
 export const api = axios.create({
   baseURL: BASE_URL,
-  headers: {
-    "Content-Type": "application/json",
-    "X-Platform": "WEB",
-  },
 });
 
 // Watchdog Cloud monitoring integration
@@ -14,6 +10,14 @@ export const api = axios.create({
 // watchdog avtomatik ravishda Axios interceptor qo'shadi
 
 api.interceptors.request.use((config) => {
+  const method = String(config.method ?? "get").toLowerCase();
+  const isBodyRequest = method !== "get" && method !== "head";
+
+  if (isBodyRequest) {
+    config.headers["Content-Type"] = "application/json";
+    config.headers["X-Platform"] = "WEB";
+  }
+
   const token = localStorage.getItem("access_token") || localStorage.getItem("accessToken");
   if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;
