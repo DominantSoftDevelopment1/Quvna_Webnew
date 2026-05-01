@@ -1,9 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { Sidebar } from "@/components/layout/Sidebar";
-import { Topbar } from "@/components/layout/Topbar";
-import { BottomNav } from "@/components/layout/BottomNav";
 import { Providers } from "./providers";
+import { WebviewLayoutGuard } from "@/components/layout/WebviewLayoutGuard";
 
 export const metadata: Metadata = {
   title: "Quvna",
@@ -19,12 +17,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="uz" className="h-full" suppressHydrationWarning>
       <body className="h-full flex" suppressHydrationWarning>
         <Providers>
-          <Sidebar />
-          <div className="main-content">
-            <Topbar />
-            <div className="main-body-scroll">{children}</div>
-          </div>
-          <BottomNav />
+          <WebviewLayoutGuard>{children}</WebviewLayoutGuard>
         </Providers>
       </body>
     </html>
