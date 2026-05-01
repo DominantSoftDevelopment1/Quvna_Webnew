@@ -19,6 +19,7 @@ type PubgUidStep = "catalog" | "identity";
 type SteamCurrency = "UZS" | "USD";
 
 const STEAM_USD_TO_UZS_RATE = 13_000;
+const DISPLAY_LOCALE = "ru-RU";
 
 interface DonatePackage {
   amount: number | string;
@@ -178,7 +179,7 @@ export default function DonateDetailPage() {
     searchParams.get("mode") === "promo" ? "promo" : "uid"
   );
   const [pubgUidStep, setPubgUidStep] = useState<PubgUidStep>("catalog");
-  const [rememberNickname, setRememberNickname] = useState(true);
+  const [freefireUidStep, setFreefireUidStep] = useState<"catalog" | "identity">("catalog");
   const [savedIdentities, setSavedIdentities] = useState<SavedIdentity[]>(() => {
     if (typeof window === "undefined") return [];
     try {
@@ -191,6 +192,7 @@ export default function DonateDetailPage() {
   });
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [providerModalOpen, setProviderModalOpen] = useState(false);
+  const [freefireUidConfirmOpen, setFreefireUidConfirmOpen] = useState(false);
   const [paymentProvider, setPaymentProvider] = useState<PaymentProvider>("OSON");
   const [steamCurrency, setSteamCurrency] = useState<SteamCurrency>("UZS");
   const [steamAmountInput, setSteamAmountInput] = useState("");
@@ -241,6 +243,39 @@ export default function DonateDetailPage() {
     // Pagega kirganda narxlar doim qayta olinadi
   }, [donateId, donateProductsQuery.refetch]);
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const raw = localStorage.getItem(`donate_form_snapshot_${donateId}`);
+    if (!raw) return;
+    try {
+      const parsed = JSON.parse(raw) as {
+        userId?: string;
+        nickname?: string;
+        steamAmountInput?: string;
+        steamCurrency?: SteamCurrency;
+      };
+      setUserId(parsed.userId ?? "");
+      setNickname(parsed.nickname ?? "");
+      setSteamAmountInput(parsed.steamAmountInput ?? "");
+      if (parsed.steamCurrency === "UZS" || parsed.steamCurrency === "USD") {
+        setSteamCurrency(parsed.steamCurrency);
+      }
+    } catch {
+      // ignore broken snapshot
+    }
+  }, [donateId]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const snapshot = {
+      userId,
+      nickname,
+      steamAmountInput,
+      steamCurrency,
+    };
+    localStorage.setItem(`donate_form_snapshot_${donateId}`, JSON.stringify(snapshot));
+  }, [donateId, userId, nickname, steamAmountInput, steamCurrency]);
+
   function resolvePackagePrice(pkg?: DonatePackage | null): number | undefined {
     if (!pkg) return undefined;
     return typeof pkg.price === "number" && Number.isFinite(pkg.price) ? pkg.price : 0;
@@ -248,7 +283,12 @@ export default function DonateDetailPage() {
 
   function formatMoney(value?: number): string {
     if (typeof value !== "number" || !Number.isFinite(value)) return "0";
-    return value.toLocaleString(undefined, { maximumFractionDigits: 2 });
+    return value.toLocaleString(DISPLAY_LOCALE, { maximumFractionDigits: 2 });
+  }
+
+  function formatDisplayNumber(value?: number): string {
+    if (typeof value !== "number" || !Number.isFinite(value)) return "0";
+    return value.toLocaleString(DISPLAY_LOCALE, { maximumFractionDigits: 0 });
   }
 
   function formatNumberInput(value: string): string {
@@ -358,6 +398,13 @@ export default function DonateDetailPage() {
       setPubgUidStep("identity");
       return;
     }
+    if (donateId === "freefire" && freefireUidStep === "catalog") {
+      if (typeof packageIndex === "number") {
+        setSelectedIndex(packageIndex);
+      }
+      setFreefireUidStep("identity");
+      return;
+    }
 
     const selectedPackage =
       typeof packageIndex === "number"
@@ -397,6 +444,19 @@ export default function DonateDetailPage() {
       }
     }
 
+    if (donateId === "freefire") {
+      if (!userId.trim()) {
+        setSubmitError("Free Fire UID kiriting.");
+        return;
+      }
+      if (!/^\d{5,20}$/.test(userId.trim())) {
+        setSubmitError("Free Fire UID faqat raqamlardan iborat bo'lishi kerak.");
+        return;
+      }
+      setFreefireUidConfirmOpen(true);
+      return;
+    }
+
     setProviderModalOpen(true);
   }
 
@@ -425,9 +485,15 @@ export default function DonateDetailPage() {
           ? userId.trim()
           : donateId === "pubg" && activePubgTab === "uid"
             ? userId.trim()
-            : "";
+            : donateId === "freefire"
+              ? userId.trim()
+              : "";
       const playerNameValue =
-        donateId === "pubg" && activePubgTab === "uid" ? nickname.trim() : "";
+        donateId === "pubg" && activePubgTab === "uid"
+          ? nickname.trim()
+          : donateId === "freefire"
+            ? userId.trim()
+            : "";
       const response = await createOrderMutation.mutateAsync({
         orderItems: [
           {
@@ -443,7 +509,7 @@ export default function DonateDetailPage() {
         paymentServiceType: selectedProvider as PaymentServiceType,
       });
 
-      if (donateId === "pubg" && activePubgTab === "uid" && rememberNickname) {
+      if (donateId === "pubg" && activePubgTab === "uid") {
         addIdentityToHistory(userId, nickname);
       }
 
@@ -526,7 +592,7 @@ export default function DonateDetailPage() {
         />
 
         <main className="relative z-10 mx-auto w-full max-w-[1180px] min-w-0 box-border px-6 py-10 lg:px-10 lg:py-12">
-          <header className="flex h-[60px] items-center justify-between">
+          <header className="sticky top-0 z-30 flex h-[60px] items-center justify-between">
             <button
               type="button"
               onClick={() => {
@@ -534,19 +600,23 @@ export default function DonateDetailPage() {
                   setPubgUidStep("catalog");
                   return;
                 }
+                if (donateId === "freefire" && freefireUidStep === "identity") {
+                  setFreefireUidStep("catalog");
+                  return;
+                }
                 router.back();
               }}
-              className="grid h-11 w-11 place-items-center rounded-full text-white"
+              className="-ml-1 grid h-11 w-11 place-items-center rounded-full text-white transition"
               aria-label="Orqaga"
             >
-              <img src="/icons/back_left.svg" alt="" width={20} height={20} className="icon-invert" />
+              <img src="/icons/back_left.svg" alt="" width={72} height={72} className="-scale-x-100 brightness-0 invert opacity-100" />
             </button>
-            {donateId !== "steam" && <p className="text-[16px] font-semibold">{item.name}</p>}
+            <div />
             <div className="w-11" />
           </header>
 
           {donateId === "steam" && (
-            <section className="relative z-10 flex min-h-[calc(100dvh-92px)] w-full min-w-0 items-start justify-center px-4 pt-[70px] pb-10 box-border">
+            <section className="relative z-10 flex min-h-[calc(100%-92px)] w-full min-w-0 items-start justify-center px-4 pt-[70px] pb-10 box-border">
               <div className="flex w-full max-w-[920px] min-w-0 min-h-[520px] flex-col items-start justify-center rounded-[26px] border border-white/12 bg-black/55 px-[100px] pt-[50px] pb-[30px] shadow-[0_28px_90px_rgba(0,0,0,0.65)] backdrop-blur-xl box-border">
                 <div className="mx-auto flex w-full max-w-[760px] min-w-0 flex-col items-end justify-end gap-10 px-[30px]">
                   <div className="mx-auto flex flex-col items-center pt-4 text-center">
@@ -652,7 +722,7 @@ export default function DonateDetailPage() {
               <div className="flex items-center gap-2 text-[16px]">
                 <span className="font-medium">Barchasi</span>
                 <span className="inline-block h-1 w-1 rounded-full bg-[#d5d7da]" />
-                <span className="text-[#d5d7da]">{item.totalCount.toLocaleString()}</span>
+                <span className="text-[#d5d7da]">{formatDisplayNumber(item.totalCount)}</span>
               </div>
 
               <div className="grid min-w-0 grid-cols-2 gap-5 box-border sm:grid-cols-3 lg:grid-cols-4">
@@ -677,11 +747,12 @@ export default function DonateDetailPage() {
                   >
                     <img src={pkg.image ?? item.image} alt={item.name} className="mx-auto h-[120px] w-[120px] object-contain" />
                     <p className="mt-4 whitespace-nowrap text-[30px] font-bold leading-none tracking-tight">
-                      {Number(pkg.amount).toLocaleString()} <span className="text-[16px]">💎</span>
+                      {typeof pkg.amount === "number" ? formatDisplayNumber(Number(pkg.amount)) : String(pkg.amount)}
+                      {pkg.bonus && <span className="ml-1 align-middle text-[11px] font-bold text-[#03ff93]">{pkg.bonus}</span>}
                     </p>
-                    <div className="mt-6 w-full min-w-0 box-border space-y-5">
-                      <p className="mt-4 whitespace-nowrap text-[22px] font-semibold leading-none text-white/95">
-                        <span aria-hidden="true" className="inline-block w-[1.2em]" />
+                    <div className="mt-3 w-full border-t border-dashed border-[#425242]/80" />
+                    <div className="mt-5 w-full min-w-0 box-border">
+                      <p className="mt-2 text-center whitespace-nowrap text-[22px] font-semibold leading-none text-white/95">
                         {formatMoney(resolvePackagePrice(pkg))} so&apos;m
                       </p>
                     </div>
@@ -753,12 +824,12 @@ export default function DonateDetailPage() {
                   >
                     <img src={pkg.image ?? item.image} alt={item.name} className="mx-auto h-[120px] w-[120px] object-contain" />
                     <p className="mt-4 whitespace-nowrap text-[30px] font-bold leading-none tracking-tight">
-                      {Number(pkg.amount).toLocaleString()} UC{" "}
+                      {formatDisplayNumber(Number(pkg.amount))} UC{" "}
                       {pkg.bonus && <span className="ml-1 align-middle text-[11px] font-bold text-[#03ff93]">{pkg.bonus}</span>}
                     </p>
-                    <div className="mt-6 w-full min-w-0 box-border space-y-5">
-                      <p className="mt-4 whitespace-nowrap text-[22px] font-semibold leading-none text-white/95">
-                        <span aria-hidden="true" className="inline-block w-[1.2em]" />
+                    <div className="mt-3 w-full border-t border-dashed border-[#425242]/80" />
+                    <div className="mt-5 w-full min-w-0 box-border">
+                      <p className="mt-2 text-center whitespace-nowrap text-[22px] font-semibold leading-none text-white/95">
                         {formatMoney(resolvePackagePrice(pkg))} so&apos;m
                       </p>
                     </div>
@@ -769,46 +840,41 @@ export default function DonateDetailPage() {
           )}
 
           {donateId === "pubg" && pubgUidStep === "identity" && (
-            <section className="mt-6 flex min-w-0 flex-col gap-5 box-border">
-              <div className="flex flex-col items-center gap-3 text-center">
-                <img src="/images/profile-games/pubgmobile.png" alt="PUBG" className="h-[72px] w-auto object-contain" />
-                <h2 className="text-[38px] font-medium leading-tight">UID orqali sotib olish</h2>
-                <p className="text-[26px] leading-tight text-[#d5d7da]">
+            <section className="relative z-10 mt-6 flex w-full min-w-0 items-start justify-center px-4 pb-10 box-border md:mt-0 md:pt-[70px]">
+              <div className="flex w-full max-w-[920px] min-w-0 flex-col items-center justify-center rounded-[26px] border border-white/12 bg-black/55 px-6 py-10 shadow-[0_28px_90px_rgba(0,0,0,0.65)] backdrop-blur-xl box-border min-h-[590px] md:min-h-[620px] md:px-[100px] md:pt-[64px] md:pb-[44px]">
+              <div className="mx-auto my-5 flex w-full max-w-[560px] min-w-0 flex-col gap-7 px-1 py-4 md:my-6 md:py-5">
+              <div className="flex flex-col items-center gap-2 text-center">
+                <img src="/images/profile-games/pubgmobile.png" alt="PUBG" className="h-[72px] w-auto rounded-xl object-contain" />
+                <h2 className="text-[24px] font-semibold leading-tight md:text-[32px]">UID orqali sotib olish</h2>
+                <p className="text-[14px] leading-[1.5] text-white/85">
                   Sotib olish uchun o&apos;z UID va nicknameingizni kiriting
                 </p>
               </div>
 
-              <div className="grid min-w-0 grid-cols-1 gap-4">
+              <div className="grid min-w-0 grid-cols-1 gap-5">
                 <input
                   value={userId}
                   onChange={(e) => setUserId(e.target.value)}
                   placeholder="UID kiriting"
-                  className="h-[45px] w-full rounded-[44px] border border-[#3a3a3a] bg-[#1c1c1c] px-4 text-[14px] text-white placeholder:text-[#717680] outline-none shadow-[inset_0_1px_0_rgba(255,255,255,0.04),0_8px_20px_rgba(0,0,0,0.3)] transition hover:border-[#4a4a4a] focus:border-[#03ff93]/60 focus:shadow-[inset_0_1px_0_rgba(255,255,255,0.05),0_10px_24px_rgba(0,0,0,0.34),0_0_0_2px_rgba(3,255,147,0.16)]"
+                  className="h-[58px] w-full rounded-xl border border-[#292929] bg-[#1c1c1c] pl-6 pr-4 text-[15px] leading-[1.35] text-white placeholder:text-[#8a8ea1] outline-none transition hover:border-[#3a3a3a] focus:border-[#03ff93]/60"
+                  style={{ paddingLeft: "28px", paddingRight: "16px" }}
                 />
                 <input
                   value={nickname}
                   onChange={(e) => setNickname(e.target.value)}
                   placeholder="Nicknameingizni kiriting"
-                  className="h-[47px] w-full rounded-[52px] border border-[#3a3a3a] bg-[#1c1c1c] px-4 text-[14px] text-white placeholder:text-[#717680] outline-none shadow-[inset_0_1px_0_rgba(255,255,255,0.04),0_8px_20px_rgba(0,0,0,0.3)] transition hover:border-[#4a4a4a] focus:border-[#03ff93]/60 focus:shadow-[inset_0_1px_0_rgba(255,255,255,0.05),0_10px_24px_rgba(0,0,0,0.34),0_0_0_2px_rgba(3,255,147,0.16)]"
+                  className="h-[58px] w-full rounded-xl border border-[#292929] bg-[#1c1c1c] pl-6 pr-4 text-[15px] leading-[1.35] text-white placeholder:text-[#8a8ea1] outline-none transition hover:border-[#3a3a3a] focus:border-[#03ff93]/60"
+                  style={{ paddingLeft: "28px", paddingRight: "16px" }}
                 />
-                <label className="inline-flex items-center gap-2 text-[14px] text-[#d5d7da]">
-                  <input
-                    type="checkbox"
-                    checked={rememberNickname}
-                    onChange={(e) => setRememberNickname(e.target.checked)}
-                    className="h-4 w-4 rounded border-[#292929] accent-[#03ff93]"
-                  />
-                  Nicknameni eslab qol
-                </label>
               </div>
 
               {!!savedIdentities.length && (
                 <div className="min-w-0 overflow-x-auto pb-1">
-                  <div className="flex min-w-max gap-2">
+                  <div className="flex min-w-max gap-3">
                     {savedIdentities.map((itemValue, idx) => (
                       <div
                         key={`${itemValue.uid}-${itemValue.nickname}-${idx}`}
-                        className="relative shrink-0 rounded-2xl border border-[#292929] bg-[#1c1c1c] px-4 py-2 pr-8"
+                        className="relative shrink-0 rounded-2xl border border-[#292929] bg-[#1c1c1c] px-4 py-2.5 pr-8"
                       >
                         <button
                           type="button"
@@ -818,8 +884,8 @@ export default function DonateDetailPage() {
                           }}
                           className="text-left"
                         >
-                          <p className="text-[12px] text-[#4e505c]">UID: {itemValue.uid}</p>
-                          <p className="text-[12px] text-white">Nickname: {itemValue.nickname}</p>
+                          <p className="text-[12px] leading-[1.35] text-[#667085]">UID: {itemValue.uid}</p>
+                          <p className="text-[12px] leading-[1.35] text-white">Nickname: {itemValue.nickname}</p>
                         </button>
                         <button
                           type="button"
@@ -834,10 +900,10 @@ export default function DonateDetailPage() {
                 </div>
               )}
 
-              <div className="rounded-[18px] border border-[#292929] bg-[#1c1c1c] p-[14px]">
-                <h3 className="text-[20px] font-semibold">Buyurtma tavsilotlari</h3>
+              <div className="relative z-0 rounded-[18px] border border-[#292929] bg-[#1c1c1c] px-5 py-5 before:absolute before:-inset-3 before:-z-10 before:rounded-[24px] before:bg-[#1c1c1c]">
+                <h3 className="text-[20px] font-semibold leading-[1.2]">Buyurtma tavsilotlari</h3>
                 <div className="mt-4 space-y-4">
-                  <div className="flex items-center justify-between text-[14px]">
+                  <div className="flex min-h-8 items-center justify-between text-[14px] leading-[1.45]">
                     <span className="text-[#d5d7da]">Maxsulot</span>
                     <span className="inline-flex items-center gap-2">
                       <img
@@ -845,11 +911,11 @@ export default function DonateDetailPage() {
                         alt=""
                         className="h-5 w-5 object-contain"
                       />
-                      {isCurrentPackageReady ? `${Number(currentPackage?.amount ?? 0).toLocaleString()} UC` : "Yuklanmoqda..."}
+                      {isCurrentPackageReady ? `${formatDisplayNumber(Number(currentPackage?.amount ?? 0))} UC` : "Yuklanmoqda..."}
                     </span>
                   </div>
-                  <div className="border-t border-dashed border-[#292929]" />
-                  <div className="flex items-center justify-between">
+                  <div className="my-1 border-t border-dashed border-[#292929]" />
+                  <div className="flex min-h-8 items-center justify-between leading-[1.45]">
                     <span className="text-[14px] font-semibold text-[#919eab]">Итого</span>
                     <span className="text-[16px] font-semibold">
                       {isCurrentPackageReady ? `${formatMoney(resolvePackagePrice(currentPackage))} UZS` : "Narxlar yuklanmoqda..."}
@@ -862,15 +928,25 @@ export default function DonateDetailPage() {
                   </p>
                 )}
               </div>
+              <button
+                type="button"
+                onClick={() => void handlePurchase()}
+                disabled={createOrderMutation.isPending || !isCurrentPackageReady}
+                className="mt-1 h-10 w-full rounded-xl bg-[#03ff93] text-[16px] font-semibold text-[#1a1b1f] transition hover:brightness-110 disabled:cursor-default disabled:opacity-60"
+              >
+                {createOrderMutation.isPending ? "Yuborilmoqda..." : "Sotib olish"}
+              </button>
+              </div>
+              </div>
             </section>
           )}
 
-          {donateId === "freefire" && (
+          {donateId === "freefire" && freefireUidStep === "catalog" && (
             <section className="mt-8 flex min-w-0 flex-col gap-5 box-border">
               <div className="flex flex-col items-center gap-2">
                 <img src={item.image} alt="Free Fire" className="h-8 w-auto object-contain" />
                 <h2 className="text-center text-[30px] font-semibold leading-tight">{item.subtitle}</h2>
-                <p className="text-center text-[16px] text-[#d5d7da]">ID kiriting va paketni tanlang</p>
+                <p className="text-center text-[16px] text-[#d5d7da]">Paketni tanlang</p>
               </div>
 
               <div className="grid min-w-0 grid-cols-2 gap-5 box-border sm:grid-cols-3 lg:grid-cols-4">
@@ -895,11 +971,11 @@ export default function DonateDetailPage() {
                   >
                     <img src={pkg.image ?? item.image} alt={item.name} className="mx-auto h-[120px] w-[120px] object-contain" />
                     <p className="mt-4 whitespace-nowrap text-[30px] font-bold leading-none tracking-tight">
-                      {typeof pkg.amount === "number" ? Number(pkg.amount).toLocaleString() : String(pkg.amount)}
+                      {typeof pkg.amount === "number" ? formatDisplayNumber(Number(pkg.amount)) : String(pkg.amount)}
                     </p>
-                    <div className="mt-6 w-full min-w-0 box-border space-y-5">
-                      <p className="mt-4 whitespace-nowrap text-[22px] font-semibold leading-none text-white/95">
-                        <span aria-hidden="true" className="inline-block w-[1.2em]" />
+                    <div className="mt-3 w-full border-t border-dashed border-[#425242]/80" />
+                    <div className="mt-5 w-full min-w-0 box-border">
+                      <p className="mt-2 text-center whitespace-nowrap text-[22px] font-semibold leading-none text-white/95">
                         {formatMoney(resolvePackagePrice(pkg))} so&apos;m
                       </p>
                     </div>
@@ -907,6 +983,57 @@ export default function DonateDetailPage() {
                 ))}
               </div>
 
+            </section>
+          )}
+          {donateId === "freefire" && freefireUidStep === "identity" && (
+            <section className="relative z-10 mt-6 flex w-full min-w-0 items-start justify-center px-4 pb-10 box-border md:mt-0 md:pt-[70px]">
+              <div className="flex w-full max-w-[920px] min-w-0 flex-col items-center justify-center rounded-[26px] border border-white/12 bg-black/55 px-6 py-10 shadow-[0_28px_90px_rgba(0,0,0,0.65)] backdrop-blur-xl box-border min-h-[520px] md:px-[100px] md:pt-[56px] md:pb-[38px]">
+                <div className="mx-auto my-4 flex w-full max-w-[560px] min-w-0 flex-col gap-6 px-1 py-3">
+                  <div className="flex flex-col items-center gap-2 text-center">
+                    <img src={item.image} alt="Free Fire" className="h-[72px] w-auto rounded-xl object-contain" />
+                    <h2 className="text-[24px] font-semibold leading-tight md:text-[32px]">UID orqali sotib olish</h2>
+                    <p className="text-[14px] leading-[1.5] text-white/85">Sotib olish uchun Free Fire UID kiriting</p>
+                  </div>
+
+                  <input
+                    value={userId}
+                    onChange={(e) => setUserId(e.target.value)}
+                    placeholder="Free Fire UID kiriting"
+                    className="h-[58px] w-full rounded-xl border border-[#292929] bg-[#1c1c1c] pl-6 pr-4 text-[15px] leading-[1.35] text-white placeholder:text-[#8a8ea1] outline-none transition hover:border-[#3a3a3a] focus:border-[#03ff93]/60"
+                    style={{ paddingLeft: "28px", paddingRight: "16px" }}
+                  />
+
+                  <div className="relative z-0 rounded-[18px] border border-[#292929] bg-[#1c1c1c] px-5 py-5 before:absolute before:-inset-3 before:-z-10 before:rounded-[24px] before:bg-[#1c1c1c]">
+                    <h3 className="text-[20px] font-semibold leading-[1.2]">Buyurtma tavsilotlari</h3>
+                    <div className="mt-4 space-y-4">
+                      <div className="flex min-h-8 items-center justify-between text-[14px] leading-[1.45]">
+                        <span className="text-[#d5d7da]">Maxsulot</span>
+                        <span>
+                          {typeof currentPackage?.amount === "number"
+                            ? formatDisplayNumber(Number(currentPackage.amount))
+                            : String(currentPackage?.amount ?? "-")}
+                        </span>
+                      </div>
+                      <div className="my-1 border-t border-dashed border-[#292929]" />
+                      <div className="flex min-h-8 items-center justify-between leading-[1.45]">
+                        <span className="text-[14px] font-semibold text-[#919eab]">Итого</span>
+                        <span className="text-[16px] font-semibold">
+                          {isCurrentPackageReady ? `${formatMoney(resolvePackagePrice(currentPackage))} UZS` : "Narxlar yuklanmoqda..."}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => void handlePurchase(selectedIndex)}
+                    disabled={createOrderMutation.isPending || !isCurrentPackageReady}
+                    className="h-10 w-full rounded-xl bg-[#03ff93] text-[16px] font-semibold text-[#1a1b1f] transition hover:brightness-110 disabled:cursor-default disabled:opacity-60"
+                  >
+                    {createOrderMutation.isPending ? "Yuborilmoqda..." : "Sotib olish"}
+                  </button>
+                </div>
+              </div>
             </section>
           )}
           {submitError && (
@@ -917,15 +1044,59 @@ export default function DonateDetailPage() {
         </main>
       </div>
 
+      {freefireUidConfirmOpen && (
+        <div className="fixed inset-0 z-[112] grid place-items-center bg-black/90 px-5 py-6 md:px-8">
+          <div className="w-full max-w-[560px] min-w-0 rounded-2xl bg-transparent px-[20px] py-[28px] backdrop-blur-[2px]">
+            <div
+              className="flex min-w-0 flex-col gap-4 rounded-xl border border-white/15 bg-transparent text-center box-border"
+              style={{ paddingTop: "20px", paddingBottom: "20px", paddingLeft: "20px", paddingRight: "20px" }}
+            >
+              <h3 className="text-[22px] font-semibold leading-tight text-white">Diqqat</h3>
+              <p className="text-[15px] leading-[1.5] text-white/85">
+                UID to&apos;g&apos;ri terganingizga ishonchingiz komilmi?
+              </p>
+              <p className="text-[16px] font-semibold text-[#f59e0b]">{userId.trim()}</p>
+
+              <div className="mt-3 grid w-full min-w-0 grid-cols-2 gap-3 pb-1 box-border">
+                <button
+                  type="button"
+                  onClick={() => setFreefireUidConfirmOpen(false)}
+                  className="h-11 w-full min-w-0 rounded-xl border border-white/15 bg-white/5 text-[14px] font-semibold text-white/70 transition hover:bg-white/10 hover:text-white/85"
+                >
+                  Yo&apos;q, tahrirlash
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setFreefireUidConfirmOpen(false);
+                    setProviderModalOpen(true);
+                  }}
+                  className="h-11 w-full min-w-0 rounded-xl border border-[#03ff93]/35 bg-[#03ff93]/18 text-[14px] font-semibold text-[#cffff0] transition hover:bg-[#03ff93]/24"
+                >
+                  Ha, davom etish
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {isIframeOpen && (
-        <div className="fixed inset-0 z-[100] bg-black/85 p-4">
+        <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-black/85 p-4">
           <div className="mx-auto flex h-full w-full max-w-[900px] min-w-0 flex-col gap-3 rounded-2xl border border-white/15 bg-[#141414] p-3 box-border">
-            <div className="flex items-center justify-between">
-              <p className="text-[14px] text-white/90">Oson to&apos;lov sahifasi</p>
+            <div className="grid min-h-[56px] grid-cols-[auto_1fr_auto] items-center rounded-xl border border-white/10 bg-[#1b1b1b] px-6 py-3">
+              <button
+                type="button"
+                onClick={() => router.push("/profile/history")}
+                className="justify-self-start h-10 rounded-md border border-white/20 bg-white/5 px-4 text-[13px] font-semibold text-white/90 transition hover:bg-white/10"
+              >
+                Tarixga o&apos;tish
+              </button>
+              <p className="text-center text-[15px] font-semibold tracking-[0.01em] text-white/90">OSON to&apos;lov tafsilotlari</p>
               <button
                 type="button"
                 onClick={() => setIsIframeOpen(false)}
-                className="rounded-lg border border-white/20 px-3 py-1 text-[12px] text-white/85"
+                className="justify-self-end flex h-10 flex-col items-center justify-center rounded-md border border-white/20 bg-white/5 px-5 text-[14px] font-semibold text-white/90 transition hover:bg-white/10"
               >
                 Yopish
               </button>
@@ -937,18 +1108,6 @@ export default function DonateDetailPage() {
               className="h-full min-h-0 w-full min-w-0 rounded-xl border border-white/10 bg-white"
               title="Oson Payment"
             />
-            <div className="flex items-center justify-between gap-2">
-              <p className="text-[12px] text-white/60">
-                To&apos;lov yakunlangach status tarix bo&apos;limida yangilanadi.
-              </p>
-              <button
-                type="button"
-                onClick={() => router.push("/profile/history")}
-                className="shrink-0 rounded-lg bg-[#03ff93] px-3 py-1.5 text-[12px] font-semibold text-[#1a1b1f]"
-              >
-                Tarixga o&apos;tish
-              </button>
-            </div>
             {paymentState === "error" && (
               <p className="rounded-lg border border-red-400/40 bg-red-500/10 px-3 py-2 text-[12px] text-red-300">
                 To&apos;lov holatida xatolik ko&apos;rindi. Qayta tekshirib ko&apos;ring.
@@ -959,36 +1118,42 @@ export default function DonateDetailPage() {
       )}
 
       {providerModalOpen && (
-        <div className="fixed inset-0 z-[110] grid place-items-center bg-[rgba(16,16,16,0.9)] p-4">
-          <div className="w-full max-w-[620px] min-w-0 rounded-2xl border border-white/10 bg-[#222326] px-[16px] py-[24px] my-0 mx-[20px] shadow-[0_30px_80px_rgba(0,0,0,0.55)]">
-            <div className="px-[10px] flex flex-col items-center text-center">
+        <div className="fixed inset-0 z-[110] grid place-items-center bg-black/90 px-5 py-6 md:px-8">
+          <div className="w-full max-w-[640px] min-w-0 max-h-[calc(100dvh-48px)] overflow-y-auto box-border rounded-2xl border border-white/10 bg-[#222326] px-5 pt-5 pb-8 md:px-6 md:pt-6 md:pb-9 shadow-[0_30px_80px_rgba(0,0,0,0.55)]">
+            <div className="mb-4 flex w-full min-w-0 box-border flex-col items-center gap-4 rounded-xl border border-white/10 bg-[#26282e] px-4 pt-4 pb-6 md:px-4 md:pt-4 md:pb-6">
+              <div className="mx-auto flex w-full max-w-[560px] min-w-0 box-border flex-col items-center px-5 py-6 text-center md:px-6 md:py-7">
               <img
                 src="https://www.figma.com/api/mcp/asset/c5aa4559-0694-4fd2-aa8d-4de4642da30b"
                 alt=""
-                className="h-[96px] w-[96px]"
+                className="h-20 w-20 md:h-24 md:w-24"
               />
-              <h3 className="mt-3 text-[20px] font-medium text-white">To&apos;lov usulini tanlang</h3>
-              <p className="mt-1 text-[14px] text-[#d5d7da]">
+              <h3 className="mt-4 text-[22px] font-semibold leading-tight text-white">
+                To&apos;lov usulini tanlang
+              </h3>
+              <p className="mt-2 text-[15px] leading-6 text-[#d5d7da]">
                 Quyidagi to&apos;lov usullaridan birini tanlang
               </p>
             </div>
 
-            <div className="w-full min-w-0 box-border px-[10px] pt-4 grid gap-4">
+            <div className="mx-auto grid w-full max-w-[560px] min-w-0 box-border gap-3 p-4">
               <button
                 type="button"
                 onClick={() => setPaymentProvider("OSON")}
-                className={`w-full min-h-[88px] rounded-xl border px-4 py-3 text-left ${
+                style={{ paddingLeft: 24, paddingRight: 20, paddingTop: 16, paddingBottom: 16 }}
+                className={`w-full min-h-[82px] min-w-0 box-border rounded-xl border py-4 pl-6 pr-5 text-left backdrop-blur-[10px] shadow-[0_10px_26px_rgba(0,0,0,0.24)] transition-all duration-200 hover:-translate-y-0.5 hover:border-white/35 hover:bg-white/[0.09] hover:shadow-[0_16px_36px_rgba(0,0,0,0.34)] ${
                   paymentProvider === "OSON"
-                    ? "border-[#03ff93] bg-[#1c1c1c]"
-                    : "border-[#292929] bg-[#1c1c1c]"
+                    ? "border-[#03ff93] bg-white/[0.14]"
+                    : "border-white/15 bg-white/[0.05]"
                 }`}
               >
-                <div className="flex items-center justify-between gap-3">
+                <div className="flex min-w-0 items-center justify-between gap-4">
                   <div className="min-w-0">
-                    <p className="text-[20px] font-extrabold tracking-wide text-white">OSON</p>
-                    <p className="mt-1 text-[13px] text-[#d5d7da]">Humo / Uzcard</p>
+                    <p className="truncate text-[20px] font-extrabold leading-6 tracking-wide text-white">
+                      OSON
+                    </p>
+                    <p className="mt-1 text-[13px] leading-5 text-[#d5d7da]">Humo / Uzcard</p>
                   </div>
-                  <span className="pt-0.5 text-[16px] text-[#03ff93]">
+                  <span className="shrink-0 text-[18px] leading-none text-[#03ff93]">
                     {paymentProvider === "OSON" ? "●" : "○"}
                   </span>
                 </div>
@@ -997,40 +1162,43 @@ export default function DonateDetailPage() {
               <button
                 type="button"
                 onClick={() => setPaymentProvider("OCTO")}
-                className={`w-full min-h-[88px] mb-6 rounded-xl border px-4 py-4 text-left ${
+                style={{ paddingLeft: 24, paddingRight: 20, paddingTop: 16, paddingBottom: 16 }}
+                className={`w-full min-h-[82px] min-w-0 box-border rounded-xl border py-4 pl-6 pr-5 text-left backdrop-blur-[10px] shadow-[0_10px_26px_rgba(0,0,0,0.24)] transition-all duration-200 hover:-translate-y-0.5 hover:border-white/35 hover:bg-white/[0.09] hover:shadow-[0_16px_36px_rgba(0,0,0,0.34)] ${
                   paymentProvider === "OCTO"
-                    ? "border-[#03ff93] bg-[#1c1c1c]"
-                    : "border-[#292929] bg-[#1c1c1c]"
+                    ? "border-[#03ff93] bg-white/[0.14]"
+                    : "border-white/15 bg-white/[0.05]"
                 }`}
               >
-                <div className="flex items-center justify-between gap-3">
+                <div className="flex min-w-0 items-center justify-between gap-4">
                   <div className="min-w-0">
-                    <p className="text-[20px] font-extrabold tracking-wide text-white">OCTOBANK</p>
-                    <div className="mt-1 flex items-center gap-2">
-                      <span className="inline-flex h-5 items-center rounded-md border border-white/20 px-1.5 text-[10px] font-bold tracking-wide text-white">
+                    <p className="truncate text-[20px] font-extrabold leading-6 tracking-wide text-white">
+                      OCTOBANK
+                    </p>
+                    <div className="mt-2 flex min-w-0 flex-wrap items-center gap-2">
+                      <span className="inline-flex h-5 shrink-0 items-center rounded-md border border-white/20 px-1.5 text-[10px] font-bold tracking-wide text-white">
                         VISA
                       </span>
-                      <span className="inline-flex items-center">
+                      <span className="inline-flex shrink-0 items-center">
                         <span className="h-3.5 w-3.5 rounded-full bg-[#eb001b]/90" />
                         <span className="-ml-1.5 h-3.5 w-3.5 rounded-full bg-[#f79e1b]/90" />
                       </span>
-                      <p className="text-[13px] text-[#d5d7da]">Visa / Mastercard</p>
+                      <p className="min-w-0 text-[13px] leading-5 text-[#d5d7da]">
+                        Visa / Mastercard
+                      </p>
                     </div>
                   </div>
-                  <span className="pt-0.5 text-[16px] text-[#03ff93]">
+                  <span className="shrink-0 text-[18px] leading-none text-[#03ff93]">
                     {paymentProvider === "OCTO" ? "●" : "○"}
                   </span>
                 </div>
               </button>
             </div>
 
-            <div className="h-6" />
-
-            <div className="w-full min-w-0 box-border px-[10px] grid grid-cols-2 gap-3">
+            <div className="mx-auto mt-4 grid w-full max-w-[560px] min-w-0 box-border grid-cols-2 gap-3">
               <button
                 type="button"
                 onClick={() => setProviderModalOpen(false)}
-                className="h-12 rounded-xl border border-[#292929] bg-[#1c1c1c] px-4 py-3 text-[16px] text-[#d5d7da]"
+                className="h-12 md:h-[52px] rounded-xl border border-[#292929] bg-[#1c1c1c] px-4 md:px-5 text-[16px] text-[#d5d7da]"
               >
                 Ortga
               </button>
@@ -1038,10 +1206,12 @@ export default function DonateDetailPage() {
                 type="button"
                 onClick={() => void confirmPaymentProvider()}
                 disabled={createOrderMutation.isPending}
-                className="h-12 rounded-xl bg-[#03ff93] px-4 py-3 text-[16px] font-semibold text-[#1a1b1f] disabled:opacity-60"
+                className="h-12 md:h-[52px] rounded-xl bg-[#03ff93] px-4 md:px-5 text-[16px] font-semibold text-[#1a1b1f] disabled:opacity-60"
               >
                 {createOrderMutation.isPending ? "Yuborilmoqda..." : "Tasdiqlash"}
               </button>
+            </div>
+            <div className="h-3 w-full" />
             </div>
           </div>
         </div>

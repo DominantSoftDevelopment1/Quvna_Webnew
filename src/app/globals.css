@@ -534,6 +534,14 @@ body {
   padding-bottom: 10px;
 }
 
+/* Profile history: full-bleed background except sidebar area */
+body.history-full-bleed .main-body-scroll {
+  margin-left: 0;
+  margin-right: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
 /* Profil tahriri: country-preview kabi to'liq ekran (Sidebar + 220px margin olib tashlanadi) */
 body.profile-edit-focus .sidebar {
   display: none !important;

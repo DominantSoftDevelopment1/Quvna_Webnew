@@ -135,8 +135,40 @@ export function HomeBanner() {
 }
 
 function StreamBannerCard({ stream }: { stream: StreamListItem }) {
+  const streamId = String(stream.id ?? "").trim();
+
+  if (!streamId) {
+    return (
+      <div className="banner-card" aria-disabled="true">
+        {stream.thumbnailUrl || stream.thumbnail ? (
+          <img
+            src={cdnUrl(stream.thumbnailUrl ?? stream.thumbnail)}
+            alt={stream.name ?? stream.title ?? ""}
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          <div className="w-full h-full bg-card2" />
+        )}
+
+        <div className="banner-gradient" />
+
+        <div className="banner-bottom">
+          <LiveAvatar avatar={stream.user?.avatar} />
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-white leading-snug line-clamp-1">
+              {stream.name ?? stream.title}
+            </p>
+            <p className="stream-username">
+              {stream.user?.username ? `@${stream.user.username}` : stream.user?.fullName ?? ""}
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <Link href={`/stream/${stream.id}`} className="banner-card">
+    <Link href={`/videos/efirlar/${streamId}`} className="banner-card">
       {stream.thumbnailUrl || stream.thumbnail ? (
         <img
           src={cdnUrl(stream.thumbnailUrl ?? stream.thumbnail)}

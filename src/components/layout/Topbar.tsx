@@ -10,9 +10,10 @@ import { useProfile } from "@/hooks/useProfile";
 
 export function Topbar() {
   const { user, isLoggedIn } = useAuthStore();
+  const isAuthed = isLoggedIn();
   const userId = user?.id != null ? Number(user.id) : null;
   const { data: profile } = useProfile(userId);
-  const { data: unreadCount = 0 } = useUnreadCount();
+  const { data: unreadCount = 0 } = useUnreadCount(isAuthed);
   const [mounted, setMounted] = useState(false);
   const pathname = usePathname();
   const p = (profile ?? {}) as {
@@ -62,7 +63,7 @@ export function Topbar() {
           {unreadCount > 0 && <span className="topbar-notif-dot" />}
         </Link>
 
-        {mounted && isLoggedIn() ? (
+        {mounted && isAuthed ? (
           <>
             <Link href="/profile" className="topbar-avatar">
               {avatarSrc ? (

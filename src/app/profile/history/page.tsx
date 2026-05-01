@@ -175,6 +175,13 @@ export default function ProfileHistoryPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab, userId]);
 
+  useEffect(() => {
+    document.body.classList.add("history-full-bleed");
+    return () => {
+      document.body.classList.remove("history-full-bleed");
+    };
+  }, []);
+
   const grouped = useMemo(() => {
     const map = new Map<string, HistoryItem[]>();
     for (const item of activeState.items) {

@@ -56,6 +56,46 @@ Muhim yo‘llar: `/user/profile/{id}`, `PATCH /user/edit/{id}`, video/stream end
 - “Sotib olish” tugmasi dizaynni buzsa, kartaning o‘zini clickable patternga o‘tkazing (`role="button"`, `tabIndex={0}`, `onClick`, `Enter/Space`).
 - Bitta action bosilganda boshqa kartalar loading bo‘lib ketmasin: global pending’ni vizualda faqat `selectedIndex` bilan target qiling.
 
+### Muvaffaqiyatli preset (PUBG/ML/FreeFire birxillashtirish)
+
+- Card formulasi: `image -> amount(+bonus) -> dashed divider -> centered price`.
+- Tavsiya etilgan divider: `mt-3 w-full border-t border-dashed border-[#425242]/80` (ko‘rinadi, lekin qo‘pol emas).
+- Narx qatori markazda bo‘lsin: `mt-5` container + `mt-2 text-center text-[22px] font-semibold`.
+- Narx oldidagi sun’iy spacer (`inline-block w-[1.2em]`)ni ishlatmang; u noto‘g‘ri offset beradi.
+- Identity sahifadagi katta fon-cardni ichki elementga tegmasdan cho‘zish kerak bo‘lsa, pseudo-layer o‘rniga container’ning o‘ziga `min-h-*` bering (masalan: `min-h-[590px] md:min-h-[620px]`) va `justify-center`ni saqlang.
+
+## Donate modal spacing (Figma parity) - incident learnings
+
+- DOM path aniq bo‘lsa ham, avval muammoni 2 ga ajrating: **(a) local spacing**, **(b) viewport clipping**.
+- `mt/mb/pb` ishlamayotgandek ko‘rinsa, ko‘pincha parent panel ekran bo‘yidan kesilib ko‘rinadi; buni `max-h-[calc(100dvh-...)] + overflow-y-auto` bilan tekshiring.
+- Global reset (`* { padding: 0 }`) bor loyihada visual smoke-test uchun vaqtincha inline style ishlatish mumkin; tasdiqlangach Tailwind/classga qaytaring.
+- Tugmalar “pastga yopishgan” case’da faqat tugmani emas, parent panel (`fixed` modal content) va ichki wrapper bo‘shliqlarini birga tekshiring.
+- Figma cardlar uchun tezkor formula: `header -> provider-list -> action-row -> explicit bottom spacer` (kerak bo‘lsa `h-*`).
+
+## Donate detail design fix (input + card) - incident learnings
+
+- PUBG `DonateDetailPage` (`src/app/donate/[id]/page.tsx`) da muammoni 3 qatlamda tekshiring: **parent panel spacing**, **content wrapper**, **field/card inner spacing**.
+- Input text joylashuvi uchun avval oddiy Tailwind (`pl-*`, `pr-*`) bilan mikrotune qiling; foydalanuvchi feedbacki asosida 2-4px qadam bilan yuring.
+- Agar utility class vizualda apply bo‘lmayotgandek ko‘rinsa, vaqtincha inline `style={{ paddingLeft, paddingRight }}` bilan smoke-test qiling; so‘ng kerak bo‘lsa classga qaytaring.
+- “Card fonini kattalashtirish, ichki element joyida qolsin” talabi uchun pseudo layer pattern ishlaydi: `relative` + `before:absolute before:-inset-* before:-z-10`.
+- `justify-center`/`items-center` qo‘shilganda ichki kontent “devorga yopishgan” bo‘lishi mumkin; bu holda wrapperga `my-*`, `py-*`, `gap-*` bilan bo‘shliqni parent-first tarzda qayta balanslang.
+
+### UID ogohlantirish card (FreeFire) - nima ishladi / nima ishlamadi
+
+- **Ishlagan yondashuv:** card paddingni aniq talab bo‘lsa (`20px 20px`), class o‘rniga inline style bilan tekshirib tasdiqlang (`paddingTop/Bottom/Left/Right: "20px"`).
+- **Ishlagan yondashuv:** buttonlar siqilib qolmasligi uchun `grid` wrapper va buttonlarda `w-full min-w-0 box-border` qo‘llang.
+- **Ishlagan yondashuv:** “faqat fon kattalashsin” talabi bo‘lsa, bitta qatlamdan foydalaning (single layer). DOM’da bitta target wrapper tanlang.
+- **Qilmaslik kerak:** tashqi va ichki wrapperga bir vaqtning o‘zida `before` qo‘shib yubormang — double-frame/qat-qat border paydo bo‘ladi.
+- **Qilmaslik kerak:** “fon kattalashsin” talabida borderlarni ko‘paytirmang; aks holda vizual “buzilgan” ko‘rinadi.
+- **Qilmaslik kerak:** katta UI tuning jarayonida bir nechta joyga bir vaqtda glass/pseudo effekt tarqatmang; faqat foydalanuvchi ko‘rsatgan elementni o‘zgartiring.
+
+## Fast debug order (30s)
+
+1. `data-cursor-element-id` + DOM path bilan target parentni toping.
+2. Devtools/computed’da real `height/overflow`ni tekshiring (`overflow-y-auto` yo‘qmi?).
+3. Avval viewport clippingni bartaraf qiling, keyin visual spacingni mikrotune qiling.
+4. Faqat oxirida global CSS clashni gumon qiling.
+
 ## GSD / Claude CLI
 
 Agar foydalanuvchi GSD buyruqlarini ishlatmasa, skill ichidagi `/gsd-*` havolalarini majburiy qilmang — bu ixtiyoriy ish jarayoni.

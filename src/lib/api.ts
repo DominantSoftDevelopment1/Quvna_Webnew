@@ -22,6 +22,10 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (res) => res,
   async (err) => {
+    const skipAuthRedirect =
+      String(
+        (err?.config?.headers as Record<string, unknown> | undefined)?.["X-Skip-Auth-Redirect"] ?? ""
+      ) === "1";
     // 502 Bad Gateway - backend qayta ishga tushganda retry qilish
     if (err.response?.status === 502 || err.code === 'ECONNREFUSED') {
       const maxRetries = 3;
@@ -58,7 +62,9 @@ api.interceptors.response.use(
           localStorage.removeItem("refresh_token");
           localStorage.removeItem("accessToken");
           localStorage.removeItem("refreshToken");
-          window.location.href = "/auth/login";
+          if (!skipAuthRedirect) {
+            window.location.href = "/auth/login";
+          }
         }
       }
     }

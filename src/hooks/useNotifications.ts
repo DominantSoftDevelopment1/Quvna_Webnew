@@ -45,13 +45,14 @@ export function useSystemNotifications() {
   });
 }
 
-export function useUnreadCount() {
+export function useUnreadCount(enabled = true) {
   return useQuery({
     queryKey: ["notifications", "unreadCount"],
     queryFn: async () => {
       const { data } = await api.get("/notification/userUnReadNotificationCount");
       return (data?.data ?? 0) as number;
     },
+    enabled,
     refetchInterval: 30_000,
   });
 }
