@@ -3,6 +3,7 @@ import { BASE_URL } from "./constants";
 
 export const api = axios.create({
   baseURL: BASE_URL,
+  timeout: 12_000,
 });
 
 // Watchdog Cloud monitoring integration
@@ -32,14 +33,12 @@ api.interceptors.response.use(
       ) === "1";
     // 502 Bad Gateway - backend qayta ishga tushganda retry qilish
     if (err.response?.status === 502 || err.code === 'ECONNREFUSED') {
-      const maxRetries = 3;
-      const retryDelay = 2000; // 2 soniya
+      const maxRetries = 2;
+      const retryDelay = 600;
       const retryCount = err.config.__retryCount || 0;
 
       if (retryCount < maxRetries) {
         err.config.__retryCount = retryCount + 1;
-        console.log(`Backend unavailable, retrying... (${retryCount + 1}/${maxRetries})`);
-
         await new Promise(resolve => setTimeout(resolve, retryDelay));
         return api(err.config);
       }

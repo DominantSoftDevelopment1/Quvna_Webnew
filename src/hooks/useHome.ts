@@ -12,6 +12,9 @@ export interface DonateProduct {
   amount?: number;
   totalAmount?: number;
   productType: DonateProductType;
+  imageUrl?: string;
+  image?: string;
+  attachmentResponseDTO?: { preSignedUrl?: string; contentURL?: string };
 }
 
 export interface CreateOrderItemPayload {

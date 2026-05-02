@@ -33,8 +33,9 @@ export function HomeGameStore() {
         >
           <div className="w-full h-20 overflow-hidden">
             <img
-              src={cdnUrl(item.imageUrl ?? item.image)}
+              src={item.attachmentResponseDTO?.preSignedUrl ?? item.attachmentResponseDTO?.contentURL ?? cdnUrl(item.imageUrl ?? item.image)}
               alt={item.name ?? item.title}
+              loading="lazy"
               className="w-full h-full object-cover"
             />
           </div>
@@ -61,4 +62,5 @@ interface GameStoreItem {
   imageUrl?: string;
   image?: string;
   price?: number;
+  attachmentResponseDTO?: { preSignedUrl?: string; contentURL?: string };
 }

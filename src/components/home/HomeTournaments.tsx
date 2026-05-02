@@ -37,6 +37,7 @@ export function HomeTournaments() {
               <img
                 src={cdnUrl(t.imageUrl ?? t.image)}
                 alt={t.name ?? t.title}
+                loading="lazy"
                 className="w-full h-full object-cover"
               />
             ) : (

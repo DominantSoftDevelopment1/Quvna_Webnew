@@ -204,6 +204,8 @@ export default function DonateDetailPage() {
           ? `+${product.bonus} ${donateId === "pubg" ? "UC" : donateId === "ml" ? "💎" : ""}`
           : resolvedItem.packages[index]?.bonus,
       image:
+        product.attachmentResponseDTO?.preSignedUrl ??
+        product.attachmentResponseDTO?.contentURL ??
         packageImages[index] ??
         resolvedItem.packages[index]?.image ??
         resolvedItem.image,

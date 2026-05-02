@@ -115,31 +115,35 @@ export function useInfiniteShorts() {
   });
 }
 
+function mapStreamList(list: Array<Record<string, unknown>>): StreamListItem[] {
+  return list.map((item): StreamListItem => {
+    const user = (item.user ?? {}) as Record<string, unknown>;
+    const attachment = (user.attachmentResponseDTO ?? {}) as Record<string, unknown>;
+    const firstName = typeof user.firstName === "string" ? user.firstName : "";
+    const lastName = typeof user.lastName === "string" ? user.lastName : "";
+    return {
+      ...item,
+      user: {
+        ...user,
+        avatar: (attachment.preSignedUrl as string | undefined) ?? undefined,
+        fullName: `${firstName} ${lastName}`.trim(),
+      },
+    } as StreamListItem;
+  });
+}
+
 export function useStreams() {
   return useQuery<StreamListItem[]>({
     queryKey: ["streams"],
     queryFn: async () => {
       try {
-        // New backend requires pagination on /streams/all
-        const { data } = await api.get("/streams/all", { params: { page: 0, size: 20 } });
-        const list = (data?.data ?? []) as Array<Record<string, unknown>>;
-        return list.map((item): StreamListItem => {
-          const user = (item.user ?? {}) as Record<string, unknown>;
-          const attachment = (user.attachmentResponseDTO ?? {}) as Record<string, unknown>;
-          const firstName = typeof user.firstName === "string" ? user.firstName : "";
-          const lastName = typeof user.lastName === "string" ? user.lastName : "";
-          return {
-            ...item,
-            user: {
-              ...user,
-              avatar: (attachment.preSignedUrl as string | undefined) ?? undefined,
-              fullName: `${firstName} ${lastName}`.trim(),
-            },
-          } as StreamListItem;
+        const { data } = await api.get("/streams/all", {
+          params: { page: 0, size: 20 },
+          timeout: 5_000,
         });
+        return mapStreamList((data?.data ?? []) as Array<Record<string, unknown>>);
       } catch {
-        // Legacy endpoint fallback
-        const { data } = await api.get("/streams");
+        const { data } = await api.get("/streams", { timeout: 5_000 });
         return (data ?? []) as StreamListItem[];
       }
     },

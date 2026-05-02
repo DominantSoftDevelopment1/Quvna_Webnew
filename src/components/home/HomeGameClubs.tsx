@@ -50,7 +50,7 @@ function GameClubCard({ club }: { club: ClubItem }) {
     <div className="club-card">
       <div className="club-img-wrap">
         {attachments.length > 0 ? (
-          <img src={cdnUrl(attachments[0])} alt={club.name} className="club-img" />
+          <img src={cdnUrl(attachments[0])} alt={club.name} loading="lazy" className="club-img" />
         ) : null}
         <button
           type="button"
