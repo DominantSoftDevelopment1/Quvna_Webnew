@@ -269,26 +269,14 @@ export default function StreamStudioPage() {
     }
   };
 
-  const startLive = async () => {
+  const startLive = () => {
     if (!streamId) {
       setError("Avval Stream yaratish tugmasini bosing.");
       return;
     }
-    try {
-      setBusy(true);
-      setError(null);
-      await requestWithFallback("put", `/streams/${streamId}`, {
-        name: title.trim() || "Quvna Live Stream",
-        url: "rtmp",
-        isLive: true,
-        fileId: null,
-      });
-      setStatus("live");
-    } catch {
-      setError("Streamni boshlashda xatolik bo'ldi.");
-    } finally {
-      setBusy(false);
-    }
+    // createStreamV2 allaqachon isLive:true qo'yadi — PUT kerak emas
+    setStatus("live");
+    setError(null);
   };
 
   const regenerateKey = async () => {

@@ -143,8 +143,13 @@ export function useStreams() {
         });
         return mapStreamList((data?.data ?? []) as Array<Record<string, unknown>>);
       } catch {
-        const { data } = await api.get("/streams", { timeout: 5_000 });
-        return (data ?? []) as StreamListItem[];
+        try {
+          const { data } = await api.get("/streams", { timeout: 5_000 });
+          const list = Array.isArray(data) ? data : (data?.data ?? []);
+          return mapStreamList(list as Array<Record<string, unknown>>);
+        } catch {
+          return [];
+        }
       }
     },
     staleTime: 0,
