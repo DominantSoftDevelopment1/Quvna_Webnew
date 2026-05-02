@@ -59,8 +59,8 @@ export function Sidebar() {
   };
 
   const handleSidebarMouseLeave = (e: React.MouseEvent<HTMLElement>) => {
-    const next = e.relatedTarget as HTMLElement | null;
-    if (next?.closest(".videos-hover-flyout")) return;
+    const next = e.relatedTarget;
+    if (next instanceof Element && next.closest(".videos-hover-flyout")) return;
     closeFlyoutNow();
   };
 

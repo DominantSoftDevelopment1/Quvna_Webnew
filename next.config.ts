@@ -7,6 +7,10 @@ const nextConfig: NextConfig = {
         source: "/api-proxy/:path*",
         destination: "https://quvna.dominantsoftdevelopment.uz/:path*",
       },
+      {
+        source: "/hls-proxy/:path*",
+        destination: "https://quvna-live.b-cdn.net/:path*",
+      },
     ];
   },
 };

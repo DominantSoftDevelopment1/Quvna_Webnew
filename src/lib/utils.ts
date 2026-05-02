@@ -21,10 +21,12 @@ export function timeAgo(dateStr: string): string {
   return `${days} kun oldin`;
 }
 
+const TRANSPARENT_PIXEL = "data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==";
+
 export function cdnUrl(path: unknown): string {
-  if (typeof path !== "string") return "/placeholder.png";
+  if (typeof path !== "string") return TRANSPARENT_PIXEL;
   const cleanPath = path.trim();
-  if (!cleanPath) return "/placeholder.png";
-  if (cleanPath.startsWith("http")) return cleanPath;
+  if (!cleanPath) return TRANSPARENT_PIXEL;
+  if (cleanPath.startsWith("http") || cleanPath.startsWith("data:")) return cleanPath;
   return `https://quvna-live.b-cdn.net/${cleanPath}`;
 }

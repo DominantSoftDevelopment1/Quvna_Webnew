@@ -58,7 +58,11 @@ function getApiCandidates(): string[] {
 function buildHlsCandidates(streamId: string): string[] {
   const cdn = "https://quvna-live.b-cdn.net";
   const origin = "https://quvna.dominantsoftdevelopment.uz";
+  const proxy = "/hls-proxy";
   return [
+    `${proxy}/hls/${streamId}.m3u8`,
+    `${proxy}/hls/${streamId}/playlist.m3u8`,
+    `${proxy}/${streamId}/playlist.m3u8`,
     `${cdn}/hls/${streamId}.m3u8`,
     `${cdn}/hls/${streamId}/playlist.m3u8`,
     `${cdn}/${streamId}/playlist.m3u8`,
