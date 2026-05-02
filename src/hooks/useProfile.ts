@@ -7,12 +7,28 @@ import { api } from "@/lib/api";
 function normalizeProfileRow(raw: Record<string, unknown> | null | undefined) {
   if (!raw || typeof raw !== "object") return raw ?? null;
   const c = (camel: string, snake: string) => raw[camel] ?? raw[snake];
-  const reg = raw.region as { name?: string } | string | undefined;
+  const reg = raw.region as { name?: string; code?: string } | string | undefined;
   let countryDisplay = "";
   if (raw.country != null && String(raw.country).trim()) countryDisplay = String(raw.country);
   else if (typeof reg === "object" && reg && reg !== null && "name" in reg)
     countryDisplay = String((reg as { name?: unknown }).name ?? "");
-  else if (typeof reg === "string") countryDisplay = reg;
+  else if (typeof reg === "string") {
+    const s = reg.trim();
+    if (/^[a-zA-Z]{2}$/.test(s)) countryDisplay = s.toUpperCase();
+    else countryDisplay = reg;
+  }
+
+  /** Backend `UserProfileDTO`: `xUrl`, `donatAURL`, `isPrivateAccount`, `isGameInfoHidden` */
+  const twitterUrl =
+    (typeof raw.twitterUrl === "string" && raw.twitterUrl.trim()) ||
+    (typeof raw.xUrl === "string" && raw.xUrl.trim()) ||
+    (typeof raw.twitter_url === "string" && raw.twitter_url.trim()) ||
+    "";
+  const donationAlertsUrl =
+    (typeof raw.donationAlertsUrl === "string" && raw.donationAlertsUrl.trim()) ||
+    (typeof raw.donatAURL === "string" && raw.donatAURL.trim()) ||
+    (typeof raw.donation_alerts_url === "string" && raw.donation_alerts_url.trim()) ||
+    "";
 
   return {
     ...raw,
@@ -25,9 +41,11 @@ function normalizeProfileRow(raw: Record<string, unknown> | null | undefined) {
     facebookUrl: c("facebookUrl", "facebook_url"),
     discordUrl: c("discordUrl", "discord_url"),
     linkedinUrl: c("linkedinUrl", "linkedin_url"),
-    twitterUrl: c("twitterUrl", "twitter_url"),
+    twitterUrl: twitterUrl || (c("twitterUrl", "twitter_url") as string) || "",
     websiteUrl: c("websiteUrl", "website_url"),
-    donationAlertsUrl: c("donationAlertsUrl", "donation_alerts_url"),
+    donationAlertsUrl: donationAlertsUrl || (c("donationAlertsUrl", "donation_alerts_url") as string) || "",
+    isPrivate: Boolean(raw.isPrivate ?? raw.isPrivateAccount),
+    hideGameInfo: Boolean(raw.hideGameInfo ?? raw.isGameInfoHidden),
   } as Record<string, unknown>;
 }
 

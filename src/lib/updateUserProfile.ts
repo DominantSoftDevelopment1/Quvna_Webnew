@@ -77,6 +77,17 @@ function mapUiGenderToApi(s: string): "MALE" | "FEMALE" | "UNKNOWN" | undefined 
   return undefined;
 }
 
+/**
+ * Backend: `region` — ISO 3166-1 alpha-2 lowercase string masalan `"uz"`, `"af"` (`"region":"uz"`).
+ */
+export function normalizeRegionCodeForApi(value: unknown): string | undefined {
+  if (value == null) return undefined;
+  const s = String(value).trim();
+  if (!s) return undefined;
+  if (/^[A-Za-z]{2}$/.test(s)) return s.toLowerCase();
+  return undefined;
+}
+
 /** `DD/MM/YYYY` yoki `DD.MM.YYYY` → `yyyy-MM-dd` (backend `LocalDate` parse uchun). */
 function normalizeAgeValue(v: unknown): string | undefined {
   if (v == null) return undefined;
@@ -93,8 +104,8 @@ function normalizeAgeValue(v: unknown): string | undefined {
 }
 
 /**
- * Rasmiy `UserEditDTO` (OpenAPI) kalitlari + ijtimoiy/UID kabi kengaytmalar (bo‘sh bo‘lmasa).
- * Bo‘sh qatorlar yuborilmaydi — bo‘sh `age` / `region` 500 xatoga olib kelishi mumkin.
+ * Backend `UserEditDTO` string kalitlari (`twitterUrl`→`xUrl`, `donationAlertsUrl`→`donatAURL` alohida).
+ * Bo‘sh `age` / `region` yuborilmaydi. `country` UI → body da `region` (2 harf, lowercase).
  */
 const USER_EDIT_CORE_KEYS = new Set([
   "firstName",
@@ -117,16 +128,16 @@ const USER_EDIT_CORE_KEYS = new Set([
   "facebookUrl",
   "discordUrl",
   "linkedinUrl",
-  "twitterUrl",
-  "donationAlertsUrl",
   "websiteUrl",
 ]);
 
 function omitEmptyStringOptional(obj: Record<string, unknown>): Record<string, unknown> {
   const o: Record<string, unknown> = {};
+  /** Havolani tozalash uchun bo‘sh qator yuborish kerak */
+  const allowEmptyString = new Set(["xUrl", "donatAURL"]);
   for (const [k, v] of Object.entries(obj)) {
-    if (v === "") continue;
     if (v === undefined) continue;
+    if (v === "" && !allowEmptyString.has(k)) continue;
     o[k] = v;
   }
   return o;
@@ -137,7 +148,7 @@ export function toUserEditPayload(picked: Record<string, unknown>): Record<strin
   for (const [key, value] of Object.entries(picked)) {
     if (value === undefined) continue;
     if (key === "country") {
-      const r = typeof value === "string" ? value.trim() : String(value);
+      const r = normalizeRegionCodeForApi(value);
       if (r) out.region = r;
       continue;
     }
@@ -149,6 +160,22 @@ export function toUserEditPayload(picked: Record<string, unknown>): Record<strin
     if (key === "gender") {
       const m = mapUiGenderToApi(String(value));
       if (m) out.gender = m;
+      continue;
+    }
+    if (key === "isPrivate") {
+      out.isPrivateAccount = Boolean(value);
+      continue;
+    }
+    if (key === "hideGameInfo") {
+      out.isGameInfoHidden = Boolean(value);
+      continue;
+    }
+    if (key === "twitterUrl") {
+      out.xUrl = String(value ?? "");
+      continue;
+    }
+    if (key === "donationAlertsUrl") {
+      out.donatAURL = String(value ?? "");
       continue;
     }
     if (!USER_EDIT_CORE_KEYS.has(key)) continue;

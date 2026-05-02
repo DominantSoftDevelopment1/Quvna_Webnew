@@ -1,11 +1,10 @@
-"use client";
-
-import { useParams } from "next/navigation";
 import { StreamViewerContent } from "@/components/stream/StreamViewerContent";
 
-export default function StreamViewerPage() {
-  const params = useParams<{ id: string }>();
-  const streamId = String(params?.id ?? "");
-  return <StreamViewerContent streamId={streamId} />;
-}
+type PageProps = { params: Promise<{ id: string }> };
 
+/** `params` async — Next.js 15+ sync dynamic API ogohlantirishlarini chetlab oʻtadi. */
+export default async function StreamViewerRoutePage({ params }: PageProps) {
+  const { id } = await params;
+  const streamId = decodeURIComponent(id ?? "").trim();
+  return <StreamViewerContent key={streamId} streamId={streamId} />;
+}

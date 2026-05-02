@@ -14,9 +14,20 @@ function apiBaseUrl(): string {
 
 export const BASE_URL = apiBaseUrl();
 export const CDN_BASE_URL = "https://quvna-live.b-cdn.net";
-export const WS_URL =
-  BASE_URL.startsWith("/api-proxy") || BASE_URL.startsWith("https://")
-    ? "wss://quvna.dominantsoftdevelopment.uz"
-    : "ws://95.130.227.48:8066";
+
+/**
+ * Chat WebSocket bazasi; to‘liq URL: `{WS_URL}/scws/{streamId}` (stream `id` backenddan).
+ * Masalan: `ws://quvna.dominantsoftdevelopment.uz/scws/{id}` yoki `wss://...`.
+ * `.env.local`: `NEXT_PUBLIC_WS_URL=ws://quvna.dominantsoftdevelopment.uz` yoki `wss://...`
+ */
+function wsBaseUrl(): string {
+  const fromEnv = process.env.NEXT_PUBLIC_WS_URL?.trim();
+  if (fromEnv) return fromEnv.replace(/\/$/, "");
+  if (BASE_URL.startsWith("/api-proxy") || BASE_URL.startsWith("https://"))
+    return "wss://quvna.dominantsoftdevelopment.uz";
+  return "ws://95.130.227.48:8066";
+}
+
+export const WS_URL = wsBaseUrl();
 
 export const APP_NAME = "Quvna";

@@ -65,7 +65,19 @@ npm install
 npm run dev
 ```
 
-Server `http://localhost:3000` da ishga tushadi.
+Server standart ravishda `http://localhost:3000` da ochiladi (IPv6/OS farqlari uchun `http://127.0.0.1:3000` ham sinab ko‘ring).
+
+### Lokal ishlamasa (Next «Another server is already running»)
+
+1. Eskidan qolgan `next dev` hali ishlayapti — terminalda Ctrl+C bilan yoping yoki xabardagi PID bo‘yicha PowerShell/cmd: `taskkill /PID <PID> /F`
+2. Shundan keyin: `npm run dev`
+3. Turbopack bilan muammo bo‘lsa: **`npm run dev:webpack`**
+4. Dev kesh/lock chalkash bo‘lsa (avval keraksa jarayonni to‘xtatib): **`npm run dev:fresh`**
+5. Sahifa ochilmay qolsa yoki tortib qolsa: `netstat -ano | findstr :3000` — eski `next dev` (**CLOSE_WAIT** ko‘p bo‘lsa jarayon „osilib“ qolgan) — xabardagi PID uchun `taskkill /PID <PID> /F`, keyin **`npm run dev`**
+
+**Sekin fayl tizimi:** Next ba’zan `Slow filesystem detected` deb ogohlantiradi — loyiha/network disklarda bo‘lsa (`QUVNA OBSIDIAN` ichida) dev sekin yoki noto‘g‘ri ishlashi mumkin; imkon bo‘lsa kodni lokal SSD papkaga ko‘chirib sinab ko‘ring.
+
+**Eslatma:** PowerShellda **`&&`** ishlashi mumkin emas — alohida qatorlar yoki npm skriptlari ishlating.
 
 ## quvna.com — CI/CD
 
