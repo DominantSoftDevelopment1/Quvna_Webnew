@@ -29,6 +29,20 @@ export function Topbar() {
     user?.avatar || user?.attachmentResponseDTO?.preSignedUrl || user?.attachmentResponseDTO?.contentURL;
   const avatarLetter = displayName.trim().charAt(0).toUpperCase() || "U";
 
+  const ratingScore = (() => {
+    const raw = profile as Record<string, unknown> | null;
+    if (!raw) return null;
+    const rObj = typeof raw.rating === "object" && raw.rating != null && !Array.isArray(raw.rating)
+      ? (raw.rating as Record<string, number>)
+      : null;
+    const score = rObj
+      ? Number(rObj.ucAmount ?? 0)
+      : typeof raw.rating === "number"
+        ? raw.rating
+        : null;
+    return score != null && score > 0 ? score : null;
+  })();
+
   const hideTopbar = pathname?.startsWith("/profile/edit");
   const isEfirlar = pathname?.startsWith("/videos/efirlar");
 
@@ -52,10 +66,20 @@ export function Topbar() {
       </div>
 
       <div className="my-[10px] flex items-center justify-center gap-2">
-        {/* Rating always visible */}
-        <Link href="/rating" className="topbar-rating-btn" aria-label="Reyting">
-          <img src="/icons/star.svg" alt="" width={22} height={22} className="topbar-rating-star" />
-        </Link>
+        {/* Rating widget — logged in va score > 0 bo'lsa to'liq, aks holda oddiy icon */}
+        {mounted && isAuthed && ratingScore != null ? (
+          <Link href="/rating" className="topbar-rating-widget" aria-label={`Reyting: ${ratingScore}`}>
+            <span className="topbar-rating-pill-text">
+              <span className="topbar-rating-pill-brand">REYTING</span>
+              <span className="topbar-rating-pill-rank">{ratingScore}</span>
+              <span className="topbar-rating-pill-star">★</span>
+            </span>
+          </Link>
+        ) : (
+          <Link href="/rating" className="topbar-rating-btn" aria-label="Reyting">
+            <img src="/icons/star.svg" alt="" width={22} height={22} className="topbar-rating-star" />
+          </Link>
+        )}
 
         {/* Notifications always visible */}
         <Link href="/notifications" className="topbar-notif-btn" aria-label="Bildirishnomalar">
