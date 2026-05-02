@@ -147,6 +147,9 @@ export function useStreams() {
         return (data ?? []) as StreamListItem[];
       }
     },
+    staleTime: 0,
+    refetchInterval: 30_000,
+    refetchOnWindowFocus: true,
   });
 }
 
