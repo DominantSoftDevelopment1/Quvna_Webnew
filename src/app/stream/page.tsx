@@ -71,8 +71,8 @@ function buildHlsCandidates(streamId: string): string[] {
   ];
 }
 
-function persistKey(userId: string | null): string {
-  return `stream_studio_state_${userId ?? "guest"}`;
+function persistKey(): string {
+  return "quvna_stream_studio_state";
 }
 
 async function safeCopyText(value: string, inputElement: HTMLInputElement | null): Promise<CopyStatus> {
@@ -168,13 +168,11 @@ export default function StreamStudioPage() {
   const hlsUrl = hlsCandidates[hlsIndex] ?? "";
 
   const saveState = (id: string, key: string) => {
-    const uid = localStorage.getItem("userId");
-    localStorage.setItem(persistKey(uid), JSON.stringify({ id, key }));
+    localStorage.setItem(persistKey(), JSON.stringify({ id, key }));
   };
 
   const clearState = () => {
-    const uid = localStorage.getItem("userId");
-    localStorage.removeItem(persistKey(uid));
+    localStorage.removeItem(persistKey());
   };
 
   const requestWithFallback = async <T,>(method: "get" | "post" | "put", path: string, body?: unknown): Promise<T> => {
@@ -206,8 +204,18 @@ export default function StreamStudioPage() {
   const loadExistingStream = async () => {
     try {
       const data = await requestWithFallback<StreamDto | null>("get", "/streams/if-exist/user-stream");
-      if (data?.id) applyStream(data);
-    } catch {}
+      if (data?.id) {
+        applyStream(data);
+      } else {
+        // Backend da stream yo'q — localStorage ni tozalab offline ga qayt
+        clearState();
+        setStreamId(null);
+        setStreamKey("");
+        setStatus("offline");
+      }
+    } catch {
+      // Network xato — localStorage state saqlansin
+    }
   };
 
   const createStream = async () => {
@@ -219,7 +227,8 @@ export default function StreamStudioPage() {
       return;
     }
     if (streamId && streamKey) {
-      setStatus((s) => (s === "offline" ? "waiting" : s));
+      // Mavjud stream ni tekshir — backend da bor bo'lsa ishlatamiz
+      void loadExistingStream();
       return;
     }
     if (!title.trim()) {
@@ -326,8 +335,7 @@ export default function StreamStudioPage() {
       return;
     }
 
-    const uid = localStorage.getItem("userId");
-    const saved = localStorage.getItem(persistKey(uid));
+    const saved = localStorage.getItem(persistKey());
     if (saved) {
       try {
         const parsed = JSON.parse(saved) as { id?: string; key?: string };
