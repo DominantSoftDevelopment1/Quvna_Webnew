@@ -10,6 +10,7 @@ import {
   useDonateProducts,
 } from "@/hooks/useHome";
 import { useAuthStore } from "@/store/auth.store";
+import { CATEGORY_AMBIENT_BG_CLASS, GAME_CATEGORY_BACKGROUND } from "@/lib/categoryGameBackgrounds";
 
 type DonateId = "pubg" | "ml" | "freefire" | "steam";
 type PubgTab = "uid" | "promo";
@@ -136,28 +137,6 @@ const PACKAGE_IMAGE_BY_ID: Record<DonateId, string[]> = {
   steam: ["/images/donate/steam/steam_logo.png"],
 };
 
-const BACKGROUND_IMAGE_BY_ID: Record<DonateId, string> = {
-  pubg: "/images/profile-games/pubgmobile.png",
-  ml: "/images/profile-games/mobilelegends.png",
-  freefire: "/images/profile-games/freefire.png",
-  steam: "/images/profile-games/steam.png",
-};
-
-const BACKGROUND_CLASS_BY_ID: Record<DonateId, string> = {
-  pubg: "fixed inset-x-0 -top-16 -bottom-16 z-0 w-full bg-cover bg-center bg-no-repeat",
-  ml: "fixed inset-x-0 -top-16 -bottom-16 z-0 w-full bg-cover bg-center bg-no-repeat",
-  steam: "fixed inset-x-0 -top-16 -bottom-16 z-0 w-full bg-cover bg-center bg-no-repeat",
-  freefire: "fixed inset-x-0 -top-16 -bottom-16 z-0 w-full bg-cover bg-center bg-no-repeat",
-};
-
-const BACKGROUND_OVERLAY_BY_ID: Record<DonateId, string> = {
-  pubg: "linear-gradient(90deg, rgba(5,10,8,0.72) 0%, rgba(5,10,8,0.45) 40%, rgba(5,10,8,0.72) 100%)",
-  ml: "linear-gradient(90deg, rgba(5,10,8,0.72) 0%, rgba(5,10,8,0.45) 40%, rgba(5,10,8,0.72) 100%)",
-  steam:
-    "radial-gradient(circle at 70% 35%, rgba(0,120,255,0.22) 0%, transparent 35%), linear-gradient(90deg, rgba(3,7,13,0.92) 0%, rgba(3,7,13,0.72) 45%, rgba(3,7,13,0.90) 100%)",
-  freefire:
-    "radial-gradient(circle at 86% 34%, rgba(255,130,32,0.32) 0%, rgba(255,130,32,0) 38%), radial-gradient(circle at 72% 72%, rgba(255,180,80,0.18) 0%, rgba(255,180,80,0) 46%), linear-gradient(90deg, rgba(10,6,3,0.82) 0%, rgba(10,6,3,0.52) 44%, rgba(10,6,3,0.84) 100%)",
-};
 
 export default function DonateDetailPage() {
   const params = useParams<{ id?: string | string[] }>();
@@ -576,18 +555,17 @@ export default function DonateDetailPage() {
     }
   }
 
+  const ambientBg = GAME_CATEGORY_BACKGROUND[donateId];
+
   return (
     <div className="min-h-[100dvh] w-full bg-black text-white box-border">
       <div className="relative min-h-screen overflow-hidden box-border">
         <div
-          className={BACKGROUND_CLASS_BY_ID[donateId]}
+          className={CATEGORY_AMBIENT_BG_CLASS}
           style={{
-            backgroundImage: `
-              ${BACKGROUND_OVERLAY_BY_ID[donateId]},
-              url('${BACKGROUND_IMAGE_BY_ID[donateId] ?? item.image}')
-            `,
+            backgroundImage: ` ${ambientBg.overlay}, url('${ambientBg.image ?? item.image}')`,
             backgroundSize: "cover",
-            backgroundPosition: donateId === "steam" ? "center center" : "center",
+            backgroundPosition: ambientBg.position ?? "center",
           }}
         />
 

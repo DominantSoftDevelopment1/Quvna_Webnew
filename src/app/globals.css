@@ -1214,8 +1214,6 @@ body.profile-edit-focus .main-body-scroll {
   display: flex; align-items: center; justify-content: center;
   font-size: 11px; font-weight: 800;
 }
-.rating-podium-name   { font-size: 12px; font-weight: 600; color: var(--text-primary); text-align: center; }
-.rating-podium-amount { font-size: 13px; font-weight: 700; color: var(--primary); text-align: center; }
 
 /* ── Game play page ── */
 .game-page-header {
@@ -1226,6 +1224,11 @@ body.profile-edit-focus .main-body-scroll {
   width: 36px; height: 36px; border-radius: 10px; border: none; cursor: pointer;
   display: flex; align-items: center; justify-content: center;
   background: var(--bg-card); flex-shrink: 0;
+}
+/* back_left.svg chapga qarashi + SVG dagi oq stroke saqlansin (invert o‘rniga) */
+.game-back-btn img.icon-invert {
+  filter: none;
+  transform: scaleX(-1);
 }
 .game-page-icon {
   width: 52px; height: 52px; border-radius: 14px; flex-shrink: 0;
@@ -1279,43 +1282,618 @@ body.profile-edit-focus .main-body-scroll {
 .game-coming      { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 48px 0; }
 .game-coming-text { font-size: 20px; font-weight: 600; color: var(--text-primary); }
 
-/* ── Rating page ── */
-.rating-header       { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: 12px; padding: 14px 24px; background: var(--bg-dark); border-bottom: 1px solid var(--border); }
+/* ── Rating page (polish + Telegram/iOS glass) ── */
+.rating-page {
+  max-width: 1160px;
+  margin: 0 auto;
+  padding: 16px 24px 48px;
+}
+
+.rating-hero {
+  position: relative;
+  overflow: hidden;
+  border-radius: 22px;
+  min-height: 260px;
+  padding: 28px 24px 18px;
+  background:
+    linear-gradient(180deg, rgba(0, 0, 0, 0.25), rgba(0, 0, 0, 0.72)),
+    var(--rating-bg, #101010);
+  background-size: cover;
+  background-position: center;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.35);
+}
+
+.rating-hero::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.7));
+  pointer-events: none;
+  z-index: 0;
+  border-radius: inherit;
+}
+
+.rating-hero-inner {
+  position: relative;
+  z-index: 1;
+}
+
+.rating-header {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 8px 12px;
+  margin: -8px -8px 0;
+  background: rgba(8, 10, 10, 0.35);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px 14px 0 0;
+}
 .rating-header-title { font-size: 17px; font-weight: 700; color: var(--text-primary); flex: 1; }
 
-.rating-tabs        { display: flex; gap: 6px; padding: 12px 24px; overflow-x: auto; scrollbar-width: none; }
+.rating-tabs {
+  display: flex;
+  flex-wrap: nowrap;
+  justify-content: center;
+  align-items: center;
+  gap: 150px;
+  padding: 14px 0 18px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
 .rating-tabs::-webkit-scrollbar { display: none; }
-.rating-tab         { display: flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 20px; border: 1px solid var(--border); background: transparent; color: var(--text-muted); font-size: 12px; font-weight: 600; white-space: nowrap; cursor: pointer; transition: all 0.15s; }
-.rating-tab:hover   { background: var(--bg-hover); }
-.rating-tab.active  { background: var(--primary-muted); border-color: var(--primary); color: var(--primary); }
-.rating-tab-icon    { width: 18px; height: 18px; object-fit: contain; }
 
-/* Podium */
-.rating-podium-wrap    { position: relative; width: 100%; }
-.rating-podium-bg      { width: 100%; display: block; }
-.rating-podium-players { position: absolute; bottom: 6%; left: 0; right: 0; display: flex; align-items: flex-end; justify-content: center; gap: 0; }
+.rating-tab,
+.rating-tab.ios-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 38px;
+  padding: 0 16px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(28, 28, 28, 0.78);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.rating-tab:hover {
+  background: rgba(40, 40, 40, 0.88);
+  color: var(--text-primary);
+}
+.rating-tab.active,
+.rating-tab.ios-tab.active {
+  background: rgba(3, 255, 147, 0.12);
+  border-color: rgba(3, 255, 147, 0.4);
+  color: var(--primary);
+  box-shadow:
+    0 0 0 1px rgba(3, 255, 147, 0.35),
+    0 8px 22px rgba(3, 255, 147, 0.08);
+}
+.rating-tab-icon { width: 18px; height: 18px; object-fit: contain; }
 
-.rating-podium-slot       { display: flex; flex-direction: column; align-items: center; width: 33.333%; padding-bottom: 4px; position: relative; }
-.rating-podium-slot.first { margin-bottom: 12px; }
+/* Podium — top 3: gradient rank blocks (reference: top 3 card / rating-page-improved) */
+.rating-podium-wrap {
+  position: relative;
+  width: 100%;
+  max-width: min(100%, 720px);
+  margin: 0 auto 12px;
+  padding: 30px 20px 20px;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 16px 40px rgba(0, 0, 0, 0.4);
+  overflow: visible;
+  box-sizing: border-box;
+}
 
-.rating-crown { width: 28px; height: 28px; margin-bottom: -6px; z-index: 2; filter: drop-shadow(0 0 6px #FFD700); }
+.rating-podium-glow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -40%);
+  width: 120%;
+  height: 200px;
+  border-radius: 50%;
+  background: radial-gradient(ellipse, rgba(3, 255, 147, 0.06) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+}
 
-.rating-podium-avatar-wrap { position: relative; display: flex; align-items: center; justify-content: center; }
-.rating-podium-avatar-ring { border-radius: 50%; overflow: hidden; border: 2px solid transparent; }
-.rating-podium-avatar-ring.rank-1 { width: 60px; height: 60px; border-color: #FFD700; }
-.rating-podium-avatar-ring.rank-2 { width: 50px; height: 50px; border-color: #C0C0C0; }
-.rating-podium-avatar-ring.rank-3 { width: 46px; height: 46px; border-color: #CD7F32; }
-.rating-wreath { position: absolute; inset: -6px; width: calc(100% + 12px); height: calc(100% + 12px); object-fit: contain; pointer-events: none; }
+.rating-podium-players {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 14px;
+  position: relative;
+  z-index: 1;
+  min-height: 230px;
+}
+@media (min-width: 480px) {
+  .rating-podium-players {
+    gap: 20px;
+  }
+}
+@media (max-width: 639px) {
+  .rating-podium-players {
+    gap: 8px;
+    min-height: 200px;
+  }
+}
 
-.rating-badge-num     { width: 28px; height: 28px; object-fit: contain; margin-top: 4px; }
-.rating-podium-name   { font-size: 11px; font-weight: 600; color: var(--text-primary); text-align: center; margin-top: 2px; max-width: 90%; }
-.rating-podium-amount { font-size: 12px; font-weight: 700; color: var(--primary); }
+.rating-podium-slot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+  max-width: min(200px, 30vw);
+  position: relative;
+  animation: rating-podium-enter 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.rating-podium-slot.first  { order: 2; animation-delay: 0.15s; z-index: 3; }
+.rating-podium-slot.second { order: 1; animation-delay: 0.3s; z-index: 2; }
+.rating-podium-slot.third  { order: 3; animation-delay: 0.45s; z-index: 1; }
+
+@keyframes rating-podium-enter {
+  from {
+    opacity: 0;
+    transform: translateY(30px) scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.rating-podium-stack {
+  position: relative;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.rating-podium-avatar-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-bottom: 8px;
+  z-index: 5;
+  overflow: visible !important;
+}
+.rating-podium-slot:hover .rating-podium-avatar-ring {
+  transform: scale(1.08);
+}
+
+.rating-podium-avatar-ring {
+  position: relative;
+  z-index: 1;
+  border-radius: 50%;
+  overflow: hidden;
+  background: var(--bg-dark);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.3s ease;
+}
+
+.rating-podium-avatar-ring.rank-1 {
+  width: 72px;
+  height: 72px;
+  border: 3px solid #ffd700;
+  box-shadow:
+    0 0 0 4px rgba(255, 215, 0, 0.15),
+    0 0 20px rgba(255, 215, 0, 0.25),
+    0 4px 12px rgba(0, 0, 0, 0.3);
+}
+.rating-podium-avatar-ring.rank-2 {
+  width: 60px;
+  height: 60px;
+  border: 3px solid #c0c0c0;
+  box-shadow:
+    0 0 0 4px rgba(192, 192, 192, 0.12),
+    0 0 16px rgba(192, 192, 192, 0.15),
+    0 4px 10px rgba(0, 0, 0, 0.25);
+}
+.rating-podium-avatar-ring.rank-3 {
+  width: 56px;
+  height: 56px;
+  border: 3px solid #cd7f32;
+  box-shadow:
+    0 0 0 4px rgba(205, 127, 50, 0.12),
+    0 0 14px rgba(205, 127, 50, 0.15),
+    0 4px 10px rgba(0, 0, 0, 0.25);
+}
+
+.rating-podium-avatar-ph {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+/* Toj: asset / o‘lcham o‘zgarmaydi, faqat engil animatsiya */
+.rating-crown {
+  position: absolute !important;
+  left: 50% !important;
+  top: 0 !important;
+  transform: translate(-50%, -55%) !important;
+  width: 38px !important;
+  height: 38px !important;
+  max-width: none !important;
+  z-index: 10 !important;
+  pointer-events: none;
+  object-fit: contain !important;
+  filter:
+    drop-shadow(0 2px 4px rgba(0, 0, 0, 0.35))
+    drop-shadow(0 -1px 0 rgba(255, 220, 170, 0.28));
+  animation: rating-crown-float 3s ease-in-out infinite;
+}
+
+@keyframes rating-crown-float {
+  0%,
+  100% {
+    transform: translate(-50%, -55%) translateY(0);
+  }
+  50% {
+    transform: translate(-50%, -55%) translateY(-4px);
+  }
+}
+
+.rating-wreath {
+  position: absolute !important;
+  left: 50% !important;
+  top: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  width: calc(100% + 14px) !important;
+  height: calc(100% + 14px) !important;
+  max-width: none !important;
+  object-fit: contain !important;
+  object-position: center center !important;
+  pointer-events: none;
+  z-index: 0;
+}
+.rating-wreath--muted {
+  opacity: 0.45;
+}
+
+/* Gradient rank card (ism / summa blok ichida) */
+.rating-rank-block {
+  width: 100%;
+  border-radius: 18px;
+  padding: 12px 10px 14px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+.rating-podium-slot:hover .rating-rank-block {
+  transform: translateY(-3px);
+}
+
+.rating-rank-block.gold {
+  background: linear-gradient(180deg, #ffd700 0%, #b8860b 60%, #6b4e00 100%);
+  box-shadow:
+    0 8px 24px rgba(255, 215, 0, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.25),
+    inset 0 -4px 12px rgba(0, 0, 0, 0.2);
+}
+.rating-podium-slot:hover .rating-rank-block.gold {
+  box-shadow:
+    0 12px 32px rgba(255, 215, 0, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3),
+    inset 0 -4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.rating-rank-block.silver {
+  background: linear-gradient(180deg, #e8e8e8 0%, #9ca3af 60%, #4b5563 100%);
+  box-shadow:
+    0 8px 24px rgba(156, 163, 175, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.25),
+    inset 0 -4px 12px rgba(0, 0, 0, 0.2);
+}
+.rating-podium-slot:hover .rating-rank-block.silver {
+  box-shadow:
+    0 12px 32px rgba(156, 163, 175, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3),
+    inset 0 -4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.rating-rank-block.bronze {
+  background: linear-gradient(180deg, #d4956b 0%, #a0522d 60%, #5c3312 100%);
+  box-shadow:
+    0 8px 24px rgba(205, 127, 50, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2),
+    inset 0 -4px 12px rgba(0, 0, 0, 0.2);
+}
+.rating-podium-slot:hover .rating-rank-block.bronze {
+  box-shadow:
+    0 12px 32px rgba(205, 127, 50, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.25),
+    inset 0 -4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.rating-rank-block::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -50%;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.12) 50%,
+    transparent 100%
+  );
+  transform: skewX(-20deg);
+  animation: rating-block-shine 4s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes rating-block-shine {
+  0% {
+    left: -60%;
+  }
+  20%,
+  100% {
+    left: 120%;
+  }
+}
+
+.rating-block-rank-num {
+  font-size: 36px;
+  font-weight: 800;
+  color: rgba(0, 0, 0, 0.55);
+  line-height: 1;
+  margin-bottom: 6px;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.rating-block-divider {
+  width: 24px;
+  height: 2px;
+  border-radius: 1px;
+  background: rgba(0, 0, 0, 0.2);
+  margin: 6px auto;
+}
+
+.rating-block-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(0, 0, 0, 0.65);
+  margin-bottom: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 0 4px;
+}
+
+.rating-block-amount {
+  font-size: 17px;
+  font-weight: 700;
+  color: rgba(0, 0, 0, 0.75);
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.15);
+}
+.rating-block-amount .text-muted {
+  font-size: 0.75em;
+  color: rgba(0, 0, 0, 0.45);
+}
+
+.rating-podium-slot.first .rating-rank-block {
+  padding-top: 14px;
+  padding-bottom: 14px;
+  min-height: 144px;
+}
+.rating-podium-slot.second .rating-rank-block {
+  min-height: 120px;
+}
+.rating-podium-slot.third .rating-rank-block {
+  min-height: 108px;
+}
+
+.rating-badge-num { width: 28px; height: 28px; object-fit: contain; margin-top: 4px; }
+
+@media (max-width: 639px) {
+  .rating-podium-slot {
+    max-width: 170px;
+  }
+  .rating-podium-avatar-ring.rank-1 {
+    width: 64px;
+    height: 64px;
+  }
+  .rating-podium-avatar-ring.rank-2 {
+    width: 54px;
+    height: 54px;
+  }
+  .rating-podium-avatar-ring.rank-3 {
+    width: 50px;
+    height: 50px;
+  }
+}
 
 /* Rank rows */
-.rating-rank-row          { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-radius: 14px; background: var(--bg-card); }
-.rating-rank-row.highlight { background: var(--bg-card2); border: 1px solid var(--border); }
-.rating-rank-avatar        { width: 38px; height: 38px; border-radius: 50%; object-fit: cover; shrink: 0; }
-.rating-rank-num           { width: 28px; text-align: center; font-size: 14px; font-weight: 700; color: var(--text-muted); }
+.rating-list-stack {
+  display: flex !important;
+  flex-direction: column !important;
+  flex-wrap: nowrap !important;
+  gap: 14px !important;
+  row-gap: 14px !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+}
+.rating-list-stack > .rating-rank-row {
+  flex-shrink: 0;
+  margin: 0 !important;
+}
+
+/* Glass / iOS / glow utility */
+.glass-card {
+  background: rgba(28, 28, 28, 0.55);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.ios-hover {
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.ios-hover:hover {
+  transform: translateY(-3px) scale(1.01);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+}
+
+.glow-green {
+  box-shadow:
+    0 0 0 rgba(3, 255, 147, 0),
+    0 0 20px rgba(3, 255, 147, 0.15),
+    0 0 40px rgba(3, 255, 147, 0.08);
+}
+
+.glow-green:hover {
+  box-shadow:
+    0 0 10px rgba(3, 255, 147, 0.3),
+    0 0 30px rgba(3, 255, 147, 0.2),
+    0 0 60px rgba(3, 255, 147, 0.1);
+}
+
+@keyframes rating-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.rating-rank-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-height: 64px;
+  padding: 14px 18px;
+  border-radius: 18px;
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  transition: transform 0.16s ease, background 0.16s ease, border-color 0.16s ease;
+  animation: rating-fade-up 0.4s ease both;
+}
+.rating-rank-row.glass-card {
+  background: rgba(34, 35, 38, 0.86);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+.rating-rank-row:hover {
+  transform: translateY(-2px);
+  background: rgba(42, 43, 47, 0.98);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+.rating-rank-row.ios-hover:hover {
+  transform: translateY(-3px) scale(1.01);
+}
+.rating-rank-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+.rating-rank-num {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  width: auto;
+  text-align: center;
+  font-size: 20px;
+  font-weight: 800;
+}
+/* Rangdor badge/raqam — faqat 1–10 (11+ xira) */
+.rating-rank-num--top {
+  color: #5b63e8;
+}
+.rating-rank-num--rest {
+  color: var(--text-muted);
+  font-size: 18px;
+  font-weight: 700;
+}
+.rating-rank-num img {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+}
+.rating-rank-name {
+  flex: 1;
+  min-width: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+.rating-rank-amount {
+  margin-left: auto;
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--primary);
+  white-space: nowrap;
+}
+
+@media (min-width: 1024px) {
+  .main-body-scroll:has(.rating-page) {
+    margin-left: 0;
+    margin-right: 0;
+  }
+  .rating-page {
+    padding-left: 40px;
+    padding-right: 40px;
+  }
+}
+
+@media (max-width: 639px) {
+  .rating-page {
+    padding: 12px 12px 96px;
+  }
+  .rating-hero {
+    border-radius: 18px;
+    padding: 20px 10px 14px;
+    min-height: 0;
+  }
+  .rating-rank-row {
+    padding: 12px;
+    gap: 10px;
+    min-height: 0;
+  }
+}
 
 /* Topbar rating button */
 .topbar-rating-btn  { display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 10px; background: transparent; transition: background 0.15s; }
