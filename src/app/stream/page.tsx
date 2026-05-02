@@ -4,7 +4,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import axios, { type AxiosError } from "axios";
 import Hls from "hls.js";
 import { useRouter } from "next/navigation";
-import { BASE_URL } from "@/lib/constants";
+import { BASE_URL, WS_URL } from "@/lib/constants";
 import { PlusCircle, Smile, Users } from "lucide-react";
 
 type StreamStatus = "offline" | "waiting" | "live";
@@ -45,8 +45,8 @@ function buildRtmpServerUrl(baseUrl: string): string {
   }
 }
 
-function buildWsUrl(baseUrl: string, streamId: string): string {
-  return `${baseUrl.replace(/^http/, "ws").replace(/\/$/, "")}/scws/${streamId}`;
+function buildWsUrl(wsBase: string, streamId: string): string {
+  return `${wsBase.replace(/\/$/, "")}/scws/${streamId}`;
 }
 
 function getApiCandidates(): string[] {
@@ -348,7 +348,7 @@ export default function StreamStudioPage() {
 
   useEffect(() => {
     if (!streamId) return;
-    const ws = new WebSocket(buildWsUrl(BASE_URL, streamId));
+    const ws = new WebSocket(buildWsUrl(WS_URL, streamId));
     wsRef.current = ws;
 
     ws.onopen = () => {
