@@ -90,6 +90,57 @@ function readBoolTruthy(v: unknown): boolean {
   return v === true || v === "true" || v === 1 || v === "1";
 }
 
+/** Foydalanuvchi obyektidan avatar URL/path (CDN uchun). */
+export function resolveUserAvatarHref(user: Record<string, unknown> | undefined): string | undefined {
+  if (!user) return undefined;
+  const a = typeof user.avatar === "string" ? user.avatar.trim() : "";
+  if (a) return a;
+  const att = user.attachmentResponseDTO as Record<string, unknown> | undefined;
+  const pre = typeof att?.preSignedUrl === "string" ? att.preSignedUrl.trim() : "";
+  if (pre) return pre;
+  const cur = typeof att?.contentURL === "string" ? att.contentURL.trim() : "";
+  if (cur) return cur;
+  const photo =
+    typeof user.profileImage === "string"
+      ? user.profileImage.trim()
+      : typeof (user as { profile_image?: unknown }).profile_image === "string"
+        ? String((user as { profile_image: string }).profile_image).trim()
+        : "";
+  return photo || undefined;
+}
+
+function resolveChatSubtitle(
+  raw: Record<string, unknown>,
+  uObj: Record<string, unknown> | undefined
+): string | undefined {
+  const pieces: string[] = [];
+  const play =
+    readNonEmptyString(uObj?.playName) ||
+    readNonEmptyString(uObj?.play_name) ||
+    readNonEmptyString(raw.playName);
+  const gameId =
+    readNonEmptyString(uObj?.gameID) ||
+    readNonEmptyString(uObj?.game_id) ||
+    readNonEmptyString(raw.gameID) ||
+    readNonEmptyString(raw.game_id);
+  const mlUid =
+    readNonEmptyString(uObj?.mobileLegendsUID) || readNonEmptyString(uObj?.mobile_legends_u_i_d);
+  const ffUid =
+    readNonEmptyString(uObj?.freeFireUID) || readNonEmptyString(uObj?.free_fire_u_i_d);
+  const steamId =
+    readNonEmptyString(uObj?.steamId) ||
+    readNonEmptyString(uObj?.steamUID) ||
+    readNonEmptyString(uObj?.steam_id);
+
+  if (play) pieces.push(play);
+  if (gameId) pieces.push(`UID ${gameId}`);
+  if (!gameId && mlUid) pieces.push(`ML UID ${mlUid}`);
+  if (!gameId && !mlUid && ffUid) pieces.push(`FF UID ${ffUid}`);
+  if (!gameId && !mlUid && !ffUid && steamId) pieces.push(`Steam ${steamId}`);
+
+  return pieces.length ? pieces.join(" · ") : undefined;
+}
+
 export type ParsedChatLine = {
   id: string;
   user: string;
@@ -98,6 +149,10 @@ export type ParsedChatLine = {
   senderUserId?: number;
   /** Server bergan "strim egasi" bayrog'i (bo'lsa). */
   isStreamOwnerHint?: boolean;
+  /** Profil rasmi (CDN path yoki URL). */
+  avatarHref?: string;
+  /** Qo‘shimcha: nickname, PUBG UID va h.k. */
+  subtitle?: string;
 };
 
 /** REST `streamChat`/DTO formatlarini `parseStreamChatInbound` ga moslashtirish. */
@@ -110,6 +165,9 @@ export function normalizeChatRecordForParse(raw: Record<string, unknown>): Recor
     (typeof raw.senderUserResponseDTO === "object" && raw.senderUserResponseDTO !== null
       ? raw.senderUserResponseDTO
       : null) ??
+    (typeof raw.senderUser === "object" && raw.senderUser !== null ? raw.senderUser : null) ??
+    (typeof raw.sender === "object" && raw.sender !== null ? raw.sender : null) ??
+    (typeof raw.fromUser === "object" && raw.fromUser !== null ? raw.fromUser : null) ??
     null;
 
   if (!out.user && asUser !== null) {
@@ -118,6 +176,10 @@ export function normalizeChatRecordForParse(raw: Record<string, unknown>): Recor
 
   const preferred =
     readNonEmptyString(raw.username) ||
+    readNonEmptyString(raw.nickname) ||
+    readNonEmptyString(raw.nickName) ||
+    readNonEmptyString(raw.senderNickname) ||
+    readNonEmptyString(raw.sender_username) ||
     readNonEmptyString(raw.senderUsername) ||
     readNonEmptyString(raw.senderName) ||
     readNonEmptyString(raw.senderDisplayName) ||
@@ -133,6 +195,22 @@ export function normalizeChatRecordForParse(raw: Record<string, unknown>): Recor
   }
 
   return out;
+}
+
+/**
+ * WS xabarda `payload`/`data` ichida DTO bor bo'lsa uni tekislab `parseStreamChatInbound` uchun top-level bilan birlashtiradi.
+ */
+export function flattenStreamChatWsPayload(raw: Record<string, unknown>): Record<string, unknown> {
+  const nestedKeys = ["payload", "data", "body", "chat", "dto", "streamChat", "chatMessage"];
+  let merged: Record<string, unknown> = {};
+  for (const key of nestedKeys) {
+    const v = raw[key];
+    if (v && typeof v === "object" && !Array.isArray(v)) {
+      merged = { ...merged, ...(v as Record<string, unknown>) };
+    }
+  }
+  merged = { ...merged, ...raw };
+  return normalizeChatRecordForParse(merged);
 }
 
 /** Backend keladigan WS JSON formatlarining turli-variantini birlashtirish. */
@@ -156,7 +234,9 @@ export function parseStreamChatInbound(raw: Record<string, unknown>): ParsedChat
           user_name?: unknown;
           nickname?: unknown;
           firstName?: unknown;
+          lastName?: unknown;
           first_name?: unknown;
+          last_name?: unknown;
           fullName?: unknown;
           full_name?: unknown;
           displayName?: unknown;
@@ -165,18 +245,21 @@ export function parseStreamChatInbound(raw: Record<string, unknown>): ParsedChat
         })
       : undefined;
 
+  const fn = readNonEmptyString(u?.firstName) ?? readNonEmptyString(u?.first_name);
+  const ln = readNonEmptyString(u?.lastName) ?? readNonEmptyString(u?.last_name);
+  const fromParts = `${fn ?? ""} ${ln ?? ""}`.trim();
+
   const fromUserObj =
+    readNonEmptyString(u?.nickname) ||
+    readNonEmptyString(u?.fullName) ||
+    readNonEmptyString(u?.full_name) ||
     readNonEmptyString(u?.username) ||
     readNonEmptyString(u?.userName) ||
     readNonEmptyString(u?.user_name) ||
-    readNonEmptyString(u?.nickname) ||
     readNonEmptyString(u?.displayName) ||
     readNonEmptyString(u?.display_name) ||
-    readNonEmptyString(u?.fullName) ||
-    readNonEmptyString(u?.full_name) ||
     readNonEmptyString(u?.name) ||
-    readNonEmptyString(u?.firstName) ||
-    readNonEmptyString(u?.first_name);
+    (fromParts.length ? fromParts : undefined);
 
   if (fromUserObj && fromUserObj.toLowerCase() !== "viewer") user = fromUserObj;
 
@@ -190,6 +273,10 @@ export function parseStreamChatInbound(raw: Record<string, unknown>): ParsedChat
   if (user === "viewer") {
     const fromTopLevel =
       readNonEmptyString(raw.username) ||
+      readNonEmptyString(raw.nickname) ||
+      readNonEmptyString(raw.nickName) ||
+      readNonEmptyString(raw.playName) ||
+      readNonEmptyString(raw.senderNickname) ||
       readNonEmptyString(raw.senderName) ||
       readNonEmptyString(raw.senderUsername) ||
       readNonEmptyString(raw.sender_display_name) ||
@@ -236,20 +323,43 @@ export function parseStreamChatInbound(raw: Record<string, unknown>): ParsedChat
     roleStr === "owner" ||
     roleStr === "streamer";
 
+  let avatarHref: string | undefined;
+  if (uObj) avatarHref = resolveUserAvatarHref(uObj);
+  if (!avatarHref) {
+    avatarHref =
+      readNonEmptyString(raw.senderAvatar) ||
+      readNonEmptyString(raw.avatar) ||
+      readNonEmptyString(raw.avatarUrl) ||
+      readNonEmptyString(raw.avatar_url);
+  }
+
+  const subtitle = resolveChatSubtitle(raw, uObj);
+
   return {
     id: String(raw.id ?? `${Date.now()}-${Math.random()}`),
     user,
     text: textCandidate,
     ...(senderUserId != null ? { senderUserId } : {}),
     ...(isStreamOwnerHint ? { isStreamOwnerHint } : {}),
+    ...(avatarHref ? { avatarHref } : {}),
+    ...(subtitle ? { subtitle } : {}),
   };
 }
 
 /** Kiruvchi chat qatori strim egasidan ekanini aniqlash (client ma'lumotlari bilan). */
-export function inferLineIsStreamHost(line: ParsedChatLine, streamOwnerUserId?: number | null): boolean {
+export function inferLineIsStreamHost(
+  line: ParsedChatLine,
+  streamOwnerUserId?: number | null,
+  streamOwnerDisplayName?: string | null
+): boolean {
   if (line.isStreamOwnerHint) return true;
   if (streamOwnerUserId != null && line.senderUserId != null && line.senderUserId === streamOwnerUserId) {
     return true;
+  }
+  const label = typeof streamOwnerDisplayName === "string" ? streamOwnerDisplayName.trim() : "";
+  if (label.length > 0) {
+    const cu = typeof line.user === "string" ? line.user.trim() : "";
+    if (cu.length > 0 && cu.toLowerCase() === label.toLowerCase()) return true;
   }
   return false;
 }

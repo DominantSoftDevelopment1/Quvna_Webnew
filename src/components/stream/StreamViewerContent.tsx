@@ -5,11 +5,14 @@ import Hls from "hls.js";
 import { Reply, User, Users } from "lucide-react";
 import { WS_URL } from "@/lib/constants";
 import {
+  flattenStreamChatWsPayload,
   getStoredStreamUserId,
   inferLineIsStreamHost,
   parseStreamChatInbound,
   type ParsedChatLine,
 } from "@/lib/streamChat";
+import { useAuthStore } from "@/store/auth.store";
+import { useProfile } from "@/hooks/useProfile";
 import { fetchStreamChatHistory } from "@/lib/streamChatHistory";
 import { buildStreamWsUrl } from "@/lib/streamWs";
 import { chatUsernameColorClass, StreamChatPanel } from "@/components/stream/StreamChatPanel";
@@ -25,17 +28,25 @@ type ChatMessageRow = {
   isHost?: boolean;
   senderUserId?: number;
   ownerHint?: boolean;
+  avatarHref?: string;
+  subtitle?: string;
 };
 
-function mapParsedLineToChatRow(line: ParsedChatLine, ownerId?: number | null): ChatMessageRow {
+function mapParsedLineToChatRow(
+  line: ParsedChatLine,
+  ownerId?: number | null,
+  ownerPublicDisplayName?: string | null
+): ChatMessageRow {
   return {
     id: String(line.id),
     user: line.user,
     color: chatUsernameColorClass(line.user),
     text: line.text,
-    isHost: inferLineIsStreamHost(line, ownerId ?? undefined),
+    isHost: inferLineIsStreamHost(line, ownerId ?? undefined, ownerPublicDisplayName ?? undefined),
     ...(line.senderUserId != null ? { senderUserId: line.senderUserId } : {}),
     ...(line.isStreamOwnerHint ? { ownerHint: true } : {}),
+    ...(line.avatarHref ? { avatarHref: line.avatarHref } : {}),
+    ...(line.subtitle ? { subtitle: line.subtitle } : {}),
   };
 }
 
@@ -98,6 +109,7 @@ export function StreamViewerContent({ streamId }: StreamViewerContentProps) {
   const streamOwnerUserIdRef = useRef(streamOwnerUserId);
   streamOwnerUserIdRef.current = streamOwnerUserId;
 
+  const streamOwnerPublicNameRef = useRef("");
   const streamerDisplay = useMemo(() => {
     const u = streamMeta?.user;
     if (!u) return STREAMER_FALLBACK;
@@ -123,32 +135,82 @@ export function StreamViewerContent({ streamId }: StreamViewerContentProps) {
 
   const currentUserId = useMemo(() => getStoredStreamUserId(), []);
 
+  // Studio bilan bir xil: localStorage cache → auth store → profile
+  const storeUser = useAuthStore((s) => s.user);
+  const profileUserId = storeUser?.id != null ? Number(storeUser.id) : getStoredStreamUserId();
+  const { data: profileData } = useProfile(
+    profileUserId != null && Number.isFinite(profileUserId) && profileUserId > 0 ? profileUserId : null
+  );
+
+  const [myDisplayName, setMyDisplayName] = useState<string>(() => {
+    if (typeof window === "undefined") return "Men";
+    const cached = localStorage.getItem("quvna_stream_username") ?? "";
+    if (cached) return cached;
+    const u = useAuthStore.getState().user;
+    return (
+      (typeof u?.username === "string" && u.username.trim()) ||
+      (typeof u?.fullName === "string" && u.fullName.trim()) ||
+      (typeof u?.firstName === "string" && u.firstName.trim()) ||
+      "Men"
+    );
+  });
+
+  useEffect(() => {
+    const p = profileData as Record<string, unknown> | null | undefined;
+    if (!p) return;
+    const username = typeof p.username === "string" ? p.username.trim() : "";
+    if (username) {
+      localStorage.setItem("quvna_stream_username", username);
+      setMyDisplayName(username);
+      return;
+    }
+    const fullName = typeof p.fullName === "string" ? p.fullName.trim() : "";
+    if (fullName) setMyDisplayName(fullName);
+  }, [profileData]);
+
+  const myDisplayNameRef = useRef(myDisplayName);
+  useEffect(() => { myDisplayNameRef.current = myDisplayName; }, [myDisplayName]);
+
   const panelMessages = useMemo(
     () =>
-      chatMessages.map((m) => ({
-        id: m.id,
-        user: m.user,
-        text: m.text,
-        userColorClass: m.color,
-        withGift: m.withGift,
-        isHost: m.isHost,
-        isMe: currentUserId != null && m.senderUserId != null && m.senderUserId === currentUserId,
-      })),
-    [chatMessages, currentUserId]
+      chatMessages.map((m) => {
+        const isMe = currentUserId != null && m.senderUserId != null && m.senderUserId === currentUserId;
+        return {
+          id: m.id,
+          user: isMe ? myDisplayName : m.user,
+          text: m.text,
+          userColorClass: m.color,
+          withGift: m.withGift,
+          isHost: m.isHost,
+          isMe,
+          ...(m.avatarHref ? { avatarHref: m.avatarHref } : {}),
+          ...(m.subtitle ? { subtitle: m.subtitle } : {}),
+        };
+      }),
+    [chatMessages, currentUserId, myDisplayName]
   );
 
   /** Strim egasi ro‘yxatdan kelgach badge’lar yangilansin */
   useEffect(() => {
     setChatMessages((prev) =>
-      prev.map((m) => ({
-        ...m,
-        isHost: !!(
-          m.ownerHint ||
-          (streamOwnerUserId != null &&
-            m.senderUserId != null &&
-            m.senderUserId === streamOwnerUserId)
-        ),
-      }))
+      prev.map((m) => {
+        const lineLike: ParsedChatLine = {
+          id: m.id,
+          user: m.user,
+          text: m.text,
+          ...(m.senderUserId != null ? { senderUserId: m.senderUserId } : {}),
+          ...(m.ownerHint ? { isStreamOwnerHint: true } : {}),
+        };
+        const isHostNow = inferLineIsStreamHost(
+          lineLike,
+          streamOwnerUserId ?? undefined,
+          streamOwnerPublicNameRef.current || undefined
+        );
+        return {
+          ...m,
+          isHost: isHostNow || !!m.ownerHint,
+        };
+      })
     );
   }, [streamOwnerUserId]);
 
@@ -186,7 +248,16 @@ export function StreamViewerContent({ streamId }: StreamViewerContentProps) {
         if (cancelled || wsRef.current !== ws) return;
         disconnectStreak = 0;
         setSocketHint(null);
-        ws.send(JSON.stringify({ action: "viewer", streamId }));
+        const uid = getStoredStreamUserId();
+        const username = myDisplayNameRef.current;
+        ws.send(
+          JSON.stringify({
+            action: "viewer",
+            streamId,
+            ...(uid != null ? { userId: uid } : {}),
+            ...(username ? { username, senderName: username, displayName: username } : {}),
+          })
+        );
       };
 
       ws.onmessage = (event) => {
@@ -222,7 +293,7 @@ export function StreamViewerContent({ streamId }: StreamViewerContentProps) {
             payload = data.payload as Record<string, unknown>;
           }
 
-          const line = parseStreamChatInbound(payload);
+          const line = parseStreamChatInbound(flattenStreamChatWsPayload(payload as Record<string, unknown>));
           if (!line) return;
 
           if (/stream\s+not\s+found\b/i.test(line.text.trim())) {
@@ -233,7 +304,17 @@ export function StreamViewerContent({ streamId }: StreamViewerContentProps) {
           const idStr = String(line.id);
           setChatMessages((prev) => {
             if (prev.some((m) => String(m.id) === idStr)) return prev;
-            return [...prev, mapParsedLineToChatRow(line, streamOwnerUserIdRef.current)];
+            const withoutMatchingOptimistic = prev.filter((m) => {
+              if (!String(m.id).startsWith("opt-")) return true;
+              const sameUid =
+                m.senderUserId != null && line.senderUserId != null && m.senderUserId === line.senderUserId;
+              const sameText = m.text.trim() === line.text.trim();
+              return !(sameUid && sameText);
+            });
+            return [
+              ...withoutMatchingOptimistic,
+              mapParsedLineToChatRow(line, streamOwnerUserIdRef.current, streamOwnerPublicNameRef.current),
+            ];
           });
         } catch {
           /* ignore malformed */
@@ -274,7 +355,9 @@ export function StreamViewerContent({ streamId }: StreamViewerContentProps) {
         const lines = await fetchStreamChatHistory(streamId, { page: 0, size: 10 });
         if (cancelled) return;
         const ownerId = streamOwnerUserIdRef.current;
-        setChatMessages(lines.map((l) => mapParsedLineToChatRow(l, ownerId)));
+        setChatMessages(
+          lines.map((l) => mapParsedLineToChatRow(l, ownerId, streamOwnerPublicNameRef.current || null))
+        );
         setChatHistoryStatus("ready");
       } catch {
         if (!cancelled) {
@@ -301,6 +384,7 @@ export function StreamViewerContent({ streamId }: StreamViewerContentProps) {
     const msg = chatInput.trim();
     if (!msg) return;
     const userId = getStoredStreamUserId();
+    const username = myDisplayNameRef.current;
     if (userId == null) {
       setChatError("Chat uchun akkauntga kiring.");
       return;
@@ -310,9 +394,52 @@ export function StreamViewerContent({ streamId }: StreamViewerContentProps) {
       setChatError("Chat ulanishi tayyor emas — biroz kuting yoki sahifani yangilang.");
       return;
     }
+    const nameForWire = username && username !== "Men" ? username : undefined;
+
+    const optimisticId = `opt-${Date.now()}`;
+    const optimisticLine: ParsedChatLine = {
+      id: optimisticId,
+      user: username,
+      text: msg,
+      senderUserId: userId,
+    };
+    setChatMessages((prev) => [
+      ...prev,
+      mapParsedLineToChatRow(
+        optimisticLine,
+        streamOwnerUserIdRef.current,
+        streamOwnerPublicNameRef.current || null
+      ),
+    ]);
+
     setChatInput("");
     wsRef.current.send(
-      JSON.stringify({ action: "streamChatMessage", streamId, userId, message: msg })
+      JSON.stringify({
+        action: "streamChatMessage",
+        streamId,
+        userId,
+        message: msg,
+        ...(nameForWire
+          ? {
+              username: nameForWire,
+              senderName: nameForWire,
+              displayName: nameForWire,
+              nickname: nameForWire,
+              user: {
+                id: userId,
+                username: nameForWire,
+                userName: nameForWire,
+                nickname: nameForWire,
+              },
+              senderUserResponseDTO: {
+                id: userId,
+                username: nameForWire,
+                userName: nameForWire,
+                nickname: nameForWire,
+              },
+            }
+          : {}),
+      })
     );
   };
 

@@ -9,6 +9,7 @@ import {
   getStoredStreamUserId,
   inferLineIsStreamHost,
   parseStreamChatInbound,
+  flattenStreamChatWsPayload,
 } from "@/lib/streamChat";
 import { fetchStreamChatHistory } from "@/lib/streamChatHistory";
 import { chatUsernameColorClass, StreamChatPanel } from "@/components/stream/StreamChatPanel";
@@ -16,6 +17,8 @@ import { buildStreamWsUrl } from "@/lib/streamWs";
 import { deriveStreamRestPathId, pickStreamEntityId } from "@/lib/streamIds";
 import { Users } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
+import { useAuthStore } from "@/store/auth.store";
+import { useProfile } from "@/hooks/useProfile";
 
 type StreamStatus = "offline" | "waiting" | "live";
 type CopyStatus = "idle" | "copied" | "manual" | "failed";
@@ -31,6 +34,8 @@ interface ChatMessage {
   isHost?: boolean;
   /** Hozirgi user (studio egasi) yozgan xabar. */
   isMe?: boolean;
+  avatarHref?: string;
+  subtitle?: string;
 }
 
 interface StreamDto {
@@ -205,6 +210,44 @@ function Card({ children, green = false }: CardProps) {
 export default function StreamStudioPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const storeUser = useAuthStore((s) => s.user);
+  // Zustand hydrate'dan oldin ham localStorage'dan userId olinadi (birinchi render'da cache ishlaydi)
+  const profileUserId = useMemo(() => {
+    if (storeUser?.id != null) {
+      const n = Number(storeUser.id);
+      if (Number.isFinite(n) && n > 0) return n;
+    }
+    return getStoredStreamUserId();
+  }, [storeUser]);
+  const { data: profileData } = useProfile(profileUserId);
+
+  // Sinxron init: localStorage cache → auth store → fallback
+  const [myDisplayName, setMyDisplayName] = useState<string>(() => {
+    if (typeof window === "undefined") return "Men";
+    const cached = localStorage.getItem("quvna_stream_username") ?? "";
+    if (cached) return cached;
+    const u = useAuthStore.getState().user;
+    return (
+      (typeof u?.username === "string" && u.username.trim()) ||
+      (typeof u?.fullName === "string" && u.fullName.trim()) ||
+      (typeof u?.firstName === "string" && u.firstName.trim()) ||
+      "Men"
+    );
+  });
+
+  // Profile kelganda taxallusni yangilaymiz va cache'ga saqlaymiz
+  useEffect(() => {
+    const p = profileData as Record<string, unknown> | null | undefined;
+    if (!p) return;
+    const username = typeof p.username === "string" ? p.username.trim() : "";
+    if (username) {
+      localStorage.setItem("quvna_stream_username", username);
+      setMyDisplayName(username);
+      return;
+    }
+    const fullName = typeof p.fullName === "string" ? p.fullName.trim() : "";
+    if (fullName) setMyDisplayName(fullName);
+  }, [profileData]);
   const [title, setTitle] = useState("PUBG Mobile turnir — jonli efir");
   const [game, setGame] = useState("PUBG MOBILE");
   const [status, setStatus] = useState<StreamStatus>("offline");
@@ -226,6 +269,19 @@ export default function StreamStudioPage() {
   const wsRef = useRef<WebSocket | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const hlsRef = useRef<Hls | null>(null);
+  /** Studio egasi yuborgan xabar textlari (server echo'sini skip qilish uchun). */
+  const pendingSentTexts = useRef<Set<string>>(new Set());
+  /** userId → displayName cache (REST history'dan to'ldiriladi, WS echo'da ishlatiladi). */
+  const userNameCache = useRef<Map<number, string>>(new Map());
+  /** myDisplayName'ni WS callback ichida ham o'qish uchun ref. */
+  const myDisplayNameRef = useRef(myDisplayName);
+  useEffect(() => {
+    myDisplayNameRef.current = myDisplayName;
+    // Profile yuklanganda isMe xabarlar nomini yangilaymiz
+    setChatMessages((prev) =>
+      prev.map((m) => (m.isMe ? { ...m, user: myDisplayName } : m))
+    );
+  }, [myDisplayName]);
 
   const serverUrl = useMemo(() => buildRtmpServerUrl(BASE_URL), []);
   const hlsCandidates = useMemo(() => (streamId ? buildHlsCandidates(streamId) : []), [streamId]);
@@ -380,8 +436,10 @@ export default function StreamStudioPage() {
   const sendChat = (role: "owner" | "moderator", text: string) => {
     const msg = text.trim();
     if (!msg) return;
-    const userId = getStoredStreamUserId();
-    if (userId == null) {
+    const senderId = getStoredStreamUserId();
+    // myDisplayName — profile'dan taxallus, bo'lmasa isim-familya (useMemo yuqorida)
+    const username = myDisplayName;
+    if (senderId == null) {
       setChatPanelError("Chat uchun akkauntga kiring.");
       return;
     }
@@ -394,8 +452,31 @@ export default function StreamStudioPage() {
       return;
     }
     setChatPanelError(null);
-    wsRef.current.send(JSON.stringify({ action: "streamChatMessage", streamId, userId, message: msg }));
-    // Xabar websocket orqali qaytadi — dublikatlardan qochish
+    // Lokal optimistic add — server echo'ga bog'liq emas
+    const localId = `local-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    pendingSentTexts.current.add(msg);
+    setChatMessages((prev) => [
+      ...prev,
+      {
+        id: localId,
+        role: "owner",
+        user: username,
+        text: msg,
+        isHost: true,
+        isMe: true,
+      },
+    ]);
+    // 5 soniya ichida server echo kelsa skip qilamiz
+    window.setTimeout(() => pendingSentTexts.current.delete(msg), 5000);
+    wsRef.current.send(
+      JSON.stringify({
+        action: "streamChatMessage",
+        streamId,
+        userId: senderId,
+        message: msg,
+        ...(username ? { username, senderName: username, displayName: username } : {}),
+      })
+    );
     if (role === "owner") setOwnerMessage("");
   };
 
@@ -450,12 +531,18 @@ export default function StreamStudioPage() {
         const hostId = getStoredStreamUserId();
         const mapped: ChatMessage[] = lines.map((line) => {
           const isHost = inferLineIsStreamHost(line, hostId ?? undefined);
+          // Cache'ga yozamiz — WS echo'da username bo'lmasa ishlatiladi
+          if (line.senderUserId != null && line.user && line.user !== "viewer" && !line.user.startsWith("user_")) {
+            userNameCache.current.set(line.senderUserId, line.user);
+          }
           return {
             id: String(line.id),
             role: isHost ? "owner" : "viewer",
             user: line.user,
             text: line.text,
             isHost,
+            ...(line.avatarHref ? { avatarHref: line.avatarHref } : {}),
+            ...(line.subtitle ? { subtitle: line.subtitle } : {}),
           };
         });
         setChatMessages(mapped);
@@ -476,7 +563,16 @@ export default function StreamStudioPage() {
       ws.onopen = () => {
         if (cancelled || wsRef.current !== ws) return;
         setStudioSocketHint(null);
-        ws.send(JSON.stringify({ action: "viewer", streamId: sid }));
+        const uid = getStoredStreamUserId();
+        const username = myDisplayNameRef.current;
+        ws.send(
+          JSON.stringify({
+            action: "viewer",
+            streamId: sid,
+            ...(uid != null ? { userId: uid } : {}),
+            ...(username ? { username, senderName: username, displayName: username } : {}),
+          })
+        );
       };
 
       ws.onmessage = (event) => {
@@ -497,22 +593,40 @@ export default function StreamStudioPage() {
             setLiveUserCount(data.liveUserCount);
             return;
           }
-          let payload = data;
-          if (
-            data.action === "streamChatMessage" &&
-            typeof data.payload === "object" &&
-            data.payload !== null
-          ) {
-            payload = data.payload as Record<string, unknown>;
-          }
+          // flattenStreamChatWsPayload: top-level + barcha nested (payload/data/body) fieldlarni birlashtiradi
+          const payload = flattenStreamChatWsPayload(data);
           const line = parseStreamChatInbound(payload);
           if (line) {
             if (/stream\s+not\s+found\b/i.test(line.text.trim())) {
               setError(line.text.trim());
               return;
             }
+            // Biz yuborgan xabar server echo qilib qaytsa — skip (lokal allaqachon bor)
+            if (pendingSentTexts.current.has(line.text.trim())) {
+              pendingSentTexts.current.delete(line.text.trim());
+              return;
+            }
             const hostIdWs = getStoredStreamUserId();
-            const isHost = inferLineIsStreamHost(line, hostIdWs ?? undefined);
+            const myName = myDisplayNameRef.current;
+            const isMe =
+              hostIdWs != null &&
+              line.senderUserId != null &&
+              line.senderUserId === hostIdWs;
+            const isHost = isMe || inferLineIsStreamHost(line, hostIdWs ?? undefined);
+            const nameIsUnknown = line.user === "viewer" || line.user.startsWith("user_");
+            // Cache'dan ism topish — server WS echo'da username bermasa
+            const cachedName = line.senderUserId != null
+              ? userNameCache.current.get(line.senderUserId)
+              : undefined;
+            const resolvedUser = isMe
+              ? myName
+              : nameIsUnknown && cachedName
+                ? cachedName
+                : line.user;
+            // Yangi user kelsa cache'ga qo'shamiz
+            if (line.senderUserId != null && !nameIsUnknown) {
+              userNameCache.current.set(line.senderUserId, line.user);
+            }
             const idStr = String(line.id);
             setChatMessages((prev) => {
               if (prev.some((x) => String(x.id) === idStr)) return prev;
@@ -521,9 +635,12 @@ export default function StreamStudioPage() {
                 {
                   id: line.id,
                   role: isHost ? "owner" : "viewer",
-                  user: line.user,
+                  user: resolvedUser,
                   text: line.text,
                   isHost,
+                  isMe,
+                  ...(line.avatarHref ? { avatarHref: line.avatarHref } : {}),
+                  ...(line.subtitle ? { subtitle: line.subtitle } : {}),
                 },
               ];
             });
@@ -603,21 +720,27 @@ export default function StreamStudioPage() {
 
   const studioPanelMessages = useMemo(
     () =>
-      chatMessages.map((m) => ({
+      chatMessages.map((m) => {
+        // isMe xabarlar uchun har doim joriy taxallusni ishlatamiz
+        const displayUser = m.isMe ? myDisplayName : m.user;
+        return {
         id: m.id,
-        user: m.user,
+        user: displayUser,
         text: m.text,
         userColorClass:
           m.role === "owner"
             ? "text-[#34f5a5]"
             : m.role === "moderator"
               ? "text-[#a78bfa]"
-              : chatUsernameColorClass(m.user),
+              : chatUsernameColorClass(displayUser),
         isHost: m.isHost,
         isMe: m.role === "owner",
         badge: m.badge,
-      })),
-    [chatMessages]
+        ...(m.avatarHref ? { avatarHref: m.avatarHref } : {}),
+        ...(m.subtitle ? { subtitle: m.subtitle } : {}),
+        };
+      }),
+    [chatMessages, myDisplayName]
   );
 
   const isWaiting = status === "waiting";
@@ -671,19 +794,20 @@ export default function StreamStudioPage() {
         </header>
 
         <div
-          className="stream-layout"
           style={{
-            display: "grid",
-            gap: 24,
             borderRadius: 26,
             border: "1px solid rgba(255,255,255,.16)",
             background: "rgba(255,255,255,.02)",
             padding: 10,
             boxShadow: "inset 0 0 0 1px rgba(0,0,0,.35), 0 18px 44px rgba(0,0,0,.35)",
+            display: "flex",
+            flexDirection: "column",
+            gap: 16,
           }}
         >
-          <main style={{ minWidth: 0, display: "flex", flexDirection: "column", gap: 24 }}>
-            <section style={{ overflow: "hidden", borderRadius: 18, border: "1px solid rgba(255,255,255,.2)", background: "#111315", boxShadow: "0 0 0 1px rgba(0,0,0,.45) inset" }}>
+          {/* Yuqori qator: video + chat yan-yana, bir xil balandlik */}
+          <div className="studio-top-row" style={{ display: "flex", gap: 12, alignItems: "stretch", minWidth: 0 }}>
+            <section style={{ flex: "1 1 0", minWidth: 0, overflow: "hidden", borderRadius: 18, border: "1px solid rgba(255,255,255,.2)", background: "#111315", boxShadow: "0 0 0 1px rgba(0,0,0,.45) inset" }}>
               <div style={{ position: "relative", minHeight: 560, background: "radial-gradient(circle at 50% 35%, rgba(255,255,255,.16), transparent 28%), linear-gradient(135deg, rgba(16,185,129,.28), #18231d 45%, #000 100%)" }}>
                 <div style={{ position: "absolute", top: 22, left: 22, display: "flex", gap: 10, flexWrap: "wrap", zIndex: 2 }}>
                   <span style={{ borderRadius: 999, padding: "7px 12px", background: isLive ? "#ef4444" : isWaiting ? "#facc15" : "rgba(255,255,255,.1)", color: isWaiting ? "#111" : "white", fontSize: 12, fontWeight: 900 }}>
@@ -743,15 +867,54 @@ export default function StreamStudioPage() {
               </div>
             </section>
 
+            {/* Chat — video bilan bir qatorda, bir xil balandlik */}
+            <aside style={{ width: 520, minWidth: 320, flexShrink: 0, display: "flex", flexDirection: "column" }}>
+              <StreamChatPanel
+                className="flex-1 h-full"
+                liveUserCount={liveUserCount}
+                socketHint={studioSocketHint}
+                chatHistoryStatus={chatHistoryStatus}
+                messages={studioPanelMessages}
+                chatInput={ownerMessage}
+                onChatInputChange={(v) => {
+                  setOwnerMessage(v);
+                  if (chatPanelError) setChatPanelError(null);
+                }}
+                onSend={() => sendChat("owner", ownerMessage)}
+                chatError={chatPanelError}
+                onChatErrorDismiss={() => setChatPanelError(null)}
+                pinnedRank="7"
+                pinnedTitle="WITH AN ADDON CALLED UL..."
+                inputPlaceholder="Xabar yozing…"
+                emptyHint={
+                  streamId ? "Hozircha xabar yo’q. Tomoshabinlar yozishi yoki tarix yuklanishi mumkin." : "Avval stream yarating — chat shu yerda ko’rinadi."
+                }
+                loadingHint="Chat tarixi yuklanmoqda…"
+                welcomeFooter={
+                  <div>
+                    <p className="m-0 text-[14px] font-semibold leading-relaxed text-white">
+                      Chatga xush kelibsiz! Maxfiylik va jamiyat qoidalariga rioya qiling.
+                    </p>
+                    <button type="button" className="mt-3 border-0 bg-transparent p-0 text-[13px] font-bold text-[#3ea6ff] hover:underline">
+                      Batafsil
+                    </button>
+                  </div>
+                }
+              />
+            </aside>
+          </div>
+
+          {/* Pastki qator: info kartalar — to’liq kenglik */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
             <Card>
-              <h3 style={{ margin: "0 0 16px", fontSize: 21, fontWeight: 900 }}>Stream ma'lumotlari</h3>
+              <h3 style={{ margin: "0 0 16px", fontSize: 21, fontWeight: 900 }}>Stream ma’lumotlari</h3>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 18 }}>
                 <label style={{ minWidth: 0 }}>
                   <span style={{ display: "block", marginBottom: 8, fontSize: 13, color: "rgba(255,255,255,.65)", fontWeight: 800 }}>Stream nomi</span>
                   <input value={title} onChange={(e) => setTitle(e.target.value)} style={{ width: "100%", height: 50, borderRadius: 14, border: "1px solid rgba(255,255,255,.1)", background: "rgba(0,0,0,.25)", color: "white", padding: "0 14px", outline: "none" }} />
                 </label>
                 <label style={{ minWidth: 0 }}>
-                  <span style={{ display: "block", marginBottom: 8, fontSize: 13, color: "rgba(255,255,255,.65)", fontWeight: 800 }}>O'yin / kategoriya</span>
+                  <span style={{ display: "block", marginBottom: 8, fontSize: 13, color: "rgba(255,255,255,.65)", fontWeight: 800 }}>O’yin / kategoriya</span>
                   <select value={game} onChange={(e) => setGame(e.target.value)} style={{ width: "100%", height: 50, borderRadius: 14, border: "1px solid rgba(255,255,255,.1)", background: "rgba(0,0,0,.25)", color: "white", padding: "0 14px", outline: "none" }}>
                     <option>PUBG MOBILE</option><option>FREE FIRE</option><option>MOBILE LEGENDS</option><option>STEAM</option><option>BOSHQA</option>
                   </select>
@@ -786,49 +949,14 @@ export default function StreamStudioPage() {
                 Yangi stream key olish
               </button>
             </Card>
-          </main>
-
-          <aside className="w-full min-w-0 box-border flex flex-col">
-            <StreamChatPanel
-              className=""
-              liveUserCount={liveUserCount}
-              socketHint={studioSocketHint}
-              chatHistoryStatus={chatHistoryStatus}
-              messages={studioPanelMessages}
-              chatInput={ownerMessage}
-              onChatInputChange={(v) => {
-                setOwnerMessage(v);
-                if (chatPanelError) setChatPanelError(null);
-              }}
-              onSend={() => sendChat("owner", ownerMessage)}
-              chatError={chatPanelError}
-              onChatErrorDismiss={() => setChatPanelError(null)}
-              pinnedRank="7"
-              pinnedTitle="WITH AN ADDON CALLED UL..."
-              inputPlaceholder="Xabar yozing…"
-              emptyHint={
-                streamId ? "Hozircha xabar yo‘q. Tomoshabinlar yozishi yoki tarix yuklanishi mumkin." : "Avval stream yarating — chat shu yerda ko‘rinadi."
-              }
-              loadingHint="Chat tarixi yuklanmoqda…"
-              welcomeFooter={
-                <div>
-                  <p className="m-0 text-[14px] font-semibold leading-relaxed text-white">
-                    Chatga xush kelibsiz! Maxfiylik va jamiyat qoidalariga rioya qiling.
-                  </p>
-                  <button type="button" className="mt-3 border-0 bg-transparent p-0 text-[13px] font-bold text-[#3ea6ff] hover:underline">
-                    Batafsil
-                  </button>
-                </div>
-              }
-            />
-          </aside>
+          </div>
         </div>
       </div>
 
       <style jsx>{`
-        .stream-layout { grid-template-columns: minmax(0, 1fr); }
+        .studio-top-row { flex-direction: column; }
         @media (min-width: 1180px) {
-          .stream-layout { grid-template-columns: minmax(0, 1fr) 430px; align-items: start; column-gap: 0; }
+          .studio-top-row { flex-direction: row; }
         }
       `}</style>
     </div>

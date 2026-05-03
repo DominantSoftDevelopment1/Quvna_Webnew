@@ -7,12 +7,37 @@ import { useAuthStore } from "@/store/auth.store";
 import { cdnUrl } from "@/lib/utils";
 import { useUnreadCount } from "@/hooks/useNotifications";
 import { useProfile } from "@/hooks/useProfile";
+import { resolvePubgRatingFromProfile } from "@/lib/profileRating";
+import { useRating } from "@/hooks/useRating";
+
+function readPositiveId(v: unknown): number | null {
+  if (typeof v === "number" && Number.isFinite(v) && v > 0) return v;
+  if (typeof v === "string" && /^\d+$/.test(v)) {
+    const n = Number(v);
+    return Number.isFinite(n) && n > 0 ? n : null;
+  }
+  return null;
+}
+
+function extractRatingUserId(entry: unknown): number | null {
+  if (!entry || typeof entry !== "object") return null;
+  const e = entry as Record<string, unknown>;
+  const u =
+    (e.user && typeof e.user === "object" ? (e.user as Record<string, unknown>) : null) ??
+    (e.userResponseDTO && typeof e.userResponseDTO === "object"
+      ? (e.userResponseDTO as Record<string, unknown>)
+      : null) ??
+    (e.userDto && typeof e.userDto === "object" ? (e.userDto as Record<string, unknown>) : null) ??
+    null;
+  return readPositiveId(e.userId ?? e.user_id ?? u?.id ?? u?.userId ?? u?.user_id);
+}
 
 export function Topbar() {
   const { user, isLoggedIn } = useAuthStore();
   const isAuthed = isLoggedIn();
   const userId = user?.id != null ? Number(user.id) : null;
-  const { data: profile } = useProfile(userId);
+  const { data: profile, isLoading: profileLoading } = useProfile(userId);
+  const { data: ratingList = [], isLoading: ratingLoading } = useRating(isAuthed ? "PUBG_UC" : "");
   const { data: unreadCount = 0 } = useUnreadCount(isAuthed);
   const [mounted, setMounted] = useState(false);
   const pathname = usePathname();
@@ -23,24 +48,25 @@ export function Topbar() {
     avatar?: string;
     attachmentResponseDTO?: { preSignedUrl?: string; contentURL?: string };
   };
-  const displayName = p.fullName || p.firstName || p.username || user?.fullName || user?.firstName || user?.username || "User";
+  // Taxallus (username) eng yuqori priority — isim-familya faqat taxallus bo'lmasa
+  const displayName = p.username || user?.username || p.fullName || p.firstName || user?.fullName || user?.firstName || "User";
   const avatarSrc =
     p.avatar || p.attachmentResponseDTO?.preSignedUrl || p.attachmentResponseDTO?.contentURL ||
     user?.avatar || user?.attachmentResponseDTO?.preSignedUrl || user?.attachmentResponseDTO?.contentURL;
   const avatarLetter = displayName.trim().charAt(0).toUpperCase() || "U";
 
-  const ratingScore = (() => {
-    const raw = profile as Record<string, unknown> | null;
-    if (!raw) return null;
-    const rObj = typeof raw.rating === "object" && raw.rating != null && !Array.isArray(raw.rating)
-      ? (raw.rating as Record<string, number>)
-      : null;
-    const score = rObj
-      ? Number(rObj.ucAmount ?? 0)
-      : typeof raw.rating === "number"
-        ? raw.rating
-        : null;
-    return score != null && score > 0 ? score : null;
+  const ratingScore =
+    userId != null && userId > 0
+      ? resolvePubgRatingFromProfile(profile as Record<string, unknown> | null | undefined)
+      : 0;
+
+  const ratingRank = (() => {
+    if (!mounted || !isAuthed || userId == null || userId <= 0) return null;
+    if (ratingLoading) return "…";
+    const list = Array.isArray(ratingList) ? ratingList : [];
+    const idx = list.findIndex((entry) => extractRatingUserId(entry) === userId);
+    if (idx >= 0) return String(idx + 1);
+    return list.length >= 50 ? "50+" : "—";
   })();
 
   const hideTopbar = pathname?.startsWith("/profile/edit");
@@ -66,12 +92,22 @@ export function Topbar() {
       </div>
 
       <div className="my-[10px] flex items-center justify-center gap-2">
-        {/* Rating widget — logged in va score > 0 bo'lsa to'liq, aks holda oddiy icon */}
-        {mounted && isAuthed && ratingScore != null ? (
-          <Link href="/rating" className="topbar-rating-widget" aria-label={`Reyting: ${ratingScore}`}>
+        {/* Rating: kirgan foydalanuvchiga doim pill (profil bilan bir xil UC / fallback), mehmonda star */}
+        {mounted && isAuthed && userId != null ? (
+          <Link
+            href="/rating"
+            className="topbar-rating-widget"
+            aria-label={
+              ratingRank === "…" || ratingRank === null
+                ? "Reyting yuklanmoqda"
+                : `Reyting o‘rni: ${ratingRank}`
+            }
+          >
             <span className="topbar-rating-pill-text">
               <span className="topbar-rating-pill-brand">REYTING</span>
-              <span className="topbar-rating-pill-rank">{ratingScore}</span>
+              <span className="topbar-rating-pill-rank">
+                {ratingRank ?? (profileLoading ? "…" : ratingScore)}
+              </span>
               <span className="topbar-rating-pill-star">★</span>
             </span>
           </Link>
