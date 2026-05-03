@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:127": "next dev -H 127.0.0.1 -p 3000",
     "dev:webpack": "next dev --webpack",
     "dev:fresh": "node scripts/clear-next-dev-cache.cjs && next dev",
     "build": "next build",

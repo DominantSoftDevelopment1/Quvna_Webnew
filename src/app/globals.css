@@ -1359,6 +1359,31 @@ body.profile-edit-focus .main-body-scroll {
   text-overflow: ellipsis;
 }
 
+/* Rating header: icon + title centered as a group */
+.rating-header-center {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: min(80vw, calc(100% - 120px));
+  pointer-events: none;
+}
+
+.rating-header-title-static {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text-primary);
+  text-align: center;
+  line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .rating-tabs {
   display: flex;
   flex-wrap: nowrap;
