@@ -757,8 +757,6 @@ export default function StreamStudioPage() {
   const studioChatItems = useMemo((): StudioChatItem[] => {
     return chatMessages.map((m) => {
       const displayUser = m.isMe ? myDisplayName : m.user;
-      const time = formatChatClock(m.sentAtMs) || "—";
-      const badge = m.isHost ? "👑" : "";
       const color =
         m.role === "owner"
           ? "text-cyan-400"
@@ -769,9 +767,7 @@ export default function StreamStudioPage() {
         id: m.id,
         user: displayUser,
         text: m.text,
-        badge,
         color,
-        time,
         isHost: m.isHost,
         ...(m.avatarHref ? { avatarHref: m.avatarHref } : {}),
       };
@@ -926,89 +922,60 @@ export default function StreamStudioPage() {
           </div>
           {/* Streamer info + settings — natural scroll */}
           <div>
-          {/* STREAMER INFO BAR */}
-          <div className="box-border flex min-w-0 items-center border-b border-white/[0.06] bg-[#18181b] px-5 py-5 sm:px-7 sm:py-6">
-            <div className="flex min-w-0 flex-1 items-start gap-5">
-              <div className="relative shrink-0 pt-0.5">
-                <div className="h-11 w-11 overflow-hidden rounded-full border border-[#00d26a]/30 bg-[#2d2d35]">
-                  {profileAvatarSrc ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={profileAvatarSrc} alt="" className="h-full w-full object-cover" />
-                  ) : (
-                    <div className="flex h-full w-full items-center justify-center">
-                      <User size={20} className="text-[#00d26a]/60" />
-                    </div>
-                  )}
-                </div>
-                <span className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border border-[#18181b] bg-[#00d26a]" />
+          {/* STREAMER INFO — avatar 64px, ism, kategoriya, tugmalar */}
+          <div className="box-border flex min-w-0 items-start gap-4 border-b border-white/[0.06] bg-[#18181b] px-6 py-5">
+            {/* Avatar 64px */}
+            <div className="relative shrink-0">
+              <div className="h-16 w-16 overflow-hidden rounded-full border-2 border-[#00d26a]/40 bg-[#2d2d35]">
+                {profileAvatarSrc ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={profileAvatarSrc} alt="" className="h-full w-full object-cover" />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center">
+                    <User size={28} className="text-[#00d26a]/60" />
+                  </div>
+                )}
               </div>
-              <div className="min-w-0 flex-1 space-y-3">
-                <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-                  <span className="text-lg font-bold leading-tight tracking-tight text-white">{myDisplayName}</span>
-                  <span className="rounded-md bg-[#00d26a]/10 px-2 py-0.5 text-[11px] font-semibold leading-none text-[#00d26a]">
-                    СТРИМЕР
-                  </span>
-                </div>
-                {overlayText ? (
-                  <p className="line-clamp-3 text-[15px] leading-relaxed text-[#adadb8]">{overlayText}</p>
-                ) : null}
-              </div>
+              <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-[#18181b] bg-[#00d26a]" />
             </div>
-          </div>
-
-          {/* QUICK ACTIONS — ikki qator (ml-auto siqilish bermaydi) */}
-          <div className="box-border border-b border-white/[0.06] bg-[#18181b] px-5 py-4 sm:px-7">
-            <div className="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex min-w-0 flex-wrap items-center gap-2.5">
-                <button
-                  onClick={() => setTitle((t) => t)}
-                  className="inline-flex h-9 items-center gap-2 rounded-md bg-[#9147ff] px-4 text-sm font-semibold text-white hover:bg-[#a970ff]"
-                >
-                  <Edit3 size={15} />
-                  Tahrirlash
-                </button>
-                <button className="inline-flex h-9 items-center gap-2 rounded-md bg-[#1f1f23] px-4 text-sm font-medium text-[#adadb8] hover:bg-[#26262c] hover:text-white">
-                  <Shield size={15} />
-                  Sozlamalar
-                </button>
-                <button className="inline-flex h-9 items-center gap-2 rounded-md bg-[#1f1f23] px-4 text-sm font-medium text-[#adadb8] hover:bg-[#26262c] hover:text-white">
-                  <Users2 size={15} />
-                  Moderatsiya
-                </button>
+            {/* Info */}
+            <div className="min-w-0 flex-1 pt-1">
+              <div className="flex min-w-0 flex-wrap items-center gap-2">
+                <span className="text-[18px] font-bold leading-tight text-white">{myDisplayName}</span>
+                <span className="rounded bg-[#00d26a]/10 px-2 py-0.5 text-[11px] font-semibold text-[#00d26a]">СТРИМЕР</span>
               </div>
-              <div className="flex shrink-0 items-center gap-2.5 px-[20px]">
-                <button
-                  onClick={() => void copyWatchUrl()}
-                  className="inline-flex h-9 items-center gap-2 rounded-md bg-[#1f1f23] px-4 text-sm font-medium text-[#adadb8] hover:bg-[#26262c] hover:text-white"
-                >
-                  {watchCopied ? <Check size={15} className="text-[#00d26a]" /> : <Link2 size={15} />}
-                  Havola
+              <p className="mt-0.5 text-[13px] text-zinc-500">{game}</p>
+              {/* Overlay text input — Twitch'da tavsif matn */}
+              <div className="relative mt-3 min-w-0">
+                <input
+                  value={overlayText}
+                  onChange={(e) => setOverlayText(e.target.value)}
+                  maxLength={120}
+                  placeholder="Stream tavsifi..."
+                  className="box-border h-9 w-full min-w-0 rounded-md border border-white/[0.06] bg-[#0e0e10] py-2 pl-3 pr-14 text-[13px] text-[#efeff1] outline-none transition placeholder:text-[#5c5c6d] focus:border-[#9147ff]/40"
+                />
+                <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[11px] tabular-nums text-[#5c5c6d]">
+                  {overlayText.length}/120
+                </span>
+              </div>
+              {/* Tugmalar */}
+              <div className="mt-3 flex min-w-0 flex-wrap items-center gap-2">
+                <button onClick={() => setTitle((t) => t)} className="inline-flex h-8 items-center gap-1.5 rounded-md bg-[#9147ff] px-3 text-[13px] font-semibold text-white hover:bg-[#a970ff]">
+                  <Edit3 size={13} />Tahrirlash
                 </button>
-                <a
-                  href={viewerWatchUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-[#1f1f23] text-[#adadb8] hover:bg-[#26262c] hover:text-white"
-                >
-                  <ExternalLink size={15} />
+                <button className="inline-flex h-8 items-center gap-1.5 rounded-md bg-[#1f1f23] px-3 text-[13px] text-[#adadb8] hover:bg-[#26262c] hover:text-white">
+                  <Shield size={13} />Sozlamalar
+                </button>
+                <button className="inline-flex h-8 items-center gap-1.5 rounded-md bg-[#1f1f23] px-3 text-[13px] text-[#adadb8] hover:bg-[#26262c] hover:text-white">
+                  <Users2 size={13} />Moderatsiya
+                </button>
+                <button onClick={() => void copyWatchUrl()} className="inline-flex h-8 items-center gap-1.5 rounded-md bg-[#1f1f23] px-3 text-[13px] text-[#adadb8] hover:bg-[#26262c] hover:text-white">
+                  {watchCopied ? <Check size={13} className="text-[#00d26a]" /> : <Link2 size={13} />}Havola
+                </button>
+                <a href={viewerWatchUrl} target="_blank" rel="noopener noreferrer" className="inline-flex h-8 w-8 items-center justify-center rounded-md bg-[#1f1f23] text-[#adadb8] hover:bg-[#26262c] hover:text-white">
+                  <ExternalLink size={13} />
                 </a>
               </div>
-            </div>
-          </div>
-
-          {/* OVERLAY TEXT */}
-          <div className="box-border border-b border-white/[0.06] bg-[#18181b] px-5 py-5 sm:px-7">
-            <div className="relative min-w-0">
-              <input
-                value={overlayText}
-                onChange={(e) => setOverlayText(e.target.value)}
-                maxLength={120}
-                placeholder="Tomoshabinlar ko'radigan matn..."
-                className="box-border h-11 w-full min-w-0 rounded-md border border-white/[0.06] bg-[#0e0e10] py-2.5 pl-3 pr-16 text-[15px] text-[#efeff1] outline-none transition placeholder:text-[#5c5c6d] focus:border-[#9147ff]/40"
-              />
-              <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[11px] tabular-nums text-[#5c5c6d]">
-                {overlayText.length}/120
-              </span>
             </div>
           </div>
 
