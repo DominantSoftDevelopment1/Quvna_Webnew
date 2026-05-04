@@ -23,16 +23,22 @@ function GiftIcon({ className = "" }: { className?: string }) {
 
 function ChatLine({ msg }: { msg: StudioChatItem }) {
   return (
-    <div className="px-4 py-2 text-[14px] leading-[22px] hover:bg-white/[0.04]">
-      <div className="flex min-w-0 items-start gap-2">
-        <span className="w-[44px] shrink-0 pt-[2px] text-[11px] leading-none text-zinc-500">
-          {msg.time ?? "—"}
-        </span>
-        <span className={`shrink-0 font-bold ${msg.color || "text-[#00b5ad]"}`}>
+    <div className="group px-4 py-[5px] text-[15px] leading-[1.5] hover:bg-white/[0.04]">
+      {/* Twitch uslub: Username: matn — bitta qatorda, vaqt hover'da */}
+      <p className="min-w-0 break-words">
+        <span
+          className={`mr-1 font-bold ${msg.color || "text-[#00b5ad]"}`}
+          title={msg.time ?? ""}
+        >
           {msg.user}:
         </span>
-        <span className="min-w-0 flex-1 break-words text-zinc-100">{msg.text}</span>
-      </div>
+        <span className="text-zinc-100">{msg.text}</span>
+        {msg.time ? (
+          <span className="ml-2 hidden text-[11px] text-zinc-600 group-hover:inline">
+            {msg.time}
+          </span>
+        ) : null}
+      </p>
     </div>
   );
 }
