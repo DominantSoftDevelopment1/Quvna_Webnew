@@ -27,10 +27,10 @@ function ChatLine({ msg }: { msg: StudioChatItem }) {
       {/* Twitch uslub: Username: matn — bitta qatorda, vaqt hover'da */}
       <p className="min-w-0 break-words">
         <span
-          className={`mr-1 font-bold ${msg.color || "text-[#00b5ad]"}`}
+          className={`font-bold ${msg.color || "text-[#00b5ad]"}`}
           title={msg.time ?? ""}
         >
-          {msg.user}:
+          {msg.user}:{" "}
         </span>
         <span className="text-zinc-100">{msg.text}</span>
         {msg.time ? (
