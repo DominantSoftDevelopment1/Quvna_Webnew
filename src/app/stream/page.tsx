@@ -1028,7 +1028,7 @@ export default function StreamStudioPage() {
 
         {/* Chat — main bilan sibling, sticky: sahifa scroll qilganda qimirlamaydi */}
         <aside
-          className="sticky top-0 w-[clamp(320px,24vw,440px)] shrink-0 self-start overflow-hidden border-l border-white/[0.06] 2xl:w-[460px]"
+          className="sticky top-0 w-[460px] shrink-0 self-start overflow-hidden border-l border-white/[0.06]"
           style={{ height: "100vh" }}
         >
           <StudioChatPanel
