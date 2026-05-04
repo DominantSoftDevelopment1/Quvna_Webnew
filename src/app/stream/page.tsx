@@ -758,7 +758,7 @@ export default function StreamStudioPage() {
     return chatMessages.map((m) => {
       const displayUser = m.isMe ? myDisplayName : m.user;
       const time = formatChatClock(m.sentAtMs) || "—";
-      const badge = m.isMe ? "🟦" : m.isHost ? "👑" : "◻";
+      const badge = m.isHost ? "👑" : "";
       const color =
         m.role === "owner"
           ? "text-cyan-400"
@@ -879,8 +879,8 @@ export default function StreamStudioPage() {
       {/* Twitch layout: items-start flex — main scroll, aside sticky */}
       <div className="mx-auto flex w-full max-w-[1800px] items-start">
         <main className="min-w-0 flex-1 overflow-hidden">
-          {/* Video — to'liq viewport balandligi, sahifa bilan scroll qiladi */}
-          <div className="relative w-full bg-black" style={{ height: "calc(100vh - 48px)", minHeight: 400 }}>
+          {/* Video — 16:9 aspect ratio */}
+          <div className="relative aspect-video w-full bg-black">
             {streamId ? (
               <>
                 <video ref={videoRef} controls autoPlay muted playsInline className="h-full w-full object-contain" />
