@@ -876,22 +876,14 @@ export default function StreamStudioPage() {
         </div>
       </header>
 
-      {/* Sahifa natural scroll — video+chat to'liq ekran, pastki detallar oddiy oqim */}
-      <div className="mx-auto w-full max-w-[1800px]">
-        <main className="flex min-w-0 flex-col">
-          {/* Video + Chat qatori — to'liq viewport balandligi */}
-          <div className="flex w-full items-stretch" style={{ height: "calc(100vh - 48px)", minHeight: 480 }}>
-            <div className="relative min-h-0 min-w-0 flex-1 bg-black">
+      {/* Twitch layout: items-start flex — main scroll, aside sticky */}
+      <div className="mx-auto flex w-full max-w-[1800px] items-start">
+        <main className="min-w-0 flex-1 overflow-hidden">
+          {/* Video — to'liq viewport balandligi, sahifa bilan scroll qiladi */}
+          <div className="relative w-full bg-black" style={{ height: "calc(100vh - 48px)", minHeight: 400 }}>
             {streamId ? (
               <>
-                <video
-                  ref={videoRef}
-                  controls
-                  autoPlay
-                  muted
-                  playsInline
-                  className="h-full w-full object-cover"
-                />
+                <video ref={videoRef} controls autoPlay muted playsInline className="h-full w-full object-contain" />
                 {!hlsPlaying && (
                   <div className="absolute inset-0 flex flex-col items-center justify-center">
                     <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-white/[0.04]">
@@ -911,27 +903,20 @@ export default function StreamStudioPage() {
                 <p className="mt-1 text-xs text-[#3d3d44]">НЕ В СЕТИ</p>
               </div>
             )}
-
-            {/* Top status badge */}
+            {/* Status badges */}
             <div className="absolute left-3 top-3 z-10 flex items-center gap-2">
               {isLive ? (
                 <div className="flex items-center gap-1.5 rounded bg-[#1f1f23]/90 px-2 py-1 text-[11px] font-semibold text-red-400 backdrop-blur-sm">
-                  <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-red-500 motion-reduce:animate-none" />
-                  LIVE
+                  <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-red-500 motion-reduce:animate-none" />LIVE
                 </div>
               ) : isWaiting ? (
                 <div className="flex items-center gap-1.5 rounded bg-[#1f1f23]/90 px-2 py-1 text-[11px] font-semibold text-amber-400 backdrop-blur-sm">
-                  <Loader2 size={11} className="animate-spin" />
-                  НЕ В СЕТИ
+                  <Loader2 size={11} className="animate-spin" />НЕ В СЕТИ
                 </div>
               ) : (
-                <div className="rounded bg-[#1f1f23]/90 px-2 py-1 text-[11px] font-semibold text-[#5c5c6d] backdrop-blur-sm">
-                  НЕ В СЕТИ
-                </div>
+                <div className="rounded bg-[#1f1f23]/90 px-2 py-1 text-[11px] font-semibold text-[#5c5c6d] backdrop-blur-sm">НЕ В СЕТИ</div>
               )}
             </div>
-
-            {/* Viewers count */}
             {isLive && (
               <div className="absolute right-3 top-3 z-10 flex items-center gap-1.5 rounded bg-[#1f1f23]/90 px-2 py-1 backdrop-blur-sm">
                 <Users size={12} className="text-[#00d26a]" />
@@ -939,28 +924,7 @@ export default function StreamStudioPage() {
               </div>
             )}
           </div>
-
-            <aside className="sticky top-[48px] flex w-[clamp(340px,26vw,460px)] shrink-0 flex-col overflow-hidden border-l border-white/[0.06] 2xl:w-[480px]" style={{ height: "calc(100vh - 48px)" }}>
-              <StudioChatPanel
-                className="h-full min-h-0 w-full flex-1"
-                items={studioChatItems}
-                chatInput={ownerMessage}
-                onChatInputChange={(v) => {
-                  setOwnerMessage(v);
-                  if (chatPanelError) setChatPanelError(null);
-                }}
-                onSend={() => sendChat("owner", ownerMessage)}
-                pinnedText={pinnedChatTitle}
-                liveUserCount={liveUserCount}
-                chatError={chatPanelError}
-                onDismissError={() => setChatPanelError(null)}
-                socketHint={studioSocketHint}
-                chatHistoryStatus={chatHistoryStatus}
-                emptyHint={streamId ? "Hozircha xabar yo'q." : "Avval stream yarating."}
-              />
-            </aside>
-          </div>
-
+          {/* Streamer info + settings — natural scroll */}
           <div>
           {/* STREAMER INFO BAR */}
           <div className="box-border flex min-w-0 items-center border-b border-white/[0.06] bg-[#18181b] px-5 py-5 sm:px-7 sm:py-6">
@@ -1113,6 +1077,30 @@ export default function StreamStudioPage() {
           )}
           </div>
         </main>
+
+        {/* Chat — main bilan sibling, sticky: sahifa scroll qilganda qimirlamaydi */}
+        <aside
+          className="sticky top-[48px] w-[clamp(320px,24vw,440px)] shrink-0 self-start overflow-hidden border-l border-white/[0.06] 2xl:w-[460px]"
+          style={{ height: "calc(100vh - 48px)" }}
+        >
+          <StudioChatPanel
+            className="h-full min-h-0 w-full"
+            items={studioChatItems}
+            chatInput={ownerMessage}
+            onChatInputChange={(v) => {
+              setOwnerMessage(v);
+              if (chatPanelError) setChatPanelError(null);
+            }}
+            onSend={() => sendChat("owner", ownerMessage)}
+            pinnedText={pinnedChatTitle}
+            liveUserCount={liveUserCount}
+            chatError={chatPanelError}
+            onDismissError={() => setChatPanelError(null)}
+            socketHint={studioSocketHint}
+            chatHistoryStatus={chatHistoryStatus}
+            emptyHint={streamId ? "Hozircha xabar yo'q." : "Avval stream yarating."}
+          />
+        </aside>
       </div>
     </div>
   );
