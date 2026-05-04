@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import axios, { type AxiosError } from "axios";
 import Hls from "hls.js";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { BASE_URL, WS_URL } from "@/lib/constants";
 import {
@@ -12,13 +13,32 @@ import {
   flattenStreamChatWsPayload,
 } from "@/lib/streamChat";
 import { fetchStreamChatHistory } from "@/lib/streamChatHistory";
-import { chatUsernameColorClass, StreamChatPanel } from "@/components/stream/StreamChatPanel";
+import { StudioChatPanel, type StudioChatItem } from "@/components/stream/StudioChatPanel";
+import { chatUsernameColorClass } from "@/components/stream/StreamChatPanel";
 import { buildStreamWsUrl } from "@/lib/streamWs";
 import { deriveStreamRestPathId, pickStreamEntityId } from "@/lib/streamIds";
-import { Users } from "lucide-react";
+import {
+  ArrowLeft,
+  Check,
+  Copy,
+  Edit3,
+  ExternalLink,
+  Link2,
+  Loader2,
+  RefreshCw,
+  Send,
+  Shield,
+  Tv,
+  User,
+  Users,
+  Users2,
+} from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuthStore } from "@/store/auth.store";
 import { useProfile } from "@/hooks/useProfile";
+import { cdnUrl } from "@/lib/utils";
+
+/* ─── Types ─── */
 
 type StreamStatus = "offline" | "waiting" | "live";
 type CopyStatus = "idle" | "copied" | "manual" | "failed";
@@ -30,17 +50,23 @@ interface ChatMessage {
   user: string;
   text: string;
   badge?: string;
-  /** Strim egasi (akkaunt/strim javobi asosida). */
   isHost?: boolean;
-  /** Hozirgi user (studio egasi) yozgan xabar. */
   isMe?: boolean;
   avatarHref?: string;
   subtitle?: string;
+  /** Xabar vaqti (ms) — tarix/WS dan. */
+  sentAtMs?: number;
+}
+
+function formatChatClock(ms: number | undefined): string {
+  if (ms == null || !Number.isFinite(ms)) return "";
+  const d = new Date(ms);
+  if (Number.isNaN(d.getTime())) return "";
+  return d.toLocaleTimeString("uz-UZ", { hour: "2-digit", minute: "2-digit", hour12: false });
 }
 
 interface StreamDto {
   id: string;
-  /** `PUT /streams/{...}` uchun — odatda raqamli PK; boʻlmasa `id` bilan bir xil */
   restPathId: string;
   name?: string;
   isLive?: boolean;
@@ -49,7 +75,8 @@ interface StreamDto {
   clickCount?: number;
 }
 
-/** Backend `{ id }`, `{ data: {...} }`, UUID `streamId` / `streamUuid` — WS: `{WS_URL}/scws/{id}`. */
+/* ─── Helpers ─── */
+
 function normalizeStreamDtoFromApi(payload: unknown): StreamDto | null {
   const asObj = (v: unknown): Record<string, unknown> | null =>
     v !== null && typeof v === "object" && !Array.isArray(v) ? (v as Record<string, unknown>) : null;
@@ -79,7 +106,6 @@ function normalizeStreamDtoFromApi(payload: unknown): StreamDto | null {
   return null;
 }
 
-/** POST `/streams/create` — backend kontrakt (Zafar Bek). */
 interface CreateStreamPayload {
   name: string;
   url: string;
@@ -95,17 +121,6 @@ function stopStreamErrorMessage(err: unknown): string {
   if (typeof m === "string" && m.trim()) return m.trim();
   if (typeof ax.message === "string" && ax.message) return ax.message;
   return "Streamni to'xtatib bo'lmadi.";
-}
-
-interface FieldBoxProps {
-  label: string;
-  value: string;
-  secret?: boolean;
-}
-
-interface CardProps {
-  children: React.ReactNode;
-  green?: boolean;
 }
 
 function buildRtmpServerUrl(baseUrl: string): string {
@@ -160,58 +175,101 @@ async function safeCopyText(value: string, inputElement: HTMLInputElement | null
   return "failed";
 }
 
-function FieldBox({ label, value, secret = false }: FieldBoxProps) {
-  const [show, setShow] = useState(!secret);
-  const [status, setStatus] = useState<CopyStatus>("idle");
-  const inputRef = useRef<HTMLInputElement | null>(null);
-  const displayValue = secret && !show ? "••••••••••••••••••••••••••••••" : value;
+/* ─── UI Components ─── */
+
+function CopyButton({ value, label }: { value: string; label?: string }) {
+  const [copied, setCopied] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const handleCopy = async () => {
     const result = await safeCopyText(value, inputRef.current);
-    setStatus(result);
-    window.setTimeout(() => setStatus("idle"), 1300);
+    if (result === "copied" || result === "manual") {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
   };
 
   return (
-    <div style={{ borderRadius: 16, border: "1px solid rgba(255,255,255,.1)", background: "rgba(0,0,0,.22)", padding: 14 }}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
-        <p style={{ margin: 0, fontSize: 12, color: "rgba(255,255,255,.5)", fontWeight: 800, letterSpacing: ".05em", textTransform: "uppercase" }}>{label}</p>
-        {secret && (
-          <button type="button" onClick={() => setShow((v) => !v)} style={{ border: 0, background: "transparent", color: "#34f5a5", fontSize: 12, fontWeight: 800, cursor: "pointer" }}>
-            {show ? "Yashirish" : "Ko'rsatish"}
-          </button>
-        )}
+    <div className="group flex min-w-0 items-center gap-2">
+      <div className="relative min-w-0 flex-1">
+        <input
+          ref={inputRef}
+          readOnly
+          value={value}
+          className="box-border h-11 w-full min-w-0 rounded-md border border-white/[0.06] bg-[#0e0e10] px-3.5 text-sm font-mono text-[#adadb8] outline-none transition focus:border-[#9147ff]/20"
+        />
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) 88px", gap: 10 }}>
-        <input ref={inputRef} readOnly value={displayValue} style={{ minWidth: 0, height: 44, borderRadius: 12, border: "1px solid rgba(255,255,255,.1)", background: "#0f1011", color: "white", padding: "0 12px", outline: "none" }} />
-        <button type="button" onClick={handleCopy} style={{ border: 0, borderRadius: 12, background: "#00d997", color: "#00150d", fontWeight: 900, cursor: "pointer" }}>
-          {status === "copied" ? "Copied" : status === "manual" ? "Select" : "Copy"}
+      <button
+        onClick={handleCopy}
+        className={`box-border flex h-11 w-11 shrink-0 items-center justify-center rounded-md border transition ${
+          copied
+            ? "border-[#00d26a]/30 bg-[#00d26a]/10 text-[#00d26a]"
+            : "border-white/[0.06] text-[#5c5c6d] hover:text-[#adadb8]"
+        }`}
+        title={label || "Nusxalash"}
+      >
+        {copied ? <Check size={16} /> : <Copy size={16} />}
+      </button>
+    </div>
+  );
+}
+
+function SecretCopyField({ value, label }: { value: string; label: string }) {
+  const [show, setShow] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const display = show ? value : "•".repeat(Math.min(Math.max(value.length || 12, 12), 24));
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(value);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 2000);
+    } catch {
+      /* clipboard */
+    }
+  };
+
+  return (
+    <div className="min-w-0">
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <label className="text-xs font-medium text-[#5c5c6d]">{label}</label>
+        <button
+          type="button"
+          onClick={() => setShow((s) => !s)}
+          className="shrink-0 text-xs text-[#9147ff]/80 transition hover:text-[#9147ff]"
+        >
+          {show ? "Yashirish" : "Ko'rsatish"}
+        </button>
+      </div>
+      <div className="group flex min-w-0 items-center gap-2">
+        <input
+          readOnly
+          value={display}
+          className="box-border h-11 min-h-0 min-w-0 flex-1 rounded-md border border-white/[0.06] bg-[#0e0e10] px-3.5 font-mono text-sm text-[#adadb8] outline-none"
+        />
+        <button
+          type="button"
+          onClick={() => void handleCopy()}
+          className={`box-border flex h-11 w-11 shrink-0 items-center justify-center rounded-md border transition ${
+            copied
+              ? "border-[#00d26a]/30 bg-[#00d26a]/10 text-[#00d26a]"
+              : "border-white/[0.06] text-[#5c5c6d] hover:text-[#adadb8]"
+          }`}
+          title="Nusxalash"
+        >
+          {copied ? <Check size={16} /> : <Copy size={16} />}
         </button>
       </div>
     </div>
   );
 }
 
-function Card({ children, green = false }: CardProps) {
-  return (
-    <section
-      style={{
-        borderRadius: 24,
-        border: green ? "1px solid rgba(0,217,151,.35)" : "1px solid rgba(255,255,255,.1)",
-        background: green ? "rgba(0,217,151,.08)" : "rgba(255,255,255,.045)",
-        padding: 20,
-      }}
-    >
-      {children}
-    </section>
-  );
-}
+/* ─── Main Page ─── */
 
 export default function StreamStudioPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const storeUser = useAuthStore((s) => s.user);
-  // Zustand hydrate'dan oldin ham localStorage'dan userId olinadi (birinchi render'da cache ishlaydi)
   const profileUserId = useMemo(() => {
     if (storeUser?.id != null) {
       const n = Number(storeUser.id);
@@ -221,7 +279,6 @@ export default function StreamStudioPage() {
   }, [storeUser]);
   const { data: profileData } = useProfile(profileUserId);
 
-  // Sinxron init: localStorage cache → auth store → fallback
   const [myDisplayName, setMyDisplayName] = useState<string>(() => {
     if (typeof window === "undefined") return "Men";
     const cached = localStorage.getItem("quvna_stream_username") ?? "";
@@ -235,7 +292,6 @@ export default function StreamStudioPage() {
     );
   });
 
-  // Profile kelganda taxallusni yangilaymiz va cache'ga saqlaymiz
   useEffect(() => {
     const p = profileData as Record<string, unknown> | null | undefined;
     if (!p) return;
@@ -248,11 +304,11 @@ export default function StreamStudioPage() {
     const fullName = typeof p.fullName === "string" ? p.fullName.trim() : "";
     if (fullName) setMyDisplayName(fullName);
   }, [profileData]);
+
   const [title, setTitle] = useState("PUBG Mobile turnir — jonli efir");
   const [game, setGame] = useState("PUBG MOBILE");
   const [status, setStatus] = useState<StreamStatus>("offline");
   const [streamId, setStreamId] = useState<string | null>(null);
-  /** `PUT /streams/{id}` — backend PK (raqam) bo'lishi mumkin; WS/HLS uchun `streamId` */
   const [streamPutPathId, setStreamPutPathId] = useState<string | null>(null);
   const [streamKey, setStreamKey] = useState("");
   const [liveUserCount, setLiveUserCount] = useState(0);
@@ -263,24 +319,22 @@ export default function StreamStudioPage() {
   const [studioSocketHint, setStudioSocketHint] = useState<string | null>(null);
   const [chatHistoryStatus, setChatHistoryStatus] = useState<"loading" | "ready" | "failed">("ready");
   const [chatPanelError, setChatPanelError] = useState<string | null>(null);
+  const [watchCopied, setWatchCopied] = useState(false);
   const [hlsIndex, setHlsIndex] = useState(0);
   const [hlsPlaying, setHlsPlaying] = useState(false);
+
+  const [overlayText, setOverlayText] = useState("Salom do'stlar! Bugun PUBG Mobile turnir finalini jonli efirda kuzatamiz 🎮🔥");
 
   const wsRef = useRef<WebSocket | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const hlsRef = useRef<Hls | null>(null);
-  /** Studio egasi yuborgan xabar textlari (server echo'sini skip qilish uchun). */
   const pendingSentTexts = useRef<Set<string>>(new Set());
-  /** userId → displayName cache (REST history'dan to'ldiriladi, WS echo'da ishlatiladi). */
   const userNameCache = useRef<Map<number, string>>(new Map());
-  /** myDisplayName'ni WS callback ichida ham o'qish uchun ref. */
   const myDisplayNameRef = useRef(myDisplayName);
+
   useEffect(() => {
     myDisplayNameRef.current = myDisplayName;
-    // Profile yuklanganda isMe xabarlar nomini yangilaymiz
-    setChatMessages((prev) =>
-      prev.map((m) => (m.isMe ? { ...m, user: myDisplayName } : m))
-    );
+    setChatMessages((prev) => prev.map((m) => (m.isMe ? { ...m, user: myDisplayName } : m)));
   }, [myDisplayName]);
 
   const serverUrl = useMemo(() => buildRtmpServerUrl(BASE_URL), []);
@@ -331,7 +385,6 @@ export default function StreamStudioPage() {
       if (dto) {
         applyStream(dto);
       } else {
-        // Backend da stream yo'q — localStorage ni tozalab offline ga qayt
         clearState();
         setStreamId(null);
         setStreamPutPathId(null);
@@ -339,7 +392,7 @@ export default function StreamStudioPage() {
         setStatus("offline");
       }
     } catch {
-      // Network xato — localStorage state saqlansin
+      // Network xato
     }
   };
 
@@ -352,7 +405,6 @@ export default function StreamStudioPage() {
       return;
     }
     if (streamId && streamKey) {
-      // Mavjud stream ni tekshir — backend da bor bo'lsa ishlatamiz
       void loadExistingStream();
       return;
     }
@@ -375,7 +427,7 @@ export default function StreamStudioPage() {
       if (dto) {
         applyStream(dto, true);
         void queryClient.invalidateQueries({ queryKey: ["streams"] });
-      } else setError("Server stream id qaytarmadi. Javob formatini tekshiring.");
+      } else setError("Server stream id qaytarmadi.");
     } catch (err) {
       const statusCode = (err as AxiosError)?.response?.status;
       if (statusCode === 401 || statusCode === 403) {
@@ -391,8 +443,8 @@ export default function StreamStudioPage() {
 
   const stopStream = async () => {
     if (!streamId || busy) return;
-      const restSeg = streamPutPathId ?? streamId;
-      const sid = encodeURIComponent(restSeg);
+    const restSeg = streamPutPathId ?? streamId;
+    const sid = encodeURIComponent(restSeg);
     try {
       setBusy(true);
       setError(null);
@@ -418,7 +470,6 @@ export default function StreamStudioPage() {
       setError("Avval Stream yaratish tugmasini bosing.");
       return;
     }
-    // createStreamV2 allaqachon isLive:true qo'yadi — PUT kerak emas
     setStatus("live");
     setError(null);
   };
@@ -437,7 +488,6 @@ export default function StreamStudioPage() {
     const msg = text.trim();
     if (!msg) return;
     const senderId = getStoredStreamUserId();
-    // myDisplayName — profile'dan taxallus, bo'lmasa isim-familya (useMemo yuqorida)
     const username = myDisplayName;
     if (senderId == null) {
       setChatPanelError("Chat uchun akkauntga kiring.");
@@ -452,7 +502,6 @@ export default function StreamStudioPage() {
       return;
     }
     setChatPanelError(null);
-    // Lokal optimistic add — server echo'ga bog'liq emas
     const localId = `local-${Date.now()}-${Math.random().toString(36).slice(2)}`;
     pendingSentTexts.current.add(msg);
     setChatMessages((prev) => [
@@ -464,9 +513,9 @@ export default function StreamStudioPage() {
         text: msg,
         isHost: true,
         isMe: true,
+        sentAtMs: Date.now(),
       },
     ]);
-    // 5 soniya ichida server echo kelsa skip qilamiz
     window.setTimeout(() => pendingSentTexts.current.delete(msg), 5000);
     wsRef.current.send(
       JSON.stringify({
@@ -508,7 +557,6 @@ export default function StreamStudioPage() {
     setHlsPlaying(false);
   }, [streamId]);
 
-  /** Avval REST chat tarixi, keyin websocket (tomoshabin sahifasi bilan bir xil). */
   useEffect(() => {
     const sid = streamId?.trim();
     if (!sid) {
@@ -531,7 +579,6 @@ export default function StreamStudioPage() {
         const hostId = getStoredStreamUserId();
         const mapped: ChatMessage[] = lines.map((line) => {
           const isHost = inferLineIsStreamHost(line, hostId ?? undefined);
-          // Cache'ga yozamiz — WS echo'da username bo'lmasa ishlatiladi
           if (line.senderUserId != null && line.user && line.user !== "viewer" && !line.user.startsWith("user_")) {
             userNameCache.current.set(line.senderUserId, line.user);
           }
@@ -543,6 +590,7 @@ export default function StreamStudioPage() {
             isHost,
             ...(line.avatarHref ? { avatarHref: line.avatarHref } : {}),
             ...(line.subtitle ? { subtitle: line.subtitle } : {}),
+            ...(line.sentAtMs != null ? { sentAtMs: line.sentAtMs } : {}),
           };
         });
         setChatMessages(mapped);
@@ -593,7 +641,6 @@ export default function StreamStudioPage() {
             setLiveUserCount(data.liveUserCount);
             return;
           }
-          // flattenStreamChatWsPayload: top-level + barcha nested (payload/data/body) fieldlarni birlashtiradi
           const payload = flattenStreamChatWsPayload(data);
           const line = parseStreamChatInbound(payload);
           if (line) {
@@ -601,29 +648,17 @@ export default function StreamStudioPage() {
               setError(line.text.trim());
               return;
             }
-            // Biz yuborgan xabar server echo qilib qaytsa — skip (lokal allaqachon bor)
             if (pendingSentTexts.current.has(line.text.trim())) {
               pendingSentTexts.current.delete(line.text.trim());
               return;
             }
             const hostIdWs = getStoredStreamUserId();
             const myName = myDisplayNameRef.current;
-            const isMe =
-              hostIdWs != null &&
-              line.senderUserId != null &&
-              line.senderUserId === hostIdWs;
+            const isMe = hostIdWs != null && line.senderUserId != null && line.senderUserId === hostIdWs;
             const isHost = isMe || inferLineIsStreamHost(line, hostIdWs ?? undefined);
             const nameIsUnknown = line.user === "viewer" || line.user.startsWith("user_");
-            // Cache'dan ism topish — server WS echo'da username bermasa
-            const cachedName = line.senderUserId != null
-              ? userNameCache.current.get(line.senderUserId)
-              : undefined;
-            const resolvedUser = isMe
-              ? myName
-              : nameIsUnknown && cachedName
-                ? cachedName
-                : line.user;
-            // Yangi user kelsa cache'ga qo'shamiz
+            const cachedName = line.senderUserId != null ? userNameCache.current.get(line.senderUserId) : undefined;
+            const resolvedUser = isMe ? myName : nameIsUnknown && cachedName ? cachedName : line.user;
             if (line.senderUserId != null && !nameIsUnknown) {
               userNameCache.current.set(line.senderUserId, line.user);
             }
@@ -633,7 +668,7 @@ export default function StreamStudioPage() {
               return [
                 ...prev,
                 {
-                  id: line.id,
+                  id: idStr,
                   role: isHost ? "owner" : "viewer",
                   user: resolvedUser,
                   text: line.text,
@@ -641,6 +676,7 @@ export default function StreamStudioPage() {
                   isMe,
                   ...(line.avatarHref ? { avatarHref: line.avatarHref } : {}),
                   ...(line.subtitle ? { subtitle: line.subtitle } : {}),
+                  ...(line.sentAtMs != null ? { sentAtMs: line.sentAtMs } : {}),
                 },
               ];
             });
@@ -718,248 +754,356 @@ export default function StreamStudioPage() {
     };
   }, [streamId, hlsUrl, hlsCandidates.length]);
 
-  const studioPanelMessages = useMemo(
-    () =>
-      chatMessages.map((m) => {
-        // isMe xabarlar uchun har doim joriy taxallusni ishlatamiz
-        const displayUser = m.isMe ? myDisplayName : m.user;
-        return {
-        id: m.id,
-        user: displayUser,
-        text: m.text,
-        userColorClass:
-          m.role === "owner"
-            ? "text-[#34f5a5]"
-            : m.role === "moderator"
-              ? "text-[#a78bfa]"
-              : chatUsernameColorClass(displayUser),
-        isHost: m.isHost,
-        isMe: m.role === "owner",
-        badge: m.badge,
-        ...(m.avatarHref ? { avatarHref: m.avatarHref } : {}),
-        ...(m.subtitle ? { subtitle: m.subtitle } : {}),
-        };
-      }),
-    [chatMessages, myDisplayName]
-  );
+  const studioChatItems = useMemo((): StudioChatItem[] => {
+    return chatMessages.map((m) => {
+      const displayUser = m.isMe ? myDisplayName : m.user;
+      const time = formatChatClock(m.sentAtMs) || "—";
+      const badge = m.isMe ? "🟦" : m.isHost ? "👑" : "◻";
+      const color =
+        m.role === "owner"
+          ? "text-cyan-400"
+          : m.role === "moderator"
+            ? "text-fuchsia-400"
+            : chatUsernameColorClass(displayUser);
+      return { id: m.id, user: displayUser, text: m.text, badge, color, time };
+    });
+  }, [chatMessages, myDisplayName]);
 
   const isWaiting = status === "waiting";
   const isLive = status === "live";
+  const pinnedChatTitle = title.trim();
+
+  const viewerWatchUrl = useMemo(() => {
+    if (!streamId) return "";
+    if (typeof window === "undefined") return `/videos/efirlar/${encodeURIComponent(streamId)}`;
+    return `${window.location.origin}/videos/efirlar/${encodeURIComponent(streamId)}`;
+  }, [streamId]);
+
+  const copyWatchUrl = useCallback(async () => {
+    if (!viewerWatchUrl) return;
+    try {
+      await navigator.clipboard.writeText(viewerWatchUrl);
+      setWatchCopied(true);
+      window.setTimeout(() => setWatchCopied(false), 2000);
+    } catch {
+      /* clipboard */
+    }
+  }, [viewerWatchUrl]);
+
+  const profileAvatar = useMemo(() => {
+    const p = profileData as Record<string, unknown> | null | undefined;
+    if (!p) return "";
+    if (typeof p.avatar === "string" && p.avatar.trim()) return p.avatar.trim();
+    if (typeof p.avatarUrl === "string" && p.avatarUrl.trim()) return p.avatarUrl.trim();
+    const att = p.attachmentResponseDTO as Record<string, unknown> | undefined;
+    if (att && typeof att === "object") {
+      const u = att.preSignedUrl ?? att.contentURL ?? att.pre_signed_url;
+      if (typeof u === "string" && u.trim()) return u.trim();
+    }
+    return "";
+  }, [profileData]);
+
+  const profileAvatarSrc = useMemo(() => {
+    if (!profileAvatar) return "";
+    return profileAvatar.startsWith("http") || profileAvatar.startsWith("data:") ? profileAvatar : cdnUrl(profileAvatar);
+  }, [profileAvatar]);
 
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        color: "white",
-        background:
-          "radial-gradient(1100px 520px at 6% -6%, rgba(0, 217, 151, 0.09), transparent 62%), radial-gradient(900px 460px at 98% 0%, rgba(62, 166, 255, 0.06), transparent 60%), linear-gradient(180deg, #0b0d0e 0%, #090b0c 100%)",
-      }}
-    >
-      <div style={{ padding: "24px 28px 88px" }}>
-        <header style={{ borderRadius: 8, border: "1px solid rgba(255,255,255,.12)", background: "rgba(255,255,255,.035)", padding: "12px 14px", marginBottom: 16 }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
-            <div>
-              <h1 style={{ margin: 0, fontSize: 22, fontWeight: 900, lineHeight: 1.1 }}>Stream Studio</h1>
-              <p style={{ margin: "4px 0 0", color: "rgba(255,255,255,.58)", fontSize: 13 }}>OBS uchun Stream URL va Stream Key oling</p>
+    <div data-stream-studio-page className="flex min-h-screen flex-col bg-[#0e0e10] text-[#efeff1] antialiased">
+      {/* ===== TWITCH-STYLE HEADER ===== */}
+      <header className="sticky top-0 z-50 h-12 shrink-0 border-b border-white/[0.06] bg-[#0e0e10]/95 backdrop-blur-md">
+        <div className="mx-auto flex h-full max-w-[1600px] items-center justify-between px-4">
+          <div className="flex min-w-0 items-center gap-3">
+            <Link
+              href="/videos"
+              className="flex shrink-0 items-center gap-1.5 rounded-md py-1 pl-0.5 pr-2 text-xs font-medium text-[#adadb8] transition hover:text-white"
+            >
+              <ArrowLeft size={14} aria-hidden />
+              Efirlar
+            </Link>
+            <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded bg-[#00d26a] text-[#0e0e10]">
+              <Send size={14} strokeWidth={2.5} />
             </div>
-            <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
-              <button type="button" disabled={busy} onClick={createStream} style={{ height: 40, borderRadius: 8, border: "1px solid rgba(255,255,255,.14)", background: "rgba(255,255,255,.055)", color: "white", padding: "0 14px", fontSize: 13, fontWeight: 800, cursor: "pointer", opacity: busy ? 0.6 : 1 }}>
-                {busy ? "Yaratilmoqda..." : "Stream yaratish"}
-              </button>
-              {streamId ? (
-                <>
-                  {!isLive ? (
-                    <button
-                      type="button"
-                      disabled={busy}
-                      onClick={startLive}
-                      style={{ height: 40, borderRadius: 8, border: 0, background: "#00d997", color: "#00150d", padding: "0 14px", fontSize: 13, fontWeight: 800, cursor: "pointer", opacity: busy ? 0.6 : 1 }}
-                    >
-                      Jonli boshlash
-                    </button>
-                  ) : null}
-                  <button
-                    type="button"
-                    disabled={busy}
-                    onClick={() => void stopStream()}
-                    style={{ height: 40, borderRadius: 8, border: 0, background: "#ef4444", color: "white", padding: "0 14px", fontSize: 13, fontWeight: 800, cursor: "pointer", opacity: busy ? 0.6 : 1 }}
-                  >
-                    {isLive ? "Streamni to'xtatish" : "Strimni yopish"}
-                  </button>
-                </>
-              ) : null}
-            </div>
+            <span className="text-sm font-bold tracking-tight">Creator Studio</span>
+            <span className="text-white/10">|</span>
+            <span className="text-xs text-[#adadb8]">Jonli efir</span>
           </div>
-          {error && <p style={{ margin: "8px 0 0", color: "#fecaca", fontSize: 12, fontWeight: 700 }}>{error}</p>}
-        </header>
-
-        <div
-          style={{
-            borderRadius: 26,
-            border: "1px solid rgba(255,255,255,.16)",
-            background: "rgba(255,255,255,.02)",
-            padding: 10,
-            boxShadow: "inset 0 0 0 1px rgba(0,0,0,.35), 0 18px 44px rgba(0,0,0,.35)",
-            display: "flex",
-            flexDirection: "column",
-            gap: 16,
-          }}
-        >
-          {/* Yuqori qator: video + chat yan-yana, bir xil balandlik */}
-          <div className="studio-top-row" style={{ display: "flex", gap: 12, alignItems: "stretch", minWidth: 0 }}>
-            <section style={{ flex: "1 1 0", minWidth: 0, overflow: "hidden", borderRadius: 18, border: "1px solid rgba(255,255,255,.2)", background: "#111315", boxShadow: "0 0 0 1px rgba(0,0,0,.45) inset" }}>
-              <div style={{ position: "relative", minHeight: 560, background: "radial-gradient(circle at 50% 35%, rgba(255,255,255,.16), transparent 28%), linear-gradient(135deg, rgba(16,185,129,.28), #18231d 45%, #000 100%)" }}>
-                <div style={{ position: "absolute", top: 22, left: 22, display: "flex", gap: 10, flexWrap: "wrap", zIndex: 2 }}>
-                  <span style={{ borderRadius: 999, padding: "7px 12px", background: isLive ? "#ef4444" : isWaiting ? "#facc15" : "rgba(255,255,255,.1)", color: isWaiting ? "#111" : "white", fontSize: 12, fontWeight: 900 }}>
-                    {isLive ? "● JONLI" : isWaiting ? "OBS SIGNAL KUTILYAPTI" : "OFFLINE"}
-                  </span>
-                  <span style={{ borderRadius: 999, padding: "7px 12px", background: "rgba(0,0,0,.45)", color: "rgba(255,255,255,.82)", fontSize: 12, fontWeight: 800 }}>1080p / 60fps</span>
-                </div>
-                {isLive && (
-                  <div
-                    style={{
-                      position: "absolute",
-                      top: 22,
-                      right: 22,
-                      zIndex: 2,
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: 8,
-                      borderRadius: 999,
-                      padding: "7px 12px",
-                      background: "rgba(0,0,0,.45)",
-                      border: "1px solid rgba(255,255,255,.12)",
-                      color: "white",
-                      fontSize: 12,
-                      fontWeight: 800,
-                    }}
+          <div className="flex items-center gap-2">
+            <span className="flex items-center gap-1.5 rounded-full bg-[#1f1f23] px-2.5 py-1 text-[11px] font-medium text-[#adadb8]">
+              <span
+                className={`h-1.5 w-1.5 rounded-full motion-reduce:animate-none ${isLive ? "animate-pulse bg-red-500" : isWaiting ? "bg-amber-500" : "bg-[#5c5c6d]"}`}
+              />
+              {isLive ? "LIVE" : isWaiting ? "OBS kutish" : "Offline"}
+            </span>
+            {!streamId ? (
+              <button
+                disabled={busy}
+                onClick={createStream}
+                className="h-7 rounded border border-white/[0.08] bg-white/[0.03] px-3 text-xs font-medium text-[#adadb8] transition hover:bg-white/[0.06] hover:text-white disabled:opacity-50"
+              >
+                {busy ? "Yaratilmoqda…" : "Yaratish"}
+              </button>
+            ) : (
+              <>
+                {!isLive && (
+                  <button
+                    disabled={busy}
+                    onClick={startLive}
+                    className="h-7 rounded bg-[#00d26a] px-3 text-xs font-bold text-[#0e0e10] transition hover:bg-[#00e075] disabled:opacity-50"
                   >
-                    <Users size={14} />
-                    <span>{liveUserCount}</span>
+                    Jonli boshlash
+                  </button>
+                )}
+                <button
+                  disabled={busy}
+                  onClick={() => void stopStream()}
+                  className="h-7 rounded border border-red-500/20 bg-red-500/10 px-3 text-xs font-medium text-red-400 transition hover:bg-red-500/20 disabled:opacity-50"
+                >
+                  {isLive ? "To'xtatish" : "Yopish"}
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      </header>
+
+      {/* Chat balandligi = video oynasi (16:9) — chat video qatorida */}
+      <div className="mx-auto flex h-[calc(100vh-80px)] min-h-0 w-full max-w-[1800px] flex-col overflow-hidden">
+        <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+          <div className="flex w-full shrink-0 items-stretch">
+            <div className="relative min-h-0 min-w-0 flex-1 aspect-video bg-black">
+            {streamId ? (
+              <>
+                <video
+                  ref={videoRef}
+                  controls
+                  autoPlay
+                  muted
+                  playsInline
+                  className="h-full w-full object-cover"
+                />
+                {!hlsPlaying && (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center">
+                    <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-white/[0.04]">
+                      <Loader2 size={26} className="animate-spin text-white/20" />
+                    </div>
+                    <p className="text-sm font-medium text-[#5c5c6d]">Предпросмотр трансляции</p>
+                    <p className="mt-1 text-xs text-[#3d3d44]">НЕ В СЕТИ</p>
                   </div>
                 )}
-
-                <div style={{ position: "absolute", inset: 0, display: "grid", placeItems: "center", padding: 30, textAlign: "center" }}>
-                  {streamId ? (
-                    <div style={{ position: "absolute", inset: 2, borderRadius: 16, overflow: "hidden" }}>
-                      <div style={{ position: "relative", width: "100%", height: "100%" }}>
-                        <video ref={videoRef} controls autoPlay muted playsInline style={{ position: "absolute", inset: 0, width: "100%", height: "100%", background: "#000", objectFit: "cover" }} />
-                        {!hlsPlaying && (
-                          <div style={{ position: "absolute", inset: 0, display: "grid", placeItems: "center", background: "rgba(3,5,7,.7)" }}>
-                            <div>
-                              <p style={{ margin: 0, fontWeight: 900, fontSize: 18 }}>Stream signali kutilmoqda...</p>
-                              <p style={{ margin: "8px 0 0", color: "rgba(255,255,255,.7)", fontSize: 14 }}>OBS dan `Start Streaming` bosing. HLS odatda 5-10 soniyada chiqadi.</p>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  ) : (
-                    <div style={{ maxWidth: 900 }}>
-                      <div style={{ margin: "0 auto 24px", width: 100, height: 100, borderRadius: "50%", border: "1px solid rgba(255,255,255,.16)", background: "rgba(0,0,0,.35)", display: "grid", placeItems: "center", fontSize: 46 }}>
-                        {isLive ? "▶" : isWaiting ? "⏳" : "📺"}
-                      </div>
-                      <p style={{ margin: "8px auto 0", color: "rgba(255,255,255,.58)", lineHeight: "28px", fontSize: 15, maxWidth: 650 }}>OBS ichida Server va Stream Key ni qo'ying. OBS dan signal kelgach streamni jonli efirga chiqarishingiz mumkin.</p>
-                    </div>
-                  )}
+              </>
+            ) : (
+              <div className="absolute inset-0 flex flex-col items-center justify-center">
+                <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-white/[0.04]">
+                  <Tv size={26} className="text-white/20" />
                 </div>
-
+                <p className="text-sm font-medium text-[#5c5c6d]">Предпросмотр трансляции</p>
+                <p className="mt-1 text-xs text-[#3d3d44]">НЕ В СЕТИ</p>
               </div>
-            </section>
+            )}
 
-            {/* Chat — video bilan bir qatorda, bir xil balandlik */}
-            <aside style={{ width: 520, minWidth: 320, flexShrink: 0, display: "flex", flexDirection: "column" }}>
-              <StreamChatPanel
-                className="flex-1 h-full"
-                liveUserCount={liveUserCount}
-                socketHint={studioSocketHint}
-                chatHistoryStatus={chatHistoryStatus}
-                messages={studioPanelMessages}
+            {/* Top status badge */}
+            <div className="absolute left-3 top-3 z-10 flex items-center gap-2">
+              {isLive ? (
+                <div className="flex items-center gap-1.5 rounded bg-[#1f1f23]/90 px-2 py-1 text-[11px] font-semibold text-red-400 backdrop-blur-sm">
+                  <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-red-500 motion-reduce:animate-none" />
+                  LIVE
+                </div>
+              ) : isWaiting ? (
+                <div className="flex items-center gap-1.5 rounded bg-[#1f1f23]/90 px-2 py-1 text-[11px] font-semibold text-amber-400 backdrop-blur-sm">
+                  <Loader2 size={11} className="animate-spin" />
+                  НЕ В СЕТИ
+                </div>
+              ) : (
+                <div className="rounded bg-[#1f1f23]/90 px-2 py-1 text-[11px] font-semibold text-[#5c5c6d] backdrop-blur-sm">
+                  НЕ В СЕТИ
+                </div>
+              )}
+            </div>
+
+            {/* Viewers count */}
+            {isLive && (
+              <div className="absolute right-3 top-3 z-10 flex items-center gap-1.5 rounded bg-[#1f1f23]/90 px-2 py-1 backdrop-blur-sm">
+                <Users size={12} className="text-[#00d26a]" />
+                <span className="text-[11px] font-bold tabular-nums text-white">{liveUserCount}</span>
+              </div>
+            )}
+          </div>
+
+            <aside className="flex min-h-0 w-[clamp(340px,26vw,460px)] shrink-0 flex-col overflow-hidden border-l border-white/[0.06] 2xl:w-[480px]">
+              <StudioChatPanel
+                className="h-full min-h-0 w-full flex-1"
+                items={studioChatItems}
                 chatInput={ownerMessage}
                 onChatInputChange={(v) => {
                   setOwnerMessage(v);
                   if (chatPanelError) setChatPanelError(null);
                 }}
                 onSend={() => sendChat("owner", ownerMessage)}
+                pinnedText={pinnedChatTitle}
+                liveUserCount={liveUserCount}
                 chatError={chatPanelError}
-                onChatErrorDismiss={() => setChatPanelError(null)}
-                pinnedRank="7"
-                pinnedTitle="WITH AN ADDON CALLED UL..."
-                inputPlaceholder="Xabar yozing…"
-                emptyHint={
-                  streamId ? "Hozircha xabar yo’q. Tomoshabinlar yozishi yoki tarix yuklanishi mumkin." : "Avval stream yarating — chat shu yerda ko’rinadi."
-                }
-                loadingHint="Chat tarixi yuklanmoqda…"
-                welcomeFooter={
-                  <div>
-                    <p className="m-0 text-[14px] font-semibold leading-relaxed text-white">
-                      Chatga xush kelibsiz! Maxfiylik va jamiyat qoidalariga rioya qiling.
-                    </p>
-                    <button type="button" className="mt-3 border-0 bg-transparent p-0 text-[13px] font-bold text-[#3ea6ff] hover:underline">
-                      Batafsil
-                    </button>
-                  </div>
-                }
+                onDismissError={() => setChatPanelError(null)}
+                socketHint={studioSocketHint}
+                chatHistoryStatus={chatHistoryStatus}
+                emptyHint={streamId ? "Hozircha xabar yo'q." : "Avval stream yarating."}
               />
             </aside>
           </div>
 
-          {/* Pastki qator: info kartalar — to’liq kenglik */}
-          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-            <Card>
-              <h3 style={{ margin: "0 0 16px", fontSize: 21, fontWeight: 900 }}>Stream ma’lumotlari</h3>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 18 }}>
-                <label style={{ minWidth: 0 }}>
-                  <span style={{ display: "block", marginBottom: 8, fontSize: 13, color: "rgba(255,255,255,.65)", fontWeight: 800 }}>Stream nomi</span>
-                  <input value={title} onChange={(e) => setTitle(e.target.value)} style={{ width: "100%", height: 50, borderRadius: 14, border: "1px solid rgba(255,255,255,.1)", background: "rgba(0,0,0,.25)", color: "white", padding: "0 14px", outline: "none" }} />
-                </label>
-                <label style={{ minWidth: 0 }}>
-                  <span style={{ display: "block", marginBottom: 8, fontSize: 13, color: "rgba(255,255,255,.65)", fontWeight: 800 }}>O’yin / kategoriya</span>
-                  <select value={game} onChange={(e) => setGame(e.target.value)} style={{ width: "100%", height: 50, borderRadius: 14, border: "1px solid rgba(255,255,255,.1)", background: "rgba(0,0,0,.25)", color: "white", padding: "0 14px", outline: "none" }}>
-                    <option>PUBG MOBILE</option><option>FREE FIRE</option><option>MOBILE LEGENDS</option><option>STEAM</option><option>BOSHQA</option>
-                  </select>
-                </label>
+          <div className="min-h-0 flex-1 overflow-y-auto">
+          {/* STREAMER INFO BAR */}
+          <div className="box-border flex min-w-0 items-center border-b border-white/[0.06] bg-[#18181b] px-5 py-5 sm:px-7 sm:py-6">
+            <div className="flex min-w-0 flex-1 items-start gap-5">
+              <div className="relative shrink-0 pt-0.5">
+                <div className="h-11 w-11 overflow-hidden rounded-full border border-[#00d26a]/30 bg-[#2d2d35]">
+                  {profileAvatarSrc ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={profileAvatarSrc} alt="" className="h-full w-full object-cover" />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center">
+                      <User size={20} className="text-[#00d26a]/60" />
+                    </div>
+                  )}
+                </div>
+                <span className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border border-[#18181b] bg-[#00d26a]" />
               </div>
-              {streamId ? (
-                <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
-                  <p style={{ margin: 0, fontSize: 12, color: "rgba(255,255,255,.5)", fontWeight: 700, lineHeight: 1.4 }}>
-                    Chat WebSocket (<code>NEXT_PUBLIC_WS_URL</code>):{" "}
-                    <code style={{ color: "#34f5a5", wordBreak: "break-all" }}>{buildStreamWsUrl(WS_URL, streamId)}</code>
-                  </p>
-                  <FieldBox label="Stream ID (`/streams/create` javobi)" value={streamId} />
-                  <FieldBox
-                    label="Tomoshiba havolasi (shu id URLda)"
-                    value={
-                      typeof window !== "undefined"
-                        ? `${window.location.origin}/videos/efirlar/${encodeURIComponent(streamId)}`
-                        : `/videos/efirlar/${encodeURIComponent(streamId)}`
-                    }
+              <div className="min-w-0 flex-1 space-y-3">
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+                  <span className="text-lg font-bold leading-tight tracking-tight text-white">{myDisplayName}</span>
+                  <span className="rounded-md bg-[#00d26a]/10 px-2 py-0.5 text-[11px] font-semibold leading-none text-[#00d26a]">
+                    СТРИМЕР
+                  </span>
+                </div>
+                {overlayText ? (
+                  <p className="line-clamp-3 text-[15px] leading-relaxed text-[#adadb8]">{overlayText}</p>
+                ) : null}
+              </div>
+            </div>
+          </div>
+
+          {/* QUICK ACTIONS — ikki qator (ml-auto siqilish bermaydi) */}
+          <div className="box-border border-b border-white/[0.06] bg-[#18181b] px-5 py-4 sm:px-7">
+            <div className="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex min-w-0 flex-wrap items-center gap-2.5">
+                <button
+                  onClick={() => setTitle((t) => t)}
+                  className="inline-flex h-9 items-center gap-2 rounded-md bg-[#9147ff] px-4 text-sm font-semibold text-white hover:bg-[#a970ff]"
+                >
+                  <Edit3 size={15} />
+                  Tahrirlash
+                </button>
+                <button className="inline-flex h-9 items-center gap-2 rounded-md bg-[#1f1f23] px-4 text-sm font-medium text-[#adadb8] hover:bg-[#26262c] hover:text-white">
+                  <Shield size={15} />
+                  Sozlamalar
+                </button>
+                <button className="inline-flex h-9 items-center gap-2 rounded-md bg-[#1f1f23] px-4 text-sm font-medium text-[#adadb8] hover:bg-[#26262c] hover:text-white">
+                  <Users2 size={15} />
+                  Moderatsiya
+                </button>
+              </div>
+              <div className="flex shrink-0 items-center gap-2.5 sm:pl-4">
+                <button
+                  onClick={() => void copyWatchUrl()}
+                  className="inline-flex h-9 items-center gap-2 rounded-md bg-[#1f1f23] px-4 text-sm font-medium text-[#adadb8] hover:bg-[#26262c] hover:text-white"
+                >
+                  {watchCopied ? <Check size={15} className="text-[#00d26a]" /> : <Link2 size={15} />}
+                  Havola
+                </button>
+                <a
+                  href={viewerWatchUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-[#1f1f23] text-[#adadb8] hover:bg-[#26262c] hover:text-white"
+                >
+                  <ExternalLink size={15} />
+                </a>
+              </div>
+            </div>
+          </div>
+
+          {/* OVERLAY TEXT */}
+          <div className="box-border border-b border-white/[0.06] bg-[#18181b] px-5 py-5 sm:px-7">
+            <div className="relative min-w-0">
+              <input
+                value={overlayText}
+                onChange={(e) => setOverlayText(e.target.value)}
+                maxLength={120}
+                placeholder="Tomoshabinlar ko'radigan matn..."
+                className="box-border h-11 w-full min-w-0 rounded-md border border-white/[0.06] bg-[#0e0e10] py-2.5 pl-3 pr-16 text-[15px] text-[#efeff1] outline-none transition placeholder:text-[#5c5c6d] focus:border-[#9147ff]/40"
+              />
+              <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[11px] tabular-nums text-[#5c5c6d]">
+                {overlayText.length}/120
+              </span>
+            </div>
+          </div>
+
+          {/* SETTINGS: tor ekranda 1 ustun — siqilish yo‘q */}
+          <div className="grid min-w-0 grid-cols-1 gap-8 border-b border-white/[0.06] bg-[#18181b] px-5 py-6 sm:px-7 sm:py-8 2xl:grid-cols-2 2xl:gap-x-14 2xl:gap-y-8">
+            <div className="min-w-0 2xl:border-r 2xl:border-white/[0.06] 2xl:pr-10">
+              <h4 className="mb-5 text-xs font-semibold uppercase tracking-wide text-[#adadb8]">Stream ma&apos;lumotlari</h4>
+              <div className="flex flex-col gap-5">
+                <div className="min-w-0">
+                  <label className="mb-2 block text-xs font-medium text-[#5c5c6d]">Nomi</label>
+                  <input
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    className="box-border h-11 w-full min-w-0 rounded-md border border-white/[0.06] bg-[#0e0e10] px-3.5 text-[15px] text-[#efeff1] outline-none focus:border-[#9147ff]/30"
                   />
                 </div>
-              ) : null}
-            </Card>
-
-            <Card green>
-              <h3 style={{ margin: "0 0 14px", fontSize: 20, fontWeight: 900 }}>OBS sozlamalari</h3>
-              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                <FieldBox label="Stream URL / Server" value={serverUrl} />
-                <FieldBox label="Stream Key" value={streamKey} secret />
+                <div className="min-w-0">
+                  <label className="mb-2 block text-xs font-medium text-[#5c5c6d]">Kategoriya</label>
+                  <select
+                    value={game}
+                    onChange={(e) => setGame(e.target.value)}
+                    className="box-border h-11 w-full min-w-0 rounded-md border border-white/[0.06] bg-[#0e0e10] px-3.5 text-[15px] text-[#efeff1] outline-none"
+                  >
+                    <option>PUBG MOBILE</option>
+                    <option>FREE FIRE</option>
+                    <option>MOBILE LEGENDS</option>
+                    <option>STEAM</option>
+                    <option>BOSHQA</option>
+                  </select>
+                </div>
+                {streamId ? (
+                  <div className="min-w-0 pt-1">
+                    <label className="mb-2 block text-xs font-medium text-[#5c5c6d]">Stream ID</label>
+                    <CopyButton value={streamId} label="Stream ID" />
+                  </div>
+                ) : null}
               </div>
-              <button type="button" onClick={regenerateKey} disabled={busy} style={{ width: "100%", height: 48, marginTop: 14, borderRadius: 14, border: "1px solid rgba(255,255,255,.1)", background: "rgba(0,0,0,.25)", color: "white", fontWeight: 900, cursor: "pointer", opacity: busy ? 0.6 : 1 }}>
-                Yangi stream key olish
+            </div>
+            <div className="min-w-0 2xl:pl-2">
+              <h4 className="mb-5 text-xs font-semibold uppercase tracking-wide text-[#adadb8]">OBS</h4>
+              <div className="flex flex-col gap-5">
+                <div className="min-w-0">
+                  <label className="mb-2 block text-xs font-medium text-[#5c5c6d]">Server URL</label>
+                  <CopyButton value={serverUrl} />
+                </div>
+                <div className="min-w-0">
+                  <SecretCopyField value={streamKey} label="Stream Key" />
+                </div>
+              </div>
+              <button
+                onClick={regenerateKey}
+                disabled={busy}
+                className="mt-6 inline-flex h-9 items-center gap-2 rounded-md bg-[#1f1f23] px-4 text-sm font-medium text-[#adadb8] transition hover:bg-[#26262c] hover:text-white disabled:opacity-50"
+              >
+                <RefreshCw size={15} />
+                Yangi key
               </button>
-            </Card>
+            </div>
           </div>
-        </div>
-      </div>
 
-      <style jsx>{`
-        .studio-top-row { flex-direction: column; }
-        @media (min-width: 1180px) {
-          .studio-top-row { flex-direction: row; }
-        }
-      `}</style>
+          {/* Error */}
+          {error && (
+            <div className="border-b border-red-500/10 bg-red-500/5 px-5 py-3 sm:px-7">
+              <p className="text-sm font-medium text-red-400">{error}</p>
+            </div>
+          )}
+          </div>
+        </main>
+      </div>
     </div>
   );
 }
-
