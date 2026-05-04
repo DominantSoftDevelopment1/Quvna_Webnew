@@ -13,17 +13,6 @@ export type StudioChatItem = {
   isHost?: boolean;
 };
 
-const AVATAR_COLORS = [
-  "bg-[#9147ff]", "bg-[#00b5ad]", "bg-[#e91e8c]",
-  "bg-[#fa8231]", "bg-[#0abde3]", "bg-[#10ac84]",
-];
-
-function avatarBg(name: string): string {
-  let h = 0;
-  for (let i = 0; i < name.length; i++) h = name.charCodeAt(i) + ((h << 5) - h);
-  return AVATAR_COLORS[Math.abs(h) % AVATAR_COLORS.length];
-}
-
 function GiftIcon({ className = "" }: { className?: string }) {
   return (
     <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden>
@@ -35,40 +24,18 @@ function GiftIcon({ className = "" }: { className?: string }) {
 }
 
 function ChatLine({ msg }: { msg: StudioChatItem }) {
-  const initial = (msg.user || "?").trim().charAt(0).toUpperCase();
-  const bg = avatarBg(msg.user);
-
   return (
-    <div className="group flex min-w-0 items-start gap-2 px-3 py-[5px] hover:bg-white/[0.04]">
-      {/* Vaqt */}
-      <span className="w-[36px] shrink-0 pt-[3px] text-[11px] leading-none text-zinc-600">
-        {msg.time ?? ""}
-      </span>
-
-      {/* Avatar */}
-      <div className={`mt-[1px] h-7 w-7 shrink-0 overflow-hidden rounded-full ${bg}`}>
-        {msg.avatarHref ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={msg.avatarHref} alt="" className="h-full w-full object-cover" loading="lazy" />
-        ) : (
-          <div className="flex h-full w-full items-center justify-center text-[12px] font-extrabold text-white/90">
-            {initial}
-          </div>
-        )}
-      </div>
-
-      {/* Kontent */}
-      <div className="min-w-0 flex-1 pt-[1px]">
-        <p className="min-w-0 break-words text-[14px] leading-[1.55]">
-          {msg.badge ? (
-            <span className="mr-0.5 text-[13px]">{msg.badge} </span>
-          ) : null}
-          <span className={`font-bold ${msg.color || "text-[#00b5ad]"}`}>
-            {msg.user}:{" "}
-          </span>
-          <span className="text-zinc-100">{msg.text}</span>
-        </p>
-      </div>
+    <div className="min-w-0 px-3 py-[3px] hover:bg-white/[0.03]">
+      <p className="min-w-0 break-words text-[14px] leading-[1.6]">
+        {msg.badge ? (
+          <span className="mr-1 text-[12px] opacity-80">{msg.badge}</span>
+        ) : null}
+        <span className={`font-semibold ${msg.color || "text-[#00b5ad]"}`}>
+          {msg.user}
+        </span>
+        <span className="text-zinc-400">: </span>
+        <span className="text-zinc-100">{msg.text}</span>
+      </p>
     </div>
   );
 }
