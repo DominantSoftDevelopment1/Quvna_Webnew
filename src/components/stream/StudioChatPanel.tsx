@@ -23,7 +23,7 @@ function GiftIcon({ className = "" }: { className?: string }) {
 
 function ChatLine({ msg }: { msg: StudioChatItem }) {
   return (
-    <div className="group px-4 py-[5px] text-[15px] leading-[1.5] hover:bg-white/[0.04]">
+    <div className="group px-4 py-1.5 text-[15px] leading-[1.5] hover:bg-white/[0.04]">
       {/* Twitch uslub: Username: matn — bitta qatorda, vaqt hover'da */}
       <p className="min-w-0 break-words">
         <span

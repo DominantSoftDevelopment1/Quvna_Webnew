@@ -867,11 +867,12 @@ export default function StreamStudioPage() {
         </div>
       </header>
 
-      {/* Chat balandligi = video oynasi (16:9) — chat video qatorida */}
-      <div className="mx-auto flex h-[calc(100vh-80px)] min-h-0 w-full max-w-[1800px] flex-col overflow-hidden">
-        <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-          <div className="flex w-full shrink-0 items-stretch">
-            <div className="relative min-h-0 min-w-0 flex-1 aspect-video bg-black">
+      {/* Sahifa natural scroll — video+chat to'liq ekran, pastki detallar oddiy oqim */}
+      <div className="mx-auto w-full max-w-[1800px]">
+        <main className="flex min-w-0 flex-col">
+          {/* Video + Chat qatori — to'liq viewport balandligi */}
+          <div className="flex w-full items-stretch" style={{ height: "calc(100vh - 48px)", minHeight: 480 }}>
+            <div className="relative min-h-0 min-w-0 flex-1 bg-black">
             {streamId ? (
               <>
                 <video
@@ -930,7 +931,7 @@ export default function StreamStudioPage() {
             )}
           </div>
 
-            <aside className="flex min-h-0 w-[clamp(340px,26vw,460px)] shrink-0 flex-col overflow-hidden border-l border-white/[0.06] 2xl:w-[480px]">
+            <aside className="sticky top-[48px] flex w-[clamp(340px,26vw,460px)] shrink-0 flex-col overflow-hidden border-l border-white/[0.06] 2xl:w-[480px]" style={{ height: "calc(100vh - 48px)" }}>
               <StudioChatPanel
                 className="h-full min-h-0 w-full flex-1"
                 items={studioChatItems}
@@ -951,7 +952,7 @@ export default function StreamStudioPage() {
             </aside>
           </div>
 
-          <div className="min-h-0 flex-1 overflow-y-auto">
+          <div>
           {/* STREAMER INFO BAR */}
           <div className="box-border flex min-w-0 items-center border-b border-white/[0.06] bg-[#18181b] px-5 py-5 sm:px-7 sm:py-6">
             <div className="flex min-w-0 flex-1 items-start gap-5">
