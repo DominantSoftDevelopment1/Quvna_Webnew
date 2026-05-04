@@ -3,6 +3,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import axios, { type AxiosError } from "axios";
 import Hls from "hls.js";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { BASE_URL, WS_URL } from "@/lib/constants";
 import {
@@ -187,18 +188,18 @@ function CopyButton({ value, label }: { value: string; label?: string }) {
   };
 
   return (
-    <div className="group flex min-w-0 items-center gap-2">
+    <div className="group flex min-w-0 items-center gap-3">
       <div className="relative min-w-0 flex-1">
         <input
           ref={inputRef}
           readOnly
           value={value}
-          className="box-border h-11 w-full min-w-0 rounded-md border border-white/[0.06] bg-[#0e0e10] px-3.5 text-sm font-mono text-[#adadb8] outline-none transition focus:border-[#9147ff]/20"
+          className="box-border min-h-[56px] w-full min-w-0 rounded-lg border border-white/[0.08] bg-[#0e0e10] px-4 py-3.5 text-[14px] font-mono leading-normal text-[#adadb8] outline-none transition focus:border-[#9147ff]/25 sm:min-h-[60px] sm:px-4 sm:py-4 sm:text-[15px]"
         />
       </div>
       <button
         onClick={handleCopy}
-        className={`box-border flex h-11 w-11 shrink-0 items-center justify-center rounded-md border transition ${
+        className={`box-border flex h-[56px] w-[56px] shrink-0 items-center justify-center rounded-lg border transition sm:h-[60px] sm:w-[60px] ${
           copied
             ? "border-[#00d26a]/30 bg-[#00d26a]/10 text-[#00d26a]"
             : "border-white/[0.06] text-[#5c5c6d] hover:text-[#adadb8]"
@@ -228,26 +229,26 @@ function SecretCopyField({ value, label }: { value: string; label: string }) {
 
   return (
     <div className="min-w-0">
-      <div className="mb-2 flex items-center justify-between gap-2">
-        <label className="text-xs font-medium text-[#5c5c6d]">{label}</label>
+      <div className="mb-3.5 flex items-center justify-between gap-3 sm:mb-4">
+        <label className="text-[13px] font-medium text-[#5c5c6d]">{label}</label>
         <button
           type="button"
           onClick={() => setShow((s) => !s)}
-          className="shrink-0 text-xs text-[#9147ff]/80 transition hover:text-[#9147ff]"
+          className="shrink-0 text-[13px] text-[#9147ff]/85 transition hover:text-[#9147ff]"
         >
           {show ? "Yashirish" : "Ko'rsatish"}
         </button>
       </div>
-      <div className="group flex min-w-0 items-center gap-2">
+      <div className="group flex min-w-0 items-center gap-3">
         <input
           readOnly
           value={display}
-          className="box-border h-11 min-h-0 min-w-0 flex-1 rounded-md border border-white/[0.06] bg-[#0e0e10] px-3.5 font-mono text-sm text-[#adadb8] outline-none"
+          className="box-border min-h-[56px] min-w-0 flex-1 rounded-lg border border-white/[0.08] bg-[#0e0e10] px-4 py-3.5 font-mono text-[14px] leading-normal text-[#adadb8] outline-none sm:min-h-[60px] sm:text-[15px]"
         />
         <button
           type="button"
           onClick={() => void handleCopy()}
-          className={`box-border flex h-11 w-11 shrink-0 items-center justify-center rounded-md border transition ${
+          className={`box-border flex h-[56px] w-[56px] shrink-0 items-center justify-center rounded-lg border transition sm:h-[60px] sm:w-[60px] ${
             copied
               ? "border-[#00d26a]/30 bg-[#00d26a]/10 text-[#00d26a]"
               : "border-white/[0.06] text-[#5c5c6d] hover:text-[#adadb8]"
@@ -274,7 +275,7 @@ export default function StreamStudioPage() {
     }
     return getStoredStreamUserId();
   }, [storeUser]);
-  const { data: profileData } = useProfile(profileUserId);
+  const { data: profileData, isPending: profilePending } = useProfile(profileUserId);
 
   const [myDisplayName, setMyDisplayName] = useState<string>(() => {
     if (typeof window === "undefined") return "Men";
@@ -292,14 +293,16 @@ export default function StreamStudioPage() {
   useEffect(() => {
     const p = profileData as Record<string, unknown> | null | undefined;
     if (!p) return;
-    const username = typeof p.username === "string" ? p.username.trim() : "";
-    if (username) {
-      localStorage.setItem("quvna_stream_username", username);
-      setMyDisplayName(username);
-      return;
-    }
-    const fullName = typeof p.fullName === "string" ? p.fullName.trim() : "";
-    if (fullName) setMyDisplayName(fullName);
+    queueMicrotask(() => {
+      const username = typeof p.username === "string" ? p.username.trim() : "";
+      if (username) {
+        localStorage.setItem("quvna_stream_username", username);
+        setMyDisplayName(username);
+        return;
+      }
+      const fullName = typeof p.fullName === "string" ? p.fullName.trim() : "";
+      if (fullName) setMyDisplayName(fullName);
+    });
   }, [profileData]);
 
   const [title, setTitle] = useState("PUBG Mobile turnir — jonli efir");
@@ -331,7 +334,9 @@ export default function StreamStudioPage() {
 
   useEffect(() => {
     myDisplayNameRef.current = myDisplayName;
-    setChatMessages((prev) => prev.map((m) => (m.isMe ? { ...m, user: myDisplayName } : m)));
+    queueMicrotask(() => {
+      setChatMessages((prev) => prev.map((m) => (m.isMe ? { ...m, user: myDisplayName } : m)));
+    });
   }, [myDisplayName]);
 
   const serverUrl = useMemo(() => buildRtmpServerUrl(BASE_URL), []);
@@ -527,39 +532,47 @@ export default function StreamStudioPage() {
   };
 
   useEffect(() => {
-    const token = localStorage.getItem("access_token");
-    if (!token) {
-      setError("Login qilinmagan. Login sahifasiga yo'naltirilmoqda...");
-      router.push("/auth/login");
-      return;
-    }
+    queueMicrotask(() => {
+      const token = localStorage.getItem("access_token");
+      if (!token) {
+        setError("Login qilinmagan. Login sahifasiga yo'naltirilmoqda...");
+        router.push("/auth/login");
+        return;
+      }
 
-    const saved = localStorage.getItem(persistKey());
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved) as { id?: string; key?: string; putPath?: string };
-        if (parsed.id && parsed.key) {
-          setStreamId(parsed.id);
-          setStreamKey(parsed.key);
-          setStreamPutPathId(parsed.putPath?.trim() || parsed.id);
-          setStatus("waiting");
-        }
-      } catch {}
-    }
-    loadExistingStream();
+      const saved = localStorage.getItem(persistKey());
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved) as { id?: string; key?: string; putPath?: string };
+          if (parsed.id && parsed.key) {
+            setStreamId(parsed.id);
+            setStreamKey(parsed.key);
+            setStreamPutPathId(parsed.putPath?.trim() || parsed.id);
+            setStatus("waiting");
+          }
+        } catch {}
+      }
+      void loadExistingStream();
+    });
+    // Ilk yuklash + router; loadExistingStream deps ga kiritilsa har render takrorlanadi
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router]);
 
   useEffect(() => {
-    setHlsIndex(0);
-    setHlsPlaying(false);
+    queueMicrotask(() => {
+      setHlsIndex(0);
+      setHlsPlaying(false);
+    });
   }, [streamId]);
 
   useEffect(() => {
     const sid = streamId?.trim();
     if (!sid) {
-      setStudioSocketHint(null);
-      setChatHistoryStatus("ready");
-      setChatMessages([]);
+      queueMicrotask(() => {
+        setStudioSocketHint(null);
+        setChatHistoryStatus("ready");
+        setChatMessages([]);
+      });
       wsRef.current?.close();
       wsRef.current = null;
       return;
@@ -796,36 +809,66 @@ export default function StreamStudioPage() {
     }
   }, [viewerWatchUrl]);
 
+  /** Sidebar/Topbar bilan bir xil: API + auth store (profil kechiksa ham rasm chiqadi) */
   const profileAvatar = useMemo(() => {
     const p = profileData as Record<string, unknown> | null | undefined;
-    if (!p) return "";
-    if (typeof p.avatar === "string" && p.avatar.trim()) return p.avatar.trim();
-    if (typeof p.avatarUrl === "string" && p.avatarUrl.trim()) return p.avatarUrl.trim();
-    const att = p.attachmentResponseDTO as Record<string, unknown> | undefined;
-    if (att && typeof att === "object") {
-      const u = att.preSignedUrl ?? att.contentURL ?? att.pre_signed_url;
-      if (typeof u === "string" && u.trim()) return u.trim();
-    }
-    return "";
-  }, [profileData]);
+    const fromRow = (r: Record<string, unknown> | null | undefined) => {
+      if (!r) return "";
+      if (typeof r.avatar === "string" && r.avatar.trim()) return r.avatar.trim();
+      if (typeof r.avatarUrl === "string" && r.avatarUrl.trim()) return r.avatarUrl.trim();
+      const att = r.attachmentResponseDTO as Record<string, unknown> | undefined;
+      if (att && typeof att === "object") {
+        const u = att.preSignedUrl ?? att.contentURL ?? att.pre_signed_url;
+        if (typeof u === "string" && u.trim()) return u.trim();
+      }
+      return "";
+    };
+    const fromStore = () => {
+      const u = storeUser;
+      if (!u) return "";
+      if (typeof u.avatar === "string" && u.avatar.trim()) return u.avatar.trim();
+      const a = u.attachmentResponseDTO;
+      if (a?.preSignedUrl?.trim()) return a.preSignedUrl.trim();
+      if (a?.contentURL?.trim()) return a.contentURL.trim();
+      return "";
+    };
+    return fromRow(p) || fromStore();
+  }, [profileData, storeUser]);
 
   const profileAvatarSrc = useMemo(() => {
     if (!profileAvatar) return "";
     return profileAvatar.startsWith("http") || profileAvatar.startsWith("data:") ? profileAvatar : cdnUrl(profileAvatar);
   }, [profileAvatar]);
 
+  const profileRow = profileData as Record<string, unknown> | null | undefined;
+  const profileNumericId = (() => {
+    const raw = profileRow?.id;
+    if (typeof raw === "number" && Number.isFinite(raw)) return raw;
+    if (typeof raw === "string" && /^\d+$/.test(raw)) return Number(raw);
+    return profileUserId ?? null;
+  })();
+  const profileBio =
+    profileRow && typeof profileRow.bio === "string" && profileRow.bio.trim()
+      ? profileRow.bio.trim()
+      : "";
+  const showProfileAvatarSkeleton = Boolean(profileUserId) && profilePending && !profileAvatarSrc;
+
   return (
-    <div data-stream-studio-page className="flex min-h-screen flex-col bg-[#0e0e10] text-[#efeff1] antialiased">
-      {/* Twitch layout: items-start flex — main scroll, aside sticky */}
-      <div className="mx-auto flex w-full max-w-[1800px] items-start">
-        <main className="min-w-0 flex-1 overflow-hidden">
+    <div
+      data-stream-studio-page
+      className="flex min-h-0 flex-1 flex-col bg-[#0e0e10] text-[#efeff1] antialiased max-lg:min-h-[calc(100dvh-5.75rem)] lg:min-h-[calc(100dvh-6.5rem)]"
+    >
+      {/* Yuqori: to‘liq kenglik (video+strimer+chat). Pastdagi profil/OBS alohida cheklangan konteynerda. */}
+      <div className="flex min-h-0 w-full min-w-0 flex-1 flex-col">
+        <div className="flex min-h-0 w-full flex-1 flex-col lg:min-h-0 lg:flex-row lg:items-stretch">
+        <main className="flex min-h-0 w-full min-w-0 flex-none flex-col overflow-x-hidden overflow-y-auto lg:flex-1 lg:min-h-0">
           {/* Video — 16:9 aspect ratio */}
-          <div className="relative aspect-video w-full bg-black">
+          <div className="relative aspect-video w-full shrink-0 bg-black">
             {streamId ? (
               <>
                 <video ref={videoRef} controls autoPlay muted playsInline className="h-full w-full object-contain" />
                 {!hlsPlaying && (
-                  <div className="absolute inset-0 flex flex-col items-center justify-center">
+                  <div className="absolute inset-0 flex flex-col items-center justify-end pb-10 sm:pb-14">
                     <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-white/[0.04]">
                       <Loader2 size={26} className="animate-spin text-white/20" />
                     </div>
@@ -835,7 +878,7 @@ export default function StreamStudioPage() {
                 )}
               </>
             ) : (
-              <div className="absolute inset-0 flex flex-col items-center justify-center">
+              <div className="absolute inset-0 flex flex-col items-center justify-end pb-10 sm:pb-14">
                 <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-white/[0.04]">
                   <Tv size={26} className="text-white/20" />
                 </div>
@@ -864,14 +907,14 @@ export default function StreamStudioPage() {
               </div>
             )}
           </div>
-          {/* Streamer info + settings — natural scroll */}
-          <div>
           {/* STREAMER INFO — avatar 64px, ism, kategoriya, tugmalar */}
-          <div className="box-border flex min-w-0 items-start gap-4 border-b border-white/[0.06] bg-[#18181b] px-6 py-5">
+          <div className="box-border flex min-w-0 items-start gap-5 border-b border-white/[0.06] bg-[#18181b] px-4 py-6 sm:gap-6 sm:px-6 sm:py-7 lg:px-10 lg:py-8 xl:px-14 xl:py-9">
             {/* Avatar 64px */}
             <div className="relative shrink-0">
               <div className="h-16 w-16 overflow-hidden rounded-full border-2 border-[#00d26a]/40 bg-[#2d2d35]">
-                {profileAvatarSrc ? (
+                {showProfileAvatarSkeleton ? (
+                  <div className="h-full w-full animate-pulse bg-zinc-600/40" aria-hidden />
+                ) : profileAvatarSrc ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={profileAvatarSrc} alt="" className="h-full w-full object-cover" />
                 ) : (
@@ -889,6 +932,19 @@ export default function StreamStudioPage() {
                 <span className="rounded bg-[#00d26a]/10 px-2 py-0.5 text-[11px] font-semibold text-[#00d26a]">СТРИМЕР</span>
               </div>
               <p className="mt-0.5 text-[13px] text-zinc-500">{game}</p>
+              <div className="mt-2 flex min-w-0 flex-wrap items-center gap-x-4 gap-y-1.5 text-[12px] text-zinc-500">
+                <span className="tabular-nums">ID: {profileNumericId != null ? profileNumericId : "—"}</span>
+                <Link
+                  href="/profile/edit"
+                  className="inline-flex items-center gap-1 font-semibold text-[#00d26a] hover:text-[#00e075] hover:underline"
+                >
+                  <Edit3 size={12} aria-hidden />
+                  Profil ma&apos;lumotlari
+                </Link>
+              </div>
+              {profileBio ? (
+                <p className="mt-2 line-clamp-2 text-[12px] leading-relaxed text-zinc-400">{profileBio}</p>
+              ) : null}
               {/* Overlay text input — Twitch'da tavsif matn */}
               <div className="relative mt-3 min-w-0">
                 <input
@@ -959,80 +1015,11 @@ export default function StreamStudioPage() {
               </div>
             </div>
           </div>
-
-          {/* SETTINGS: tor ekranda 1 ustun — siqilish yo‘q */}
-          <div className="grid min-w-0 grid-cols-1 gap-8 border-b border-white/[0.06] bg-[#18181b] px-5 py-6 sm:px-7 sm:py-8 2xl:grid-cols-2 2xl:gap-x-14 2xl:gap-y-8">
-            <div className="min-w-0 2xl:border-r 2xl:border-white/[0.06] 2xl:pr-10">
-              <h4 className="mb-5 text-xs font-semibold uppercase tracking-wide text-[#adadb8]">Stream ma&apos;lumotlari</h4>
-              <div className="flex flex-col gap-5">
-                <div className="min-w-0">
-                  <label className="mb-2 block text-xs font-medium text-[#5c5c6d]">Nomi</label>
-                  <input
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    className="box-border h-11 w-full min-w-0 rounded-md border border-white/[0.06] bg-[#0e0e10] px-3.5 text-[15px] text-[#efeff1] outline-none focus:border-[#9147ff]/30"
-                  />
-                </div>
-                <div className="min-w-0">
-                  <label className="mb-2 block text-xs font-medium text-[#5c5c6d]">Kategoriya</label>
-                  <select
-                    value={game}
-                    onChange={(e) => setGame(e.target.value)}
-                    className="box-border h-11 w-full min-w-0 rounded-md border border-white/[0.06] bg-[#0e0e10] px-3.5 text-[15px] text-[#efeff1] outline-none"
-                  >
-                    <option>PUBG MOBILE</option>
-                    <option>FREE FIRE</option>
-                    <option>MOBILE LEGENDS</option>
-                    <option>STEAM</option>
-                    <option>BOSHQA</option>
-                  </select>
-                </div>
-                {streamId ? (
-                  <div className="min-w-0 pt-1">
-                    <label className="mb-2 block text-xs font-medium text-[#5c5c6d]">Stream ID</label>
-                    <CopyButton value={streamId} label="Stream ID" />
-                  </div>
-                ) : null}
-              </div>
-            </div>
-            <div className="min-w-0 2xl:pl-2">
-              <h4 className="mb-5 text-xs font-semibold uppercase tracking-wide text-[#adadb8]">OBS</h4>
-              <div className="flex flex-col gap-5">
-                <div className="min-w-0">
-                  <label className="mb-2 block text-xs font-medium text-[#5c5c6d]">Server URL</label>
-                  <CopyButton value={serverUrl} />
-                </div>
-                <div className="min-w-0">
-                  <SecretCopyField value={streamKey} label="Stream Key" />
-                </div>
-              </div>
-              <button
-                onClick={regenerateKey}
-                disabled={busy}
-                className="mt-6 inline-flex h-9 items-center gap-2 rounded-md bg-[#1f1f23] px-4 text-sm font-medium text-[#adadb8] transition hover:bg-[#26262c] hover:text-white disabled:opacity-50"
-              >
-                <RefreshCw size={15} />
-                Yangi key
-              </button>
-            </div>
-          </div>
-
-          {/* Error */}
-          {error && (
-            <div className="border-b border-red-500/10 bg-red-500/5 px-5 py-3 sm:px-7">
-              <p className="text-sm font-medium text-red-400">{error}</p>
-            </div>
-          )}
-          </div>
         </main>
 
-        {/* Chat — main bilan sibling, sticky: sahifa scroll qilganda qimirlamaydi */}
-        <aside
-          className="sticky top-0 w-[460px] shrink-0 self-start overflow-hidden border-l border-white/[0.06]"
-          style={{ height: "100vh" }}
-        >
+        <aside className="box-border flex min-h-[min(300px,45dvh)] w-full min-w-0 flex-1 flex-col overflow-hidden border-t border-white/[0.06] lg:h-auto lg:min-h-0 lg:w-[min(100%,520px)] lg:flex-none lg:border-l lg:border-t-0 xl:w-[min(100%,580px)] 2xl:w-[min(100%,640px)]">
           <StudioChatPanel
-            className="h-full min-h-0 w-full"
+            className="min-h-0 w-full min-w-0 flex-1 rounded-none border-l-0"
             items={studioChatItems}
             chatInput={ownerMessage}
             onChatInputChange={(v) => {
@@ -1047,8 +1034,82 @@ export default function StreamStudioPage() {
             socketHint={studioSocketHint}
             chatHistoryStatus={chatHistoryStatus}
             emptyHint={streamId ? "Hozircha xabar yo'q." : "Avval stream yarating."}
+            emptySubhint={
+              streamId
+                ? "Jonli efir yoki chat faol bo‘lganda xabarlar shu ro‘yxatda paydo bo‘ladi."
+                : "Chap panelda «Yaratish» tugmasi bilan stream oching — shundan keyin chat yozish mumkin bo‘ladi."
+            }
           />
         </aside>
+        </div>
+
+        <div className="mx-auto box-border min-w-0 w-full max-w-[min(100%,1180px)] shrink-0 overflow-x-hidden pb-14 sm:pb-20 lg:pb-28">
+          {/* SETTINGS */}
+          <div className="grid min-w-0 grid-cols-1 gap-12 border-b border-white/[0.06] bg-[#18181b] px-4 py-11 sm:gap-14 sm:px-6 sm:py-12 lg:gap-16 lg:px-10 lg:py-14 xl:px-14 xl:py-16 2xl:grid-cols-2 2xl:gap-x-28 2xl:gap-y-14">
+            <div className="min-w-0 2xl:border-r 2xl:border-white/[0.06] 2xl:pr-20">
+              <h4 className="mb-7 text-[12px] font-semibold uppercase tracking-wide text-[#adadb8] sm:mb-9 sm:text-xs">
+                Stream ma&apos;lumotlari
+              </h4>
+              <div className="flex flex-col gap-8 sm:gap-9 lg:gap-10">
+                <div className="min-w-0">
+                  <label className="mb-3 block text-[13px] font-medium text-[#5c5c6d] sm:mb-3.5">Nomi</label>
+                  <input
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    className="box-border min-h-[56px] w-full min-w-0 rounded-lg border border-white/[0.08] bg-[#0e0e10] px-4 py-3.5 text-[15px] leading-normal text-[#efeff1] outline-none focus:border-[#9147ff]/35 sm:min-h-[60px] sm:px-4 sm:py-4 sm:text-[16px]"
+                  />
+                </div>
+                <div className="min-w-0">
+                  <label className="mb-3 block text-[13px] font-medium text-[#5c5c6d] sm:mb-3.5">Kategoriya</label>
+                  <select
+                    value={game}
+                    onChange={(e) => setGame(e.target.value)}
+                    className="box-border min-h-[56px] w-full min-w-0 rounded-lg border border-white/[0.08] bg-[#0e0e10] px-4 py-3.5 text-[15px] leading-normal text-[#efeff1] outline-none sm:min-h-[60px] sm:py-4 sm:text-[16px]"
+                  >
+                    <option>PUBG MOBILE</option>
+                    <option>FREE FIRE</option>
+                    <option>MOBILE LEGENDS</option>
+                    <option>STEAM</option>
+                    <option>BOSHQA</option>
+                  </select>
+                </div>
+                {streamId ? (
+                  <div className="min-w-0 pt-0.5">
+                    <label className="mb-3 block text-[13px] font-medium text-[#5c5c6d] sm:mb-3.5">Stream ID</label>
+                    <CopyButton value={streamId} label="Stream ID" />
+                  </div>
+                ) : null}
+              </div>
+            </div>
+            <div className="min-w-0 2xl:pl-8">
+              <h4 className="mb-7 text-[12px] font-semibold uppercase tracking-wide text-[#adadb8] sm:mb-9 sm:text-xs">OBS</h4>
+              <div className="flex flex-col gap-8 sm:gap-9 lg:gap-10">
+                <div className="min-w-0">
+                  <label className="mb-3 block text-[13px] font-medium text-[#5c5c6d] sm:mb-3.5">Server URL</label>
+                  <CopyButton value={serverUrl} />
+                </div>
+                <div className="min-w-0">
+                  <SecretCopyField value={streamKey} label="Stream Key" />
+                </div>
+              </div>
+              <button
+                onClick={regenerateKey}
+                disabled={busy}
+                className="mt-10 inline-flex min-h-11 items-center gap-2 rounded-lg bg-[#1f1f23] px-5 py-3 text-[14px] font-medium text-[#adadb8] transition hover:bg-[#26262c] hover:text-white disabled:opacity-50 sm:mt-12"
+              >
+                <RefreshCw size={15} />
+                Yangi key
+              </button>
+            </div>
+          </div>
+
+          {/* Error */}
+          {error && (
+            <div className="border-b border-red-500/10 bg-red-500/5 px-5 py-3 sm:px-7">
+              <p className="text-sm font-medium text-red-400">{error}</p>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
