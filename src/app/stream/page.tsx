@@ -3,7 +3,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import axios, { type AxiosError } from "axios";
 import Hls from "hls.js";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { BASE_URL, WS_URL } from "@/lib/constants";
 import {
@@ -18,7 +17,6 @@ import { chatUsernameColorClass } from "@/components/stream/StreamChatPanel";
 import { buildStreamWsUrl } from "@/lib/streamWs";
 import { deriveStreamRestPathId, pickStreamEntityId } from "@/lib/streamIds";
 import {
-  ArrowLeft,
   Check,
   Copy,
   Edit3,
@@ -26,7 +24,6 @@ import {
   Link2,
   Loader2,
   RefreshCw,
-  Send,
   Shield,
   Tv,
   User,
@@ -757,6 +754,8 @@ export default function StreamStudioPage() {
   const studioChatItems = useMemo((): StudioChatItem[] => {
     return chatMessages.map((m) => {
       const displayUser = m.isMe ? myDisplayName : m.user;
+      const time = formatChatClock(m.sentAtMs) || "";
+      const badge = m.isHost ? "👑" : m.isMe ? "🟦" : "◇";
       const color =
         m.role === "owner"
           ? "text-cyan-400"
@@ -767,7 +766,9 @@ export default function StreamStudioPage() {
         id: m.id,
         user: displayUser,
         text: m.text,
+        badge,
         color,
+        time,
         isHost: m.isHost,
         ...(m.avatarHref ? { avatarHref: m.avatarHref } : {}),
       };
@@ -815,63 +816,6 @@ export default function StreamStudioPage() {
 
   return (
     <div data-stream-studio-page className="flex min-h-screen flex-col bg-[#0e0e10] text-[#efeff1] antialiased">
-      {/* ===== TWITCH-STYLE HEADER ===== */}
-      <header className="sticky top-0 z-50 h-12 shrink-0 border-b border-white/[0.06] bg-[#0e0e10]/95 backdrop-blur-md">
-        <div className="mx-auto flex h-full max-w-[1600px] items-center justify-between px-4">
-          <div className="flex min-w-0 items-center gap-3">
-            <Link
-              href="/videos"
-              className="flex shrink-0 items-center gap-1.5 rounded-md py-1 pl-0.5 pr-2 text-xs font-medium text-[#adadb8] transition hover:text-white"
-            >
-              <ArrowLeft size={14} aria-hidden />
-              Efirlar
-            </Link>
-            <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded bg-[#00d26a] text-[#0e0e10]">
-              <Send size={14} strokeWidth={2.5} />
-            </div>
-            <span className="text-sm font-bold tracking-tight">Creator Studio</span>
-            <span className="text-white/10">|</span>
-            <span className="text-xs text-[#adadb8]">Jonli efir</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="flex items-center gap-1.5 rounded-full bg-[#1f1f23] px-2.5 py-1 text-[11px] font-medium text-[#adadb8]">
-              <span
-                className={`h-1.5 w-1.5 rounded-full motion-reduce:animate-none ${isLive ? "animate-pulse bg-red-500" : isWaiting ? "bg-amber-500" : "bg-[#5c5c6d]"}`}
-              />
-              {isLive ? "LIVE" : isWaiting ? "OBS kutish" : "Offline"}
-            </span>
-            {!streamId ? (
-              <button
-                disabled={busy}
-                onClick={createStream}
-                className="h-7 rounded border border-white/[0.08] bg-white/[0.03] px-3 text-xs font-medium text-[#adadb8] transition hover:bg-white/[0.06] hover:text-white disabled:opacity-50"
-              >
-                {busy ? "Yaratilmoqda…" : "Yaratish"}
-              </button>
-            ) : (
-              <>
-                {!isLive && (
-                  <button
-                    disabled={busy}
-                    onClick={startLive}
-                    className="h-7 rounded bg-[#00d26a] px-3 text-xs font-bold text-[#0e0e10] transition hover:bg-[#00e075] disabled:opacity-50"
-                  >
-                    Jonli boshlash
-                  </button>
-                )}
-                <button
-                  disabled={busy}
-                  onClick={() => void stopStream()}
-                  className="h-7 rounded border border-red-500/20 bg-red-500/10 px-3 text-xs font-medium text-red-400 transition hover:bg-red-500/20 disabled:opacity-50"
-                >
-                  {isLive ? "To'xtatish" : "Yopish"}
-                </button>
-              </>
-            )}
-          </div>
-        </div>
-      </header>
-
       {/* Twitch layout: items-start flex — main scroll, aside sticky */}
       <div className="mx-auto flex w-full max-w-[1800px] items-start">
         <main className="min-w-0 flex-1 overflow-hidden">
@@ -958,8 +902,45 @@ export default function StreamStudioPage() {
                   {overlayText.length}/120
                 </span>
               </div>
-              {/* Tugmalar */}
+              {/* Tugmalar (stream boshqaruvi — sticky header olib tashlangach shu yerda) */}
               <div className="mt-3 flex min-w-0 flex-wrap items-center gap-2">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-[#1f1f23] px-2.5 py-1 text-[11px] font-medium text-[#adadb8]">
+                  <span
+                    className={`h-1.5 w-1.5 rounded-full motion-reduce:animate-none ${isLive ? "animate-pulse bg-red-500" : isWaiting ? "bg-amber-500" : "bg-[#5c5c6d]"}`}
+                  />
+                  {isLive ? "LIVE" : isWaiting ? "OBS kutish" : "Offline"}
+                </span>
+                {!streamId ? (
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={() => void createStream()}
+                    className="inline-flex h-8 items-center gap-1.5 rounded-md border border-white/[0.08] bg-white/[0.03] px-3 text-[13px] font-medium text-[#adadb8] transition hover:bg-white/[0.06] hover:text-white disabled:opacity-50"
+                  >
+                    {busy ? "Yaratilmoqda…" : "Yaratish"}
+                  </button>
+                ) : (
+                  <>
+                    {!isLive && (
+                      <button
+                        type="button"
+                        disabled={busy}
+                        onClick={startLive}
+                        className="inline-flex h-8 items-center gap-1.5 rounded-md bg-[#00d26a] px-3 text-[13px] font-bold text-[#0e0e10] transition hover:bg-[#00e075] disabled:opacity-50"
+                      >
+                        Jonli boshlash
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      disabled={busy}
+                      onClick={() => void stopStream()}
+                      className="inline-flex h-8 items-center gap-1.5 rounded-md border border-red-500/20 bg-red-500/10 px-3 text-[13px] font-medium text-red-400 transition hover:bg-red-500/20 disabled:opacity-50"
+                    >
+                      {isLive ? "To'xtatish" : "Yopish"}
+                    </button>
+                  </>
+                )}
                 <button onClick={() => setTitle((t) => t)} className="inline-flex h-8 items-center gap-1.5 rounded-md bg-[#9147ff] px-3 text-[13px] font-semibold text-white hover:bg-[#a970ff]">
                   <Edit3 size={13} />Tahrirlash
                 </button>
@@ -1047,8 +1028,8 @@ export default function StreamStudioPage() {
 
         {/* Chat — main bilan sibling, sticky: sahifa scroll qilganda qimirlamaydi */}
         <aside
-          className="sticky top-[48px] w-[clamp(320px,24vw,440px)] shrink-0 self-start overflow-hidden border-l border-white/[0.06] 2xl:w-[460px]"
-          style={{ height: "calc(100vh - 48px)" }}
+          className="sticky top-0 w-[clamp(320px,24vw,440px)] shrink-0 self-start overflow-hidden border-l border-white/[0.06] 2xl:w-[460px]"
+          style={{ height: "100vh" }}
         >
           <StudioChatPanel
             className="h-full min-h-0 w-full"
