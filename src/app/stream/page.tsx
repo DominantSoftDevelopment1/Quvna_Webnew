@@ -765,7 +765,16 @@ export default function StreamStudioPage() {
           : m.role === "moderator"
             ? "text-fuchsia-400"
             : chatUsernameColorClass(displayUser);
-      return { id: m.id, user: displayUser, text: m.text, badge, color, time };
+      return {
+        id: m.id,
+        user: displayUser,
+        text: m.text,
+        badge,
+        color,
+        time,
+        isHost: m.isHost,
+        ...(m.avatarHref ? { avatarHref: m.avatarHref } : {}),
+      };
     });
   }, [chatMessages, myDisplayName]);
 
@@ -1003,7 +1012,7 @@ export default function StreamStudioPage() {
                   Moderatsiya
                 </button>
               </div>
-              <div className="flex shrink-0 items-center gap-2.5 sm:pl-4">
+              <div className="flex shrink-0 items-center gap-2.5 px-[20px]">
                 <button
                   onClick={() => void copyWatchUrl()}
                   className="inline-flex h-9 items-center gap-2 rounded-md bg-[#1f1f23] px-4 text-sm font-medium text-[#adadb8] hover:bg-[#26262c] hover:text-white"
