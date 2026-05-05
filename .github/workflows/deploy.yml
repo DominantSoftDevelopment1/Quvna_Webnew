@@ -11,6 +11,21 @@ jobs:
     if: github.ref == 'refs/heads/master'
 
     steps:
+      # appleboy/ssh-action aks holda «Error: missing server host»
+      # (VPS_HOST bo‘sh yoki Actions secret umuman yozilmagan).
+      - name: Deploy secretlari bor-yo‘qligini tekshirish
+        shell: bash
+        run: |
+          set -e
+          missing=()
+          [[ -z "${{ secrets.VPS_HOST }}" ]] && missing+=("VPS_HOST")
+          [[ -z "${{ secrets.VPS_USER }}" ]] && missing+=("VPS_USER")
+          [[ -z "${{ secrets.VPS_SSH_KEY }}" ]] && missing+=("VPS_SSH_KEY")
+          if ((${#missing[@]})); then
+            echo "::error title=Actions secretları yo‘q::Repozitoriy: Settings → Secrets and variables → Actions → Repository secrets. Qo'shing: ${missing[*]}. Qo‘shimcha README «quvna.com — CI/CD» bo‘limi."
+            exit 1
+          fi
+
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
