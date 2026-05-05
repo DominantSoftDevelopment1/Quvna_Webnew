@@ -298,7 +298,7 @@ export function useStreamStudio(): StreamStudioController & {
     const token = localStorage.getItem("access_token");
     if (!token) {
       setError("Login qilinmagan. Avval akkauntga kiring.");
-      router.push("/auth/login");
+      // router.push("/auth/login"); // Vaqtinchalik o'chirilgan
       return;
     }
     if (streamId && streamKey) {
@@ -329,7 +329,7 @@ export function useStreamStudio(): StreamStudioController & {
       const statusCode = (err as AxiosError)?.response?.status;
       if (statusCode === 401 || statusCode === 403) {
         setError("Ruxsat yo'q. Qayta login qiling.");
-        router.push("/auth/login");
+        // router.push("/auth/login"); // Vaqtinchalik o'chirilgan
       } else {
         setError("Stream yaratishda xatolik bo'ldi.");
       }
@@ -430,8 +430,8 @@ export function useStreamStudio(): StreamStudioController & {
     queueMicrotask(() => {
       const token = localStorage.getItem("access_token");
       if (!token) {
-        setError("Login qilinmagan. Login sahifasiga yo'naltirilmoqda...");
-        router.push("/auth/login");
+        setError("Login qilinmagan. Avval akkauntga kiring.");
+        // router.push("/auth/login"); // Vaqtinchalik o'chirilgan
         return;
       }
 
