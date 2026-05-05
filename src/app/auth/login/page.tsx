@@ -5,12 +5,10 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { useAuthStore } from "@/store/auth.store";
-import { Eye, EyeOff, LogIn } from "lucide-react";
+import { LogIn } from "lucide-react";
 
 export default function LoginPage() {
   const [phoneNumber, setPhoneNumber] = useState("");
-  const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -23,17 +21,22 @@ export default function LoginPage() {
     setLoading(true);
     try {
       const cleanPhone = phoneNumber.replace(/[\s\-().]/g, "");
-      const { data } = await api.post("/api/auth/login", { phoneNumber: cleanPhone, password });
+      console.log("[v0] Login attempt:", { phoneNumber: cleanPhone });
+      const { data } = await api.post("/api/auth/login", { phoneNumber: cleanPhone });
+      console.log("[v0] Login response:", data);
       const d = data?.data;
       if (d?.accessToken) {
+        console.log("[v0] Login successful, setting tokens");
         setTokens(d.accessToken, d.refreshToken);
         localStorage.setItem("userId", String(d.users?.id ?? ""));
         if (d.users) setUser(d.users);
         router.push("/");
       } else {
+        console.log("[v0] No access token in response");
         setError("Telefon raqam yoki parol noto'g'ri");
       }
     } catch (err: unknown) {
+      console.log("[v0] Login error:", err);
       const msg = (err as { response?: { data?: { errors?: { msg: string }[] } } })
         ?.response?.data?.errors?.[0]?.msg;
       setError(msg ?? "Xatolik yuz berdi. Qaytadan urinib ko'ring.");
@@ -79,36 +82,7 @@ export default function LoginPage() {
             />
           </div>
 
-          <div>
-            <label className="block text-base font-medium mb-2" style={{ color: "var(--text-secondary)" }}>
-              Parol
-            </label>
-            <div className="relative">
-              <input
-                type={showPassword ? "text" : "password"}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                required
-                className="my-[5px] w-full rounded-xl text-base outline-none focus:ring-2"
-                style={{
-                  background: "var(--bg-card)",
-                  border: "1px solid var(--border)",
-                  color: "var(--text-primary)",
-                  padding: "8px",
-                  paddingRight: "48px",
-                }}
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword((v) => !v)}
-                className="absolute right-4 top-1/2 -translate-y-1/2"
-                style={{ color: "var(--text-muted)" }}
-              >
-                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-              </button>
-            </div>
-          </div>
+
 
           {error && (
             <p className="text-sm text-red-400 text-center">{error}</p>
