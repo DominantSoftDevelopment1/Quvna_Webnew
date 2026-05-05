@@ -73,8 +73,6 @@ interface StreamViewerContentProps {
 const STREAMER_FALLBACK = {
   username: "Streamer",
   avatar: "",
-  game: "Grand Theft Auto V",
-  language: "Ruscha",
 };
 
 export function StreamViewerContent({ streamId }: StreamViewerContentProps) {
@@ -110,6 +108,12 @@ export function StreamViewerContent({ streamId }: StreamViewerContentProps) {
   streamOwnerUserIdRef.current = streamOwnerUserId;
 
   const streamOwnerPublicNameRef = useRef("");
+  const streamTitle = useMemo(() => {
+    const name = streamMeta?.name?.trim();
+    const t = streamMeta?.title?.trim();
+    return name || t || "";
+  }, [streamMeta]);
+
   const streamerDisplay = useMemo(() => {
     const u = streamMeta?.user;
     if (!u) return STREAMER_FALLBACK;
@@ -121,8 +125,6 @@ export function StreamViewerContent({ streamId }: StreamViewerContentProps) {
     return {
       username: name,
       avatar: u.avatar ?? "",
-      game: STREAMER_FALLBACK.game,
-      language: STREAMER_FALLBACK.language,
     };
   }, [streamMeta]);
 
@@ -499,11 +501,13 @@ export function StreamViewerContent({ streamId }: StreamViewerContentProps) {
     };
   }, [streamId, hlsUrl, hlsCandidates.length]);
 
+  const pinnedLine = streamTitle || `${streamerDisplay.username} — jonli efir`;
+
   return (
-    <main className="flex h-full min-h-0 w-full min-w-0 flex-col bg-transparent p-3">
-      <div className="grid h-full min-h-0 w-full min-w-0 grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_480px] 2xl:grid-cols-[minmax(0,1fr)_520px]">
+    <main className="flex h-full min-h-0 w-full min-w-0 flex-col bg-transparent p-3 sm:p-4 lg:p-5">
+      <div className="grid h-full min-h-0 w-full min-w-0 grid-cols-1 gap-4 sm:gap-5 xl:grid-cols-[minmax(0,1fr)_480px] 2xl:grid-cols-[minmax(0,1fr)_520px]">
         <section className="flex min-h-0 min-w-0 flex-col overflow-hidden rounded-xl border border-white/15 bg-[#111214] shadow-[0_18px_45px_rgba(0,0,0,0.55)]">
-          <div className="w-full bg-[#090a0b] p-2">
+          <div className="w-full bg-[#090a0b] p-2 sm:p-2.5">
             <div className="relative aspect-video w-full overflow-hidden rounded-lg border border-white/15 bg-black">
               <video
                 ref={videoRef}
@@ -526,17 +530,17 @@ export function StreamViewerContent({ streamId }: StreamViewerContentProps) {
                 </div>
               )}
 
-              <div className="absolute right-4 top-4 inline-flex items-center gap-2 rounded-md border border-white/20 bg-black/70 px-3 py-1.5 text-[12px] font-semibold text-white backdrop-blur-sm">
-                <Users size={14} />
-                <span>{liveUserCount}</span>
+              <div className="absolute right-3 top-3 inline-flex items-center gap-2 rounded-md border border-white/20 bg-black/70 px-3 py-1.5 text-[12px] font-semibold text-white backdrop-blur-sm sm:right-4 sm:top-4">
+                <Users size={14} className="shrink-0 text-white/90" aria-hidden />
+                <span className="tabular-nums">{liveUserCount}</span>
               </div>
             </div>
           </div>
 
-          <div className="border-t border-white/10 px-5 py-4">
-            <div className="flex w-full items-center gap-4 py-[10px]">
-              <div className="flex min-w-0 flex-1 items-center gap-3">
-                <div className="grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded-full bg-[#24262b] text-white">
+          <div className="border-t border-white/10 px-4 py-4 sm:px-6 sm:py-5">
+            <div className="flex w-full flex-col gap-4 py-1 sm:flex-row sm:items-center sm:justify-between sm:gap-5">
+              <div className="flex min-w-0 flex-1 items-center gap-3 sm:gap-4">
+                <div className="grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded-full border border-white/10 bg-[#24262b] text-white sm:h-14 sm:w-14">
                   {streamerDisplay.avatar ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
@@ -545,41 +549,44 @@ export function StreamViewerContent({ streamId }: StreamViewerContentProps) {
                       className="h-full w-full object-cover"
                     />
                   ) : (
-                    <User size={24} />
+                    <User size={24} className="text-white/80" aria-hidden />
                   )}
                 </div>
 
-                <div className="min-w-0">
-                  <p className="flex min-w-0 flex-wrap items-center gap-2 truncate text-[18px] font-semibold text-white">
+                <div className="min-w-0 pr-1">
+                  <p className="flex min-w-0 flex-wrap items-center gap-2 text-[17px] font-semibold leading-snug text-white sm:text-[18px]">
                     <span className="truncate">{streamerDisplay.username}</span>
                     <StreamHostBadge />
                   </p>
-                  <p className="text-[14px] text-white/50">Streamer</p>
+                  <p className="mt-1 text-[13px] text-white/50 sm:text-sm">Streamer</p>
                 </div>
               </div>
 
-              <div className="flex shrink-0 items-center gap-3 px-[10px]">
-                <button className="inline-flex h-10 items-center justify-center rounded-md bg-[#03ff93] px-5 text-[14px] font-semibold text-black transition hover:bg-[#00e884]">
+              <div className="flex shrink-0 flex-wrap items-center gap-2.5 sm:justify-end sm:gap-3 sm:pl-2">
+                <button
+                  type="button"
+                  className="inline-flex min-h-10 items-center justify-center rounded-md bg-[#03ff93] px-4 py-2 text-[14px] font-semibold text-black transition hover:bg-[#00e884] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#03ff93]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#111214] sm:px-5"
+                >
                   Obuna bo&apos;lish
                 </button>
 
                 <button
                   type="button"
-                  aria-label="Share"
-                  className="inline-flex h-10 items-center gap-2 rounded-md bg-[#272727] px-[18px] text-white transition hover:bg-[#323232]"
+                  aria-label="Ulashish"
+                  className="inline-flex min-h-10 items-center gap-2 rounded-md bg-[#272727] px-4 py-2 text-white transition hover:bg-[#323232] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/25 focus-visible:ring-offset-2 focus-visible:ring-offset-[#111214] sm:px-[18px]"
                 >
-                  <Reply size={16} />
-                  <span className="text-[14px] font-semibold">Share</span>
+                  <Reply size={16} className="shrink-0 text-white/90" aria-hidden />
+                  <span className="text-[14px] font-semibold">Ulashish</span>
                 </button>
               </div>
             </div>
 
-            <h1 className="my-[10px] break-words text-[22px] font-bold leading-[1.25] text-white md:text-[25px]">
+            <h1 className="my-3 break-words text-[21px] font-bold leading-snug text-white sm:my-4 sm:text-[24px] md:text-[25px]">
               {streamerDisplay.username} — Jonli efir #{streamId}
             </h1>
 
-            <p className="mt-2 text-[15px] text-white/60">
-              {streamerDisplay.game} · {streamerDisplay.language}
+            <p className="mt-1 text-[14px] leading-relaxed text-white/65 sm:text-[15px]">
+              {streamTitle ? streamTitle : "Stream tavsifi API dan kelgach shu yerda ko‘rinadi."}
             </p>
           </div>
         </section>
@@ -595,8 +602,8 @@ export function StreamViewerContent({ streamId }: StreamViewerContentProps) {
           onSend={sendChat}
           chatError={chatError}
           onChatErrorDismiss={() => setChatError(null)}
-          pinnedRank="7"
-          pinnedTitle="WITH AN ADDON CALLED UL..."
+          pinnedRank=""
+          pinnedTitle={pinnedLine}
         />
       </div>
     </main>

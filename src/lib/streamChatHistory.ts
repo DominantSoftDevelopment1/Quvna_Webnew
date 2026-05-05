@@ -16,7 +16,11 @@ export async function fetchStreamChatHistory(streamId: string, opts?: { page?: n
   for (const row of rows) {
     const rec = normalizeChatRecordForParse(row);
     const line = parseStreamChatInbound(rec);
-    if (line) pairs.push({ row, line });
+    if (!line) continue;
+    const ts = rowTimestampMs(row);
+    const lineWithTs =
+      ts != null && line.sentAtMs == null ? { ...line, sentAtMs: ts } : line;
+    pairs.push({ row, line: lineWithTs });
   }
 
   pairs.sort((a, b) => {

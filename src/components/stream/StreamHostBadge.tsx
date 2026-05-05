@@ -28,15 +28,17 @@ export function StreamHostBadge({
   if (variant === "icon") {
     return (
       <span
-        className={`inline-flex shrink-0 items-center justify-center rounded px-1 py-0.5 text-[9px] font-extrabold uppercase tracking-wide ${palette.fg} ${palette.bg}`}
+        className={`inline-flex shrink-0 items-center justify-center rounded-md px-2 py-1 text-[10px] font-bold uppercase tracking-wide ${palette.fg} ${palette.bg}`}
         aria-label={label}
       >
-        {label === "Siz" ? "SIZ" : "HOST"}
+        {label}
       </span>
     );
   }
   return (
-    <span className={`inline-flex shrink-0 items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-bold ${palette.text} border ${palette.border}`}>
+    <span
+      className={`inline-flex shrink-0 items-center rounded-md border px-2 py-1 text-[11px] font-semibold leading-none ${palette.text} ${palette.border} bg-white/[0.04]`}
+    >
       {label}
     </span>
   );

@@ -534,6 +534,35 @@ body {
   padding-bottom: 10px;
 }
 
+/* Stream studio: yon margin kam — video+chat maksimal keng */
+.main-body-scroll:has([data-stream-studio-page]) {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  margin-left: 4px;
+  margin-right: 4px;
+  padding-top: 6px;
+  padding-bottom: 6px;
+}
+@media (min-width: 1024px) {
+  .main-body-scroll:has([data-stream-studio-page]) {
+    margin-left: 8px;
+    margin-right: 8px;
+  }
+}
+@media (min-width: 1280px) {
+  .main-body-scroll:has([data-stream-studio-page]) {
+    margin-left: 10px;
+    margin-right: 10px;
+  }
+}
+@media (min-width: 1536px) {
+  .main-body-scroll:has([data-stream-studio-page]) {
+    margin-left: 12px;
+    margin-right: 12px;
+  }
+}
+
 /* Profile history: full-bleed background except sidebar area */
 body.history-full-bleed .main-body-scroll {
   margin-left: 0;

@@ -153,7 +153,19 @@ export type ParsedChatLine = {
   avatarHref?: string;
   /** Qo‘shimcha: nickname, PUBG UID va h.k. */
   subtitle?: string;
+  /** Xabar vaqti (ms, epoch) — REST/WS DTO dan. */
+  sentAtMs?: number;
 };
+
+function extractChatRecordTimestampMs(raw: Record<string, unknown>): number | undefined {
+  const t = raw.createdAt ?? raw.updatedAt ?? raw.timestamp ?? raw.sentAt ?? raw.created_at;
+  if (typeof t === "number" && Number.isFinite(t)) return t > 1e12 ? t : t * 1000;
+  if (typeof t === "string") {
+    const d = Date.parse(t);
+    if (!Number.isNaN(d)) return d;
+  }
+  return undefined;
+}
 
 /** REST `streamChat`/DTO formatlarini `parseStreamChatInbound` ga moslashtirish. */
 export function normalizeChatRecordForParse(raw: Record<string, unknown>): Record<string, unknown> {
@@ -334,6 +346,7 @@ export function parseStreamChatInbound(raw: Record<string, unknown>): ParsedChat
   }
 
   const subtitle = resolveChatSubtitle(raw, uObj);
+  const sentAtMs = extractChatRecordTimestampMs(raw);
 
   return {
     id: String(raw.id ?? `${Date.now()}-${Math.random()}`),
@@ -343,6 +356,7 @@ export function parseStreamChatInbound(raw: Record<string, unknown>): ParsedChat
     ...(isStreamOwnerHint ? { isStreamOwnerHint } : {}),
     ...(avatarHref ? { avatarHref } : {}),
     ...(subtitle ? { subtitle } : {}),
+    ...(sentAtMs != null ? { sentAtMs } : {}),
   };
 }
 

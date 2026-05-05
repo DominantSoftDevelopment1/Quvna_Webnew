@@ -285,12 +285,6 @@ function ProfileContent({ userId, isLoggedIn, onLogout }: { userId: number | nul
                 <p className="text-xs" style={{ color: "rgba(255,255,255,0.6)" }}>ID: {p.id ?? userId}</p>
               </div>
             </div>
-            {/* Rating badge — 5px yuqoriroq */}
-            <div className="flex items-center gap-2 shrink-0"
-              style={{ background: "rgba(27,58,42,0.9)", borderRadius: 20, padding: "6px 12px", backdropFilter: "blur(8px)", marginBottom: 10, marginRight: 10 }}>
-              <Star size={15} fill="#F59E0B" style={{ color: "#F59E0B" }} />
-              <span style={{ fontSize: 15, fontWeight: 700, color: "#fff" }}>{ratingScore}</span>
-            </div>
           </div>
         </div>
 
