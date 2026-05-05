@@ -71,7 +71,6 @@ export default function LoginPage() {
               value={phoneNumber}
               onChange={(e) => setPhoneNumber(e.target.value)}
               placeholder="+998901234567"
-              required
               className="my-[5px] w-full rounded-xl text-base outline-none focus:ring-2"
               style={{
                 background: "var(--bg-card)",
