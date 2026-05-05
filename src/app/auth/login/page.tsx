@@ -21,22 +21,17 @@ export default function LoginPage() {
     setLoading(true);
     try {
       const cleanPhone = phoneNumber.replace(/[\s\-().]/g, "");
-      console.log("[v0] Login attempt:", { phoneNumber: cleanPhone });
       const { data } = await api.post("/api/auth/login", { phoneNumber: cleanPhone });
-      console.log("[v0] Login response:", data);
       const d = data?.data;
       if (d?.accessToken) {
-        console.log("[v0] Login successful, setting tokens");
         setTokens(d.accessToken, d.refreshToken);
         localStorage.setItem("userId", String(d.users?.id ?? ""));
         if (d.users) setUser(d.users);
         router.push("/");
       } else {
-        console.log("[v0] No access token in response");
         setError("Telefon raqam yoki parol noto'g'ri");
       }
     } catch (err: unknown) {
-      console.log("[v0] Login error:", err);
       const msg = (err as { response?: { data?: { errors?: { msg: string }[] } } })
         ?.response?.data?.errors?.[0]?.msg;
       setError(msg ?? "Xatolik yuz berdi. Qaytadan urinib ko'ring.");
