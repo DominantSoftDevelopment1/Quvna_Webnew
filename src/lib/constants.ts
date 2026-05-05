@@ -9,6 +9,15 @@ function apiBaseUrl(): string {
   const fromEnv = process.env.NEXT_PUBLIC_API_BASE_URL?.trim();
   if (fromEnv) return fromEnv.replace(/\/$/, "");
   if (process.env.NODE_ENV === "development") return "/api-proxy";
+  // next start lokal mashina / tugun — tashqi API ga to'g'ridan URILSAM CORS (README `/api-proxy`).
+  if (typeof window !== "undefined") {
+    const h = window.location.hostname;
+    if (h === "localhost" || h === "127.0.0.1") return "/api-proxy";
+    if (/^\d+\.\d+\.\d+\.\d+$/.test(h)) {
+      const [a, b] = h.split(".").map(Number);
+      if (a === 10 || (a === 172 && b >= 16 && b <= 31) || (a === 192 && b === 168)) return "/api-proxy";
+    }
+  }
   return "https://quvna.dominantsoftdevelopment.uz";
 }
 
